@@ -56,19 +56,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <main className='min-h-[100dvh] bg-background text-text-primary'>
+        <main className='min-h-[100dvh] bg-background text-foreground'>
             <div className='flex h-[100dvh]'>
-                <aside className='hidden w-56 shrink-0 flex-col border-r border-[#1A1A1A] bg-[#050505] px-4 pb-6 pt-5 md:flex lg:w-64'>
+                <aside className='hidden w-56 shrink-0 flex-col border-r border-line bg-background px-4 pb-6 pt-5 md:flex lg:w-64'>
                     <div className='flex items-center gap-3 px-1'>
                         <Image
                             src='/openfi.png'
                             width={35}
                             height={35}
                             alt='logo'
-                            className='rounded-full shadow-[0_0_10px_rgba(56,217,198,0.2)]'
+                            className='rounded-full shadow-logo'
                         />
-                        <span className='text-lg font-semibold tracking-tight text-[#F4F8FB]'>
-                            Open<span className='text-[#38D9C6]'>Fi</span>
+                        <span className='text-lg font-semibold tracking-tight text-foreground'>
+                            Open<span className='text-accent'>Fi</span>
                         </span>
                     </div>
                     <nav className='mt-8 space-y-2 text-sm flex-1 overflow-y-auto pr-2 custom-scrollbar'>
@@ -83,8 +83,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             href={item.href}
                                             className={
                                                 isActive
-                                                    ? 'flex-1 flex items-center gap-2 rounded-xl bg-[#38D9C6]/10 border border-[#38D9C6]/45 px-3 py-2.5 text-[#F4F8FB] font-medium shadow-[0_0_20px_rgba(56,217,198,0.14)] transition-all duration-200'
-                                                    : 'flex-1 flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-[#A8B3C2] font-medium transition-all duration-200 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] hover:border-[#38D9C6]/25'
+                                                    ? 'flex-1 flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/45 px-3 py-2.5 text-foreground font-medium shadow-glow transition-all duration-200'
+                                                    : 'flex-1 flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-muted font-medium transition-all duration-200 hover:bg-accent/10 hover:text-foreground hover:border-accent/25'
                                             }
                                         >
                                             {item.label}
@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                         {isChat && (
                                             <button 
                                                 onClick={handleCreateChat}
-                                                className="absolute right-2 p-1.5 text-[#A8B3C2] hover:text-[#38D9C6] hover:bg-[#38D9C6]/20 rounded-md transition-colors"
+                                                className="absolute right-2 p-1.5 text-muted hover:text-accent hover:bg-accent/20 rounded-md transition-colors"
                                                 title="Nuevo chat"
                                             >
                                                 <Plus size={16} />
@@ -102,15 +102,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     </div>
                                     
                                     {isChat && sessions.length > 0 && (
-                                        <div className="mt-1 ml-4 flex flex-col gap-1 border-l border-[#1A1A1A] pl-2 py-1">
+                                        <div className="mt-1 ml-4 flex flex-col gap-1 border-l border-line pl-2 py-1">
                                             {displaySessions.map((session) => (
                                                 <div 
                                                     key={session.id}
                                                     onClick={(e) => handleSelectChat(e, session.id)}
                                                     className={`group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition-colors text-xs
                                                         ${currentSessionId === session.id && isChatPage
-                                                            ? 'bg-[#1A1A1A] text-[#F4F8FB] font-medium' 
-                                                            : 'text-[#A8B3C2] hover:bg-[#1A1A1A]/50 hover:text-[#F4F8FB]'
+                                                            ? 'bg-line text-foreground font-medium' 
+                                                            : 'text-muted hover:bg-line/50 hover:text-foreground'
                                                         }`}
                                                 >
                                                     <span className="truncate pr-2">
@@ -118,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                                     </span>
                                                     <button
                                                         onClick={(e) => handleDeleteChat(e, session.id)}
-                                                        className="opacity-0 group-hover:opacity-100 p-1 text-[#A8B3C2] hover:text-red-400 transition-all rounded"
+                                                        className="opacity-0 group-hover:opacity-100 p-1 text-muted hover:text-red-400 transition-all rounded"
                                                         title="Eliminar chat"
                                                     >
                                                         <Trash2 size={12} />
@@ -129,7 +129,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                             {sessions.length > 5 && (
                                                 <button
                                                     onClick={() => setShowAllChats(!showAllChats)}
-                                                    className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#6B7788] hover:text-[#A8B3C2] transition-colors mt-1"
+                                                    className="flex items-center gap-1 px-2 py-1.5 text-xs text-subdued hover:text-muted transition-colors mt-1"
                                                 >
                                                     {showAllChats ? (
                                                         <><ChevronUp size={12} /> Mostrar menos</>
@@ -145,22 +145,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         })}
                     </nav>
                     <div className='mt-auto space-y-3 pt-6 shrink-0'>
-                        <div className='rounded-2xl border border-[#38D9C6]/20 bg-[#080C0D] p-3 shadow-[0_0_24px_rgba(56,217,198,0.08)]'>
+                        <div className='rounded-2xl border border-accent/20 bg-card p-3 shadow-panel-glow-sm'>
                             <div className='flex items-center gap-3'>
-                                <div className='flex h-10 w-10 items-center justify-center rounded-full bg-[#050505] text-sm font-semibold text-[#F4F8FB] border border-[#38D9C6]/40'>
+                                <div className='flex h-10 w-10 items-center justify-center rounded-full bg-background text-sm font-semibold text-foreground border border-accent/40'>
                                     AL
                                 </div>
                                 <div className='min-w-0'>
-                                    <div className='truncate font-medium text-[#F4F8FB]'>
+                                    <div className='truncate font-medium text-foreground'>
                                         Alen Davies
                                     </div>
-                                    <div className='truncate text-xs text-[#38D9C6]'>
+                                    <div className='truncate text-xs text-accent'>
                                         Risk Optimizer
                                     </div>
                                 </div>
                             </div>
                             <button
-                                className='mt-3 h-9 w-full rounded-xl border border-[#38D9C6]/25 bg-[#050505] text-xs font-medium text-[#A8B3C2] transition-all duration-200 hover:border-[#38D9C6]/50 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] active:scale-[0.98]'
+                                className='mt-3 h-9 w-full rounded-xl border border-accent/25 bg-background text-xs font-medium text-muted transition-all duration-200 hover:border-accent/50 hover:bg-accent/10 hover:text-foreground active:scale-[0.98]'
                                 type='button'
                             >
                                 Gestionar cuenta
@@ -170,7 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </aside>
 
                 <section className='flex min-h-0 flex-1 flex-col'>
-                    <div className='border-b border-card bg-surface px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden'>
+                    <div className='border-b border-line bg-surface px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden'>
                         <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-2 text-base font-semibold'>
                                 <Image
@@ -178,9 +178,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     alt='OpenFi Logo'
                                     width={24}
                                     height={24}
-                                    className='rounded-md shadow-[0_0_10px_rgba(56,217,198,0.2)]'
+                                    className='rounded-md shadow-logo'
                                 />
-                                <span className='text-text-primary'>
+                                <span className='text-foreground'>
                                     {active}
                                 </span>
                             </div>

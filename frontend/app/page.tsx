@@ -435,12 +435,12 @@ export default function ChatPage() {
 
     return (
         <AppShell>
-            <div className='flex h-[100dvh] w-full flex-col bg-[#050505] md:h-full'>
-                <header className='flex min-h-[74px] items-center border-b border-[#1A1A1A] bg-[#050505] px-10'>
+            <div className='flex h-[100dvh] w-full flex-col bg-background md:h-full'>
+                <header className='flex min-h-[74px] items-center border-b border-line bg-background px-10'>
                     <div className='flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between'>
                         <div className='min-w-0'>
-                            <h1 className='text-2xl font-semibold tracking-tight text-[#F4F8FB]'>
-                                Open<span className='text-[#38D9C6]'>Fi</span>{' '}
+                            <h1 className='text-2xl font-semibold tracking-tight text-foreground'>
+                                Open<span className='text-accent'>Fi</span>{' '}
                                 Chat
                             </h1>
                         </div>

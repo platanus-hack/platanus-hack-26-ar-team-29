@@ -1,76 +1,46 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
 
 :root {
-  /* LIGHT MODE (Clean Fintech) */
-  --theme-bg: #F6F8FB;
-  --theme-surface: #F0F3F8;
-  --theme-card: #FFFFFF;
-  
-  --theme-text-primary: #101828;
-  --theme-text-secondary: #667085;
-  
-  --theme-accent: #14B8A6;
-  --theme-accent-sec: #2563EB;
-  
-  --theme-success: #16A34A;
-  --theme-warning: #F59E0B;
-  --theme-error: #DC2626;
+  --color-background: #f6f8fb;
+  --color-surface: #f0f3f8;
+  --color-card: #ffffff;
+  --color-line: #d8dee8;
+  --color-input: #bfccda;
+  --color-foreground: #101828;
+  --color-muted: #667085;
+  --color-subdued: #8a94a6;
+  --color-accent: #14b8a6;
+  --color-accent-hover: #2dd4bf;
+  --color-accent-secondary: #2563eb;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-error: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* DARK MODE (True Black Cyber-Fintech) */
-    --theme-bg: #050505;
-    --theme-surface: #050505;
-    --theme-card: #080C0D;
-    
-    --theme-text-primary: #F4F8FB;
-    --theme-text-secondary: #A8B3C2;
-    
-    --theme-accent: #38D9C6;
-    --theme-accent-sec: #3B82F6;
-    
-    --theme-success: #3EE98A;
-    --theme-warning: #F5B84B;
-    --theme-error: #FF647C;
+    --color-background: #050505;
+    --color-surface: #050505;
+    --color-card: #080c0d;
+    --color-line: #1a1a1a;
+    --color-input: #2a3f57;
+    --color-foreground: #f4f8fb;
+    --color-muted: #a8b3c2;
+    --color-subdued: #6b7788;
+    --color-accent: #38d9c6;
+    --color-accent-hover: #54e3d3;
+    --color-accent-secondary: #3b82f6;
+    --color-success: #3ee98a;
+    --color-warning: #f5b84b;
+    --color-error: #ff647c;
   }
-}
-
-@theme inline {
-  --color-background: var(--theme-bg);
-  --color-surface: var(--theme-surface);
-  --color-card: var(--theme-card);
-  --color-text-primary: var(--theme-text-primary);
-  --color-text-secondary: var(--theme-text-secondary);
-  --color-accent: var(--theme-accent);
-  --color-accent-secondary: var(--theme-accent-sec);
-  --color-success: var(--theme-success);
-  --color-warning: var(--theme-warning);
-  --color-error: var(--theme-error);
-  
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--theme-bg);
-  color: var(--theme-text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   font-size: 15px;
   line-height: 1.6;
-}
-
-@layer base {
-  h1 {
-    @apply text-xl font-semibold sm:text-2xl text-text-primary;
-  }
-  h2 {
-    @apply text-lg font-semibold sm:text-xl text-text-primary;
-  }
-  h3 {
-    @apply text-base font-semibold sm:text-lg text-text-primary;
-  }
-  p {
-    @apply text-sm text-text-secondary sm:text-base;
-  }
 }

@@ -30,23 +30,23 @@ export default function ConnectionsPage() {
           title="Conexiones"
           description="Gestioná las cuentas y wallets vinculadas."
         />
-        <div className="flex-1 overflow-y-auto overscroll-contain bg-[#050505] px-4 py-6 sm:px-6 lg:px-10">
+        <div className="flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:px-10">
           <div className="mx-auto max-w-5xl grid gap-4 md:grid-cols-2">
             {connections.map((item) => (
               <div
                 key={item.id}
-                className="rounded-3xl border border-[#1A1A1A] bg-[#080C0D] p-6 shadow-[0_0_24px_rgba(56,217,198,0.03)] transition-all duration-200 hover:border-[#38D9C6]/25 hover:shadow-[0_0_30px_rgba(56,217,198,0.06)]"
+                className="rounded-3xl border border-line bg-card p-6 shadow-card transition-all duration-200 hover:border-accent/25 hover:shadow-card-hover"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-base font-medium text-[#F4F8FB]">{item.name}</div>
-                    <div className="mt-1 text-xs text-[#A8B3C2] font-mono">{item.description}</div>
+                    <div className="text-base font-medium text-foreground">{item.name}</div>
+                    <div className="mt-1 text-xs text-muted font-mono">{item.description}</div>
                   </div>
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-medium border ${
                       item.status === "Conectado"
-                        ? "bg-[#3EE98A]/10 text-[#3EE98A] border-[#3EE98A]/20 shadow-[0_0_10px_rgba(62,233,138,0.05)]"
-                        : "bg-[#050505] text-[#6B7788] border-[#1A1A1A]"
+                        ? "bg-success/10 text-success border-success/20 shadow-success-soft"
+                        : "bg-background text-subdued border-line"
                     }`}
                   >
                     {item.status}
@@ -54,7 +54,7 @@ export default function ConnectionsPage() {
                 </div>
                 <button
                   type="button"
-                  className="mt-6 w-full rounded-xl border border-[#38D9C6]/25 bg-[#050505] px-3 py-2 text-xs font-medium text-[#A8B3C2] transition-all duration-200 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] hover:border-[#38D9C6]/50 active:scale-[0.98]"
+                  className="mt-6 w-full rounded-xl border border-accent/25 bg-background px-3 py-2 text-xs font-medium text-muted transition-all duration-200 hover:bg-accent/10 hover:text-foreground hover:border-accent/50 active:scale-[0.98]"
                 >
                   {item.status === "Conectado" ? "Ver detalles" : "Conectar"}
                 </button>

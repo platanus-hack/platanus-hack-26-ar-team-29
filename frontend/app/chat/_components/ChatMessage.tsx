@@ -19,7 +19,7 @@ function renderInlineMarkdown(text: string): ReactNode[] {
       nodes.push(text.slice(lastIndex, match.index));
     }
     nodes.push(
-      <strong key={`${match.index}-${match[1]}`} className="font-semibold text-[#F4F8FB]">
+      <strong key={`${match.index}-${match[1]}`} className="font-semibold text-foreground">
         {match[1]}
       </strong>,
     );
@@ -102,7 +102,7 @@ function RichMessageContent({ content }: { content: string }) {
       {blocks.map((block, index) => {
         if (block.type === "unordered_list") {
           return (
-            <ul key={index} className="m-0 list-disc space-y-1.5 pl-5 marker:text-[#38D9C6]">
+            <ul key={index} className="m-0 list-disc space-y-1.5 pl-5 marker:text-accent">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex} className="pl-1">
                   {renderInlineMarkdown(item)}
@@ -114,7 +114,7 @@ function RichMessageContent({ content }: { content: string }) {
 
         if (block.type === "ordered_list") {
           return (
-            <ol key={index} className="m-0 list-decimal space-y-1.5 pl-5 marker:text-[#38D9C6]">
+            <ol key={index} className="m-0 list-decimal space-y-1.5 pl-5 marker:text-accent">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex} className="pl-1">
                   {renderInlineMarkdown(item)}
@@ -171,7 +171,7 @@ export function ChatMessage({
       <div className="flex justify-start">
         <div className="flex w-full flex-col gap-3 sm:max-w-[88%] lg:max-w-[78%]">
           {message.content && (
-            <div className="rounded-2xl rounded-bl-sm border border-[#1A1A1A] bg-[#080C0D] px-5 py-3 text-sm break-words text-[#F4F8FB] shadow-sm">
+            <div className="rounded-2xl rounded-bl-sm border border-line bg-card px-5 py-3 text-sm break-words text-foreground shadow-sm">
               <RichMessageContent content={message.content} />
             </div>
           )}
@@ -194,10 +194,10 @@ export function ChatMessage({
       {hasTools && !isUser && (
         <div className="flex flex-col gap-1.5 w-full sm:max-w-[86%] md:max-w-[74%] lg:max-w-[68%] xl:max-w-[62%]">
           {message.tools!.map(tool => (
-            <div key={tool.id} className="flex items-center gap-2 rounded-xl bg-[#080C0D] border border-[#1A1A1A] px-3 py-2 text-xs text-[#A8B3C2]">
+            <div key={tool.id} className="flex items-center gap-2 rounded-xl bg-card border border-line px-3 py-2 text-xs text-muted">
               {tool.status === 'started' ? (
                 <span className="flex h-4 w-4 items-center justify-center">
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#38D9C6] border-t-transparent" />
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
                 </span>
               ) : tool.status === 'error' ? (
                 <span className="flex h-4 w-4 items-center justify-center text-red-400">
@@ -206,7 +206,7 @@ export function ChatMessage({
                   </svg>
                 </span>
               ) : (
-                <span className="flex h-4 w-4 items-center justify-center text-[#38D9C6]">
+                <span className="flex h-4 w-4 items-center justify-center text-accent">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                     <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.844-8.791a.75.75 0 0 0-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 1 0-1.114 1.004l2.25 2.5a.75.75 0 0 0 1.15-.043l4.25-5.5Z" clipRule="evenodd" />
                   </svg>
@@ -222,10 +222,10 @@ export function ChatMessage({
         <div
           className={`max-w-[96%] rounded-2xl px-5 py-3.5 text-sm break-words shadow-sm sm:max-w-[86%] md:max-w-[74%] lg:max-w-[68%] xl:max-w-[62%] ${
             isUser
-              ? "whitespace-pre-wrap bg-[#38D9C6]/10 text-[#F4F8FB] border border-[#38D9C6]/30 rounded-br-sm shadow-[0_0_15px_rgba(56,217,198,0.08)]"
+              ? "whitespace-pre-wrap bg-accent/10 text-foreground border border-accent/30 rounded-br-sm shadow-glow-xs"
               : isSystem
-                ? "bg-[#F5B84B]/10 text-[#F5B84B] border border-[#F5B84B]/20 rounded-bl-sm"
-                : "bg-[#080C0D] text-[#F4F8FB] border border-[#1A1A1A] rounded-bl-sm"
+                ? "bg-warning/10 text-warning border border-warning/20 rounded-bl-sm"
+                : "bg-card text-foreground border border-line rounded-bl-sm"
           }`}
         >
           {isUser ? message.content : <RichMessageContent content={message.content} />}
