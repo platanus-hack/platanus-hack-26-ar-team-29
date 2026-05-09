@@ -13,7 +13,7 @@ Phase 1 (this pass) ships:
 - `POST /api/v1/connections/{id}/onchain/transfer`
 - `POST /api/v1/connections/{id}/export-private-key` (`chat_excluded` per `02-3` §14 row 31).
 
-Phase 2 (deferred): `/defi/markets`, `/connections/{id}/defi/positions`, `/connections/{id}/defi/{supply,withdraw}`. The package is structured so these drop in without further refactor.
+Phase 2 — Aave V3 supply/withdraw/markets/positions — is now shipped on Base mainnet. See [`defi.md`](./defi.md). Morpho Blue is still deferred.
 
 ## Networks
 

@@ -1,7 +1,8 @@
 """EthereumCustodialProvider — implements Provider ABC.
 
-Phase 1 capabilities: ``read_balance``, ``read_transactions``, ``send_onchain``.
-DeFi (``supply_defi`` / ``withdraw_defi``) lands in Phase 2.
+Phase 1: ``read_balance``, ``read_transactions``, ``send_onchain``.
+Phase 2 (now shipped, Aave V3 only): ``supply_defi``, ``withdraw_defi``,
+``list_defi_markets``, ``get_defi_market``, ``list_defi_positions``.
 """
 
 from __future__ import annotations
@@ -9,7 +10,16 @@ from __future__ import annotations
 from app.providers.base import Provider
 from app.providers.ethereum.client import EthereumClient
 
-PHASE_1_CAPABILITIES: list[str] = ["read_balance", "read_transactions", "send_onchain"]
+PHASE_1_CAPABILITIES: list[str] = [
+    "read_balance",
+    "read_transactions",
+    "send_onchain",
+    "supply_defi",
+    "withdraw_defi",
+    "list_defi_markets",
+    "get_defi_market",
+    "list_defi_positions",
+]
 
 
 class EthereumCustodialProvider(Provider):
