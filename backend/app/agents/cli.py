@@ -14,7 +14,7 @@ CONNECT_TIMEOUT_SECONDS = 30
 
 async def main() -> None:
     session = ChatAgentSession()
-    print("Pampa live chat. Type /exit to quit, /status for MCP status.", flush=True)
+    print("OpenFi live chat. Type /exit to quit, /status for MCP status.", flush=True)
     print("Connecting to Claude Agent SDK...", flush=True)
 
     try:
@@ -47,7 +47,7 @@ async def main() -> None:
             if not command:
                 continue
 
-            print("Pampa> ", end="", flush=True)
+            print("OpenFi> ", end="", flush=True)
             printed_tokens = False
             async for event in session.send_user_message(user_text):
                 printed_tokens = _render_event(event, session, printed_tokens)
