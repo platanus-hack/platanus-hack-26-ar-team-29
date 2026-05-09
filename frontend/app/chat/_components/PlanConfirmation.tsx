@@ -1,5 +1,6 @@
 import type { TradePlan } from "../../lib/backend/types";
 import { PlanSummary } from "./PlanSummary";
+import { Button } from "../../_components/Button";
 
 function isActionable(state: string) {
   return state === "pending_approval";
@@ -25,22 +26,24 @@ export function PlanConfirmation({
       <PlanSummary plan={plan} />
       {isActionable(plan.state) ? (
         <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 pt-2">
-          <button
+          <Button
             type="button"
             onClick={onReject}
             disabled={isBusy}
-            className="min-h-12 rounded-xl border border-line bg-background px-4 py-2 text-sm font-medium text-muted transition-all duration-200 hover:bg-line/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            variant="outline"
+            className="min-h-12"
           >
             Rechazar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onApprove}
             disabled={isBusy}
-            className="min-h-12 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-bold text-accent transition-all duration-200 hover:bg-accent hover:text-background hover:shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+            variant="primary"
+            className="min-h-12"
           >
             Aprobar
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-import { AppShell } from "../_components/AppShell";
+import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
 import { SyncButton } from "./SyncButton";
 
@@ -52,7 +52,7 @@ export default async function ActivityPage() {
   });
 
   return (
-    <AppShell>
+    <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="px-4 sm:px-6 lg:px-10">
           <PageHeader title="Actividad" description="Movimientos recientes y estado de planes.">
@@ -92,6 +92,6 @@ export default async function ActivityPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </Sidebar>
   );
 }

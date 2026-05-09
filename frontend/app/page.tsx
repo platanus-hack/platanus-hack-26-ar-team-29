@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppShell } from './_components/AppShell';
+import { Sidebar } from './_components/Sidebar';
 import { ChatInput } from './chat/_components/ChatInput';
 import { ChatThread } from './chat/_components/ChatThread';
 import type { Message } from './chat/types';
@@ -62,13 +62,22 @@ export default function ChatPage() {
 
     const updatePlan = useCallback(
         (planId: string, updater: (plan: TradePlan) => TradePlan) => {
-            setMessages((prev) =>
-                prev.map((message) =>
-                    message.plan?.id === planId
-                        ? { ...message, plan: updater(message.plan) }
-                        : message,
-                ),
-            );
+            setMessages((prev) => {
+                const next = prev.map((message) => {
+                    if (message.plan?.id !== planId) return message;
+                    const newPlan = updater(message.plan);
+                    const wasPending = message.plan.state === 'pending_approval';
+                    const isPending = newPlan.state === 'pending_approval';
+                    // Pending plans pin to the bottom (Date.now() + 1e9).
+                    // Once resolved, drop the pin so subsequent responses sort after.
+                    // Re-pin if the plan flips back to pending (e.g., error rollback).
+                    let createdAt = message.createdAt;
+                    if (isPending && !wasPending) createdAt = Date.now() + 1e9;
+                    else if (!isPending && wasPending) createdAt = Date.now();
+                    return { ...message, plan: newPlan, createdAt };
+                });
+                return sortMessages(next);
+            });
         },
         [],
     );
@@ -195,11 +204,13 @@ export default function ChatPage() {
             }
 
             if (frame.type === 'plan_proposed') {
+                // Plan cards are the actionable item — pin them after any
+                // current or future end-of-turn agent message in this session.
                 upsertMessage({
                     id: `plan-${frame.plan_id}`,
                     role: 'assistant',
                     content: '',
-                    createdAt: Date.now(),
+                    createdAt: Date.now() + 1e9,
                     kind: 'plan_proposal',
                     planId: frame.plan_id,
                     plan: frame.plan,
@@ -434,22 +445,17 @@ export default function ChatPage() {
     }
 
     return (
-        <AppShell>
-            <div className='flex h-[100dvh] w-full flex-col bg-background md:h-full'>
-                <header className='flex min-h-[74px] items-center border-b border-line bg-background px-10'>
+        <Sidebar>
+            <div className='flex h-full w-full flex-col bg-background'>
+                <header className='hidden md:flex min-h-[74px] items-center border-b border-line bg-background px-10 flex-shrink-0'>
                     <div className='flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between'>
                         <div className='min-w-0'>
                             <h1 className='text-2xl font-semibold tracking-tight text-foreground'>
                                 Open<span className='text-accent'>Fi</span>{' '}
-                                Chat
+                                <span className='text-muted'>Agent</span>
                             </h1>
                         </div>
                     </div>
-                    {error && (
-                        <div className='mt-2 rounded-xl bg-error/10 border border-error/20 px-3 py-2 text-sm leading-6 text-error'>
-                            {error}
-                        </div>
-                    )}
                 </header>
                 <ChatThread
                     messages={messages}
@@ -465,6 +471,6 @@ export default function ChatPage() {
                     disabled={isTyping || isBooting || !currentSessionId}
                 />
             </div>
-        </AppShell>
+        </Sidebar>
     );
 }
