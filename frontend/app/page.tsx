@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppShell } from './_components/AppShell';
+import { Sidebar } from './_components/Sidebar';
 import { ChatInput } from './chat/_components/ChatInput';
 import { ChatThread } from './chat/_components/ChatThread';
 import type { Message } from './chat/types';
@@ -434,7 +434,7 @@ export default function ChatPage() {
     }
 
     return (
-        <AppShell>
+        <Sidebar>
             <div className='flex h-[100dvh] w-full flex-col bg-background md:h-full'>
                 <header className='flex min-h-[74px] items-center border-b border-line bg-background px-10'>
                     <div className='flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between'>
@@ -465,6 +465,6 @@ export default function ChatPage() {
                     disabled={isTyping || isBooting || !currentSessionId}
                 />
             </div>
-        </AppShell>
+        </Sidebar>
     );
 }

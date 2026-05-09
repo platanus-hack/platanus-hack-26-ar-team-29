@@ -1,4 +1,4 @@
-import { AppShell } from "../_components/AppShell";
+import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
 
 const connections = [
@@ -24,7 +24,7 @@ const connections = [
 
 export default function ConnectionsPage() {
   return (
-    <AppShell>
+    <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader
           title="Conexiones"
@@ -63,6 +63,6 @@ export default function ConnectionsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </Sidebar>
   );
 }

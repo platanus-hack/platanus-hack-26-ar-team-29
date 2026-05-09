@@ -1,4 +1,4 @@
-import { AppShell } from "../_components/AppShell";
+import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
 
 const balances = [
@@ -34,7 +34,7 @@ const balances = [
 
 export default function BalancesPage() {
   return (
-    <AppShell>
+    <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader title="Balances" description="Saldos por proveedor y moneda." />
         <div className="flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:px-10">
@@ -63,6 +63,6 @@ export default function BalancesPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </Sidebar>
   );
 }

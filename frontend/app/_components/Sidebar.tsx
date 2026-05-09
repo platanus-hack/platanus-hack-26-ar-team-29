@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
 import { useState } from 'react';
+import { Tab } from './Tab';
 
 const NAV_ITEMS = [
     { label: 'Chat', href: '/' },
@@ -19,7 +20,7 @@ function currentLabel(pathname: string) {
     return NAV_ITEMS.find((item) => item.href === pathname)?.label ?? 'OpenFi';
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function Sidebar({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const active = currentLabel(pathname);
@@ -79,16 +80,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             return (
                                 <div key={item.href} className="flex flex-col">
                                     <div className="flex items-center group relative">
-                                        <Link
-                                            href={item.href}
-                                            className={
-                                                isActive
-                                                    ? 'flex-1 flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/45 px-3 py-2.5 text-foreground font-medium shadow-glow transition-all duration-200'
-                                                    : 'flex-1 flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-muted font-medium transition-all duration-200 hover:bg-accent/10 hover:text-foreground hover:border-accent/25'
-                                            }
-                                        >
-                                            {item.label}
-                                        </Link>
+                                        <Tab 
+                                            href={item.href} 
+                                            label={item.label} 
+                                            isActive={isActive} 
+                                        />
                                         
                                         {isChat && (
                                             <button 

@@ -1,4 +1,4 @@
-import { AppShell } from "../_components/AppShell";
+import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
 
 const summary = [
@@ -52,7 +52,7 @@ const positions = [
 
 export default function InvestmentsPage() {
   return (
-    <AppShell>
+    <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader
           title="Inversiones"
@@ -107,6 +107,6 @@ export default function InvestmentsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </Sidebar>
   );
 }
