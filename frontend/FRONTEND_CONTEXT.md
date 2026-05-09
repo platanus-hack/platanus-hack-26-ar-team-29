@@ -8,7 +8,7 @@ Este documento resume el estado actual del frontend y el contexto de producto/ar
 - Es una app Next.js con App Router, TypeScript, React 19 y Tailwind CSS 4.
 - El producto pertenece al track `Agentic Money` de Platanus Hack 26.
 - La idea de producto, segun los artifacts, es una app financiera donde el chat con un agente es la superficie principal para consultar, planificar y aprobar acciones sobre dinero.
-- La implementacion actual es una base inicial: homepage default de Next y una ruta `/chat` con chat mockeado y confirmacion de trade mockeada.
+- La implementacion actual muestra el chat real integrado con backend directamente en `/`.
 - El diseño objetivo esta documentado principalmente en `.opencode/artifacts/02-2_frontend_design.md` y el contrato REST/WebSocket en `.opencode/artifacts/02-3_api_surface.md`.
 
 ## Stack
@@ -38,6 +38,18 @@ npm run build
 npm run lint
 ```
 
+## Variables De Entorno Frontend
+
+No guardar valores secretos en el repo. Para conectar contra el backend local:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+# opcional; si no se define se deriva desde NEXT_PUBLIC_API_BASE_URL
+NEXT_PUBLIC_WS_BASE_URL=ws://localhost:8000
+```
+
+La integracion actual no manda token porque el backend MVP usa un usuario dev hardcodeado.
+
 ## Regla Importante De Next.js
 
 `frontend/AGENTS.md` advierte que esta version de Next.js tiene cambios breaking y no debe asumirse compatibilidad con conocimiento anterior. Antes de escribir codigo que dependa de APIs/convenios especificos de Next, revisar la guia relevante en `node_modules/next/dist/docs/`.
@@ -51,8 +63,6 @@ frontend/
     layout.tsx
     page.tsx
     chat/
-      api.ts
-      page.tsx
       types.ts
       _components/
         ChatInput.tsx
@@ -88,9 +98,9 @@ frontend/
 
 ### `app/page.tsx`
 
-- Todavia es la pantalla default de create-next-app.
-- No refleja el producto final.
-- Es candidata a reemplazarse por una landing, dashboard o redireccion a `/chat`, segun la decision de producto.
+- Es la pantalla principal del producto en `/`.
+- Renderiza el chat integrado con backend REST + WebSocket.
+- Reemplazó al boilerplate default de create-next-app y a la ruta `/chat`.
 
 ### `app/globals.css`
 
@@ -103,40 +113,44 @@ frontend/
 ### `app/chat/page.tsx`
 
 - Es un Client Component (`"use client"`).
-- Mantiene estado local de mensajes con `useState`.
-- Seed inicial: bot mockeado con texto en ingles.
-- `handleSend` agrega el mensaje de usuario, activa estado de typing y llama `sendChatMessage`.
-- Si falla la llamada mock, agrega un mensaje de error generico.
-- `setTradeStatus` actualiza un trade embebido en un mensaje a `confirmed` o `rejected`.
-- Renderiza un contenedor responsive simple con header, thread y input.
+- Mantiene estado local de mensajes, sesion activa, estado WS y plan ocupado.
+- Al montar lista sesiones reales (`GET /api/v1/chat/sessions`) y crea una si no existe.
+- Hidrata historial desde `GET /api/v1/chat/sessions/{id}/messages`.
+- Si encuentra mensajes `plan_proposal`, consulta `GET /api/v1/plans/{id}` para renderizar el plan.
+- Abre WebSocket a `/api/v1/ws?session_id=<id>` antes de mandar mensajes.
+- `handleSend` agrega mensaje optimista y llama `POST /api/v1/chat/sessions/{id}/messages`.
+- Procesa frames `chat_token`, `chat_message`, `plan_proposed`, `plan_update`, `turn_complete`, `error`, `ping/pong`.
+- Aprueba/rechaza planes con `POST /api/v1/plans/{id}/approve` y `/reject`.
+- Renderiza header con backend configurado y estado de conexion.
 
-### `app/chat/api.ts`
+### `app/lib/backend/client.ts`
 
-- No llama a backend real.
-- Simula latencia con `setTimeout` de 800 ms.
-- Devuelve respuestas aleatorias desde `CANNED_REPLIES`.
-- Si el ultimo texto contiene `swap` o `trade`, devuelve un mensaje de bot con `trade` mockeado:
-  - `fromTicker: USDC`
-  - `fromAmount: 100`
-  - `toTicker: ETH`
-  - `toAmount: 0.025`
-  - `valueUSD: 100`
-- Tiene un comentario con el reemplazo esperado por `fetch("/api/chat")`, pero el contrato real de artifacts apunta a `/api/v1/chat/...`.
+- Cliente REST tipado contra el backend FastAPI MVP real.
+- Usa `NEXT_PUBLIC_API_BASE_URL` o default `http://localhost:8000`.
+- Manda `Accept-Language: es-AR`.
+- Parsea el envelope de errores del backend y levanta `BackendApiError`.
+- Expone helpers para health, chat sessions/messages, plans, Wallbit connections, balances y transactions.
+
+### `app/lib/backend/ws.ts`
+
+- Cliente WebSocket simple para el protocolo MVP real.
+- Usa `NEXT_PUBLIC_WS_BASE_URL` o deriva `ws://`/`wss://` desde el API base.
+- Se conecta a `/api/v1/ws?session_id=<uuid>`.
+- Entrega frames parseados a la UI y emite error local si llega JSON invalido.
 
 ### `app/chat/types.ts`
 
-- Define `ChatRole = "user" | "bot"`.
-- Define `Message` con `id`, `role`, `content`, `createdAt` y opcional `trade`.
-- Define `Trade` y `TradeStatus = "pending" | "confirmed" | "rejected"`.
-- Estos tipos son utiles para el prototipo, pero no coinciden todavia con el contrato API final, que usa sesiones, mensajes, planes, steps, IDs UUID y timestamps ISO 8601.
+- Define el modelo UI `Message` con roles `user`, `assistant` y `system`.
+- Puede incluir `planId` y `plan` para renderizar propuestas reales del backend.
+- El contrato DTO/backend vive en `app/lib/backend/types.ts`.
 
 ### Componentes De Chat
 
 - `ChatInput.tsx`: input controlado, trim de mensaje, boton disabled cuando `disabled` es true.
 - `ChatThread.tsx`: lista mensajes, autoscroll con `useEffect` y render de typing indicator.
-- `ChatMessage.tsx`: burbujas diferenciadas para usuario/bot y render especial si el mensaje trae `trade`.
-- `TradeConfirmation.tsx`: tarjeta de confirmacion con botones `Reject` y `Confirm` cuando esta pendiente; luego muestra estado final.
-- `TradeSummary.tsx`: formatea montos y USD en `en-US`; usa simbolos Unicode para flecha y aproximacion.
+- `ChatMessage.tsx`: burbujas diferenciadas para usuario/asistente/sistema y render especial si el mensaje trae `plan`.
+- `PlanConfirmation.tsx`: tarjeta de aprobacion/rechazo para `TradePlan` real.
+- `PlanSummary.tsx`: resumen de plan y steps con estados.
 
 ## Arquitectura Objetivo Del Producto
 
@@ -253,14 +267,14 @@ Topicos objetivo:
 - No hay estado global/cache para snapshots REST + deltas WS.
 - No hay componentes compartidos de error/loading/empty states.
 - No hay tests.
-- `app/page.tsx` sigue siendo boilerplate.
+- `/chat` ya no tiene `page.tsx`; la experiencia principal vive en `/`.
 - Metadata y `lang` siguen genericos.
 
 ## Recomendaciones Para Siguientes Cambios
 
-1. Reemplazar `app/page.tsx` por una entrada real del producto o redireccion a `/chat`.
-2. Cambiar metadata y `lang` a la identidad real del proyecto y `es-AR`.
-3. Traducir el prototipo de chat a Spanish-first.
+1. Cambiar metadata y `lang` a la identidad real del proyecto y `es-AR`.
+2. Seguir puliendo copy Spanish-first.
+3. Evaluar si `/chat` debe mantenerse como redirect a `/` o permanecer inexistente.
 4. Separar tipos mock de tipos API objetivo para evitar acoplar el prototipo al contrato incompleto.
 5. Introducir una capa `app/chat/api.ts` alineada a `/api/v1/chat/sessions` y `/messages` cuando exista backend.
 6. Modelar `TradePlan` y `TradeStep` en vez de `trade` embebido cuando se implemente aprobacion real.

@@ -5,13 +5,15 @@ import { ChatMessage } from "./ChatMessage";
 export function ChatThread({
   messages,
   isTyping,
-  onConfirmTrade,
-  onRejectTrade,
+  onApprovePlan,
+  onRejectPlan,
+  busyPlanId,
 }: {
   messages: Message[];
   isTyping: boolean;
-  onConfirmTrade?: (messageId: string) => void;
-  onRejectTrade?: (messageId: string) => void;
+  onApprovePlan?: (planId: string) => void;
+  onRejectPlan?: (planId: string) => void;
+  busyPlanId?: string | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,18 +24,32 @@ export function ChatThread({
   }, [messages, isTyping]);
 
   return (
-    <div ref={ref} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-6">
+    <div
+      ref={ref}
+      className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-zinc-50 px-3 py-4 dark:bg-zinc-950 sm:space-y-4 sm:px-5 sm:py-6"
+    >
+      {messages.length === 0 && !isTyping && (
+        <div className="mx-auto flex min-h-full max-w-sm flex-col items-center justify-center px-4 py-10 text-center">
+          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
+            <div className="text-lg font-semibold">Hablá con Pampa</div>
+            <p className="mt-2 text-sm leading-6 text-zinc-500">
+              Probá con: “comprá 7 usd de apple” para ver una propuesta de plan.
+            </p>
+          </div>
+        </div>
+      )}
       {messages.map((m) => (
         <ChatMessage
           key={m.id}
           message={m}
-          onConfirmTrade={onConfirmTrade}
-          onRejectTrade={onRejectTrade}
+          onApprovePlan={onApprovePlan}
+          onRejectPlan={onRejectPlan}
+          busyPlanId={busyPlanId}
         />
       ))}
       {isTyping && (
         <div className="flex justify-start">
-          <div className="rounded-2xl rounded-bl-sm bg-zinc-200 px-4 py-2 text-sm text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+          <div className="rounded-2xl rounded-bl-sm bg-white px-4 py-2 text-sm text-zinc-500 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-zinc-800">
             <span className="inline-flex gap-1">
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:150ms]" />
