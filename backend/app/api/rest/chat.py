@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.api.deps import get_chat_service, get_current_user_id
+from app.common.errors import NOT_FOUND, APIError
 from app.services.chat import ChatService
 
 router = APIRouter()
@@ -20,6 +21,10 @@ class CreateSessionRequest(BaseModel):
 
 class SendMessageRequest(BaseModel):
     content: str = Field(min_length=1, max_length=8000)
+
+
+class ResolveInputRequest(BaseModel):
+    selected_options: list[str] | str = Field(...)
 
 
 @router.post("/sessions")
@@ -75,3 +80,24 @@ async def send_message(
         agent_tasks=agent_tasks,
     )
     return JSONResponse(status_code=202, content=payload)
+
+
+@router.post("/sessions/{session_id}/inputs/{input_id}/resolve")
+async def resolve_input(
+    session_id: UUID,
+    input_id: str,
+    body: ResolveInputRequest,
+    request: Request,
+    user_id: UUID = Depends(get_current_user_id),  # noqa: ARG001 - dev auth gate
+) -> dict:
+    chat_agent = request.app.state.chat_agent
+    agent_session = chat_agent.get_session(session_id)
+    resolved = agent_session.resolve_input(input_id, body.selected_options)
+    if not resolved:
+        raise APIError(
+            NOT_FOUND,
+            http_status=404,
+            message_es="No hay una pregunta pendiente con ese identificador.",
+            message_en="No pending input with that id.",
+        )
+    return {"ok": True, "input_id": input_id}

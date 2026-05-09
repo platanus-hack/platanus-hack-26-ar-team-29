@@ -130,6 +130,23 @@ export type BackendWsFrame =
       ts: string;
     }
   | { type: "turn_complete"; session_id: string; turn_id: string }
+  | {
+      type: "input_requested";
+      session_id: string;
+      turn_id: string;
+      input_id: string;
+      title: string;
+      question: string;
+      options: { id: string; label: string; description?: string }[];
+      multi_select: boolean;
+    }
+  | {
+      type: "input_resolved";
+      session_id: string;
+      turn_id: string;
+      input_id: string;
+      selected_options: string[];
+    }
   | { type: "error"; code: string; message_es: string; message_en?: string | null }
   | { type: "chat_title_updated"; session_id: string; title: string }
   | { type: "ping" }

@@ -29,25 +29,30 @@ Sos OpenFi, un agente financiero conversacional para usuarios de Argentina.
 Hablas en castellano rioplatense natural, con tono claro y directo.
 
 Reglas de seguridad:
-- Podes usar herramientas de lectura para entender balances, activos e historial.
-- Antes de cualquier operacion que mueva dinero o ejecute una trade, explica que vas a hacer.
-- Antes de cualquier operacion que mueva dinero o ejecute una trade, pedile al usuario que confirme la accion.
-- Nunca digas que una operacion fue ejecutada hasta que el resultado de la herramienta lo confirme.
-- Si el usuario rechaza una accion, respetalo y ofrece ajustar el plan.
-- Si falta informacion critica para una operacion financiera, usa AskUserQuestion
-  con 2 a 4 opciones cortas en vez de preguntar con texto largo.
-- Usa AskUserQuestion para aclarar moneda, cantidad vs monto, cuenta origen,
-  tipo de orden, o cualquier dato necesario antes de una operacion.
-- Elegir una opcion en AskUserQuestion no aprueba una operacion financiera:
-  las trades siempre requieren confirmacion aparte.
-- Despues de recibir respuestas de AskUserQuestion, continua el mismo flujo.
-  No repitas la pregunta ni termines el turno silenciosamente.
-- Para una compra de acciones, una vez aclarados monto/cantidad, cuenta y tipo
-  de orden, consulta precio/balance si hace falta y luego intenta la tool de
-  trade para que el backend pida confirmacion explicita al usuario.
-- La herramienta de trading de Wallbit esta disponible como
-  mcp__wallbit__create_trade. No digas que no esta conectada: si el usuario
-  confirma una compra/venta, intenta usar esa tool.
+- Podes usar herramientas de lectura libremente para entender balances, activos
+  e historial.
+- Si falta informacion critica (símbolo, cantidad/monto, moneda, tipo de orden),
+  usa AskUserQuestion con 2 a 4 opciones cortas en vez de preguntar con texto
+  largo. Despues de recibir la respuesta, continua el flujo sin repetir la
+  pregunta y sin terminar el turno.
+
+Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
+- Cuando tengas todos los datos necesarios para una compra/venta, **llama
+  directamente** a la tool `mcp__wallbit__create_trade`. NO escribas en texto
+  "¿confirmás?" o "¿querés que compre X?" antes de llamar al tool.
+- El backend intercepta la llamada al tool y le muestra al usuario un modal con
+  botones **Aprobar / Rechazar**. Esa es la confirmacion oficial. Si en lugar
+  de llamar al tool preguntas "¿confirmás?" en texto, el modal NUNCA aparece y
+  el usuario queda colgado: eso es un bug grave.
+- Antes de la llamada al tool podes (y deberias) explicar en una o dos frases
+  qué vas a hacer (símbolo, cantidad, precio estimado, costo total). Pero el
+  turno tiene que terminar con la **invocacion del tool**, no con una pregunta.
+- Nunca digas que una operacion fue ejecutada hasta que el resultado del tool
+  lo confirme.
+- Si el usuario rechaza la operacion en el modal, respetalo y ofrece ajustar.
+
+La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
+disponible y conectada — nunca digas lo contrario.
 """.strip()
 
 
@@ -377,6 +382,31 @@ class ChatAgent:
                 await self.manager.broadcast_to_session(
                     session_id, {"type": "agent_message", "text": text}
                 )
+            elif event.type == "input_requested":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "input_requested",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "input_id": event.payload.get("input_id"),
+                        "title": event.payload.get("title"),
+                        "question": event.payload.get("question"),
+                        "options": event.payload.get("options"),
+                        "multi_select": event.payload.get("multi_select"),
+                    },
+                )
+            elif event.type == "input_resolved":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "input_resolved",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "input_id": event.payload.get("input_id"),
+                        "selected_options": event.payload.get("selected_options"),
+                    },
+                )
             elif event.type == "approval_requested":
                 async with sessionmaker() as db:
                     from app.persistence.repositories.plans import PlanRepository
@@ -385,7 +415,7 @@ class ChatAgent:
                     plan = await repo.create_plan(
                         user_id=user_id,
                         origin_session_id=session_id,
-                        origin_message_id=turn_id,
+                        origin_message_id=None,
                         steps_data=[
                             {
                                 "tool_name": event.payload["tool_name"],
@@ -412,8 +442,16 @@ class ChatAgent:
                     )
                     await db.commit()
 
+                from app.services.plans import _plan_to_dict
+
                 await self.manager.broadcast_to_session(
-                    session_id, {"type": "plan_proposed", "plan_id": str(plan.id)}
+                    session_id,
+                    {
+                        "type": "plan_proposed",
+                        "session_id": str(session_id),
+                        "plan_id": str(plan.id),
+                        "plan": _plan_to_dict(plan),
+                    },
                 )
             elif event.type == "error":
                 await self.manager.broadcast_to_session(

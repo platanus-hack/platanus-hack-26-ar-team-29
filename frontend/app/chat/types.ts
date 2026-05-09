@@ -11,13 +11,30 @@ export interface ToolCall {
   status: 'started' | 'ok' | 'error';
 }
 
+export interface InputOption {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+export interface InputRequest {
+  inputId: string;
+  title: string;
+  question: string;
+  options: InputOption[];
+  multiSelect: boolean;
+  resolved?: boolean;
+  selectedLabels?: string[];
+}
+
 export interface Message {
   id: string;
   role: ChatRole;
   content: string;
   createdAt: number;
-  kind?: "text" | "plan_proposal" | "stream" | "error";
+  kind?: "text" | "plan_proposal" | "stream" | "error" | "input_request";
   planId?: string | null;
   plan?: TradePlan;
   tools?: ToolCall[];
+  input?: InputRequest;
 }

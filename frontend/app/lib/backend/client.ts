@@ -138,6 +138,16 @@ export const backendApi = {
     });
   },
 
+  resolveChatInput(sessionId: string, inputId: string, selectedOptions: string[]) {
+    return requestJson<{ ok: true; input_id: string }>(
+      `/chat/sessions/${sessionId}/inputs/${inputId}/resolve`,
+      {
+        method: "POST",
+        body: JSON.stringify({ selected_options: selectedOptions }),
+      },
+    );
+  },
+
   connectWallbit(body: { label?: string | null; api_key: string }) {
     return requestJson<ProviderConnection>("/connections/wallbit", {
       method: "POST",

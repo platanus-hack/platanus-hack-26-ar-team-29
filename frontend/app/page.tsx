@@ -50,6 +50,7 @@ export default function ChatPage() {
     const [isBooting, setIsBooting] = useState(true);
     const [isTyping, setIsTyping] = useState(false);
     const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
+    const [busyInputId, setBusyInputId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const upsertMessage = useCallback((message: Message) => {
@@ -129,8 +130,8 @@ export default function ChatPage() {
             if (frame.type === 'tool_call_started') {
                 setIsTyping(true);
                 setMessages((prev) => {
-                    const streamId = `stream-${frame.turn_id}`;
-                    const existing = prev.find((m) => m.id === streamId);
+                    const toolsId = `tools-${frame.turn_id}`;
+                    const existing = prev.find((m) => m.id === toolsId);
                     const newTool = {
                         id: frame.tool_use_id,
                         name: frame.tool_name,
@@ -143,15 +144,15 @@ export default function ChatPage() {
                               tools: [...(existing.tools || []), newTool],
                           }
                         : {
-                              id: streamId,
+                              id: toolsId,
                               role: 'assistant',
                               content: '',
                               createdAt: Date.now(),
-                              kind: 'stream',
+                              kind: 'text',
                               tools: [newTool],
                           };
                     return sortMessages([
-                        ...prev.filter((m) => m.id !== streamId),
+                        ...prev.filter((m) => m.id !== toolsId),
                         nextMessage,
                     ]);
                 });
@@ -160,20 +161,20 @@ export default function ChatPage() {
 
             if (frame.type === 'tool_call_finished') {
                 setMessages((prev) => {
-                    const streamId = `stream-${frame.turn_id}`;
-                    const existing = prev.find((m) => m.id === streamId);
+                    const toolsId = `tools-${frame.turn_id}`;
+                    const existing = prev.find((m) => m.id === toolsId);
                     if (!existing || !existing.tools) return prev;
 
                     const nextMessage: Message = {
                         ...existing,
-                        tools: existing.tools.map(t => 
-                            t.id === frame.tool_use_id 
+                        tools: existing.tools.map(t =>
+                            t.id === frame.tool_use_id
                                 ? { ...t, status: frame.is_error ? 'error' : 'ok', resultSummary: frame.result_summary }
                                 : t
                         ),
                     };
                     return sortMessages([
-                        ...prev.filter((m) => m.id !== streamId),
+                        ...prev.filter((m) => m.id !== toolsId),
                         nextMessage,
                     ]);
                 });
@@ -183,21 +184,10 @@ export default function ChatPage() {
             if (frame.type === 'chat_message') {
                 setMessages((prev) => {
                     const streamId = `stream-${frame.turn_id}`;
-                    const streamMessage = prev.find((m) => m.id === streamId);
-                    
-                    const withoutStreams = prev.filter(
-                        (m) => !m.id.startsWith('stream-'),
-                    );
-                    
+                    const withoutStream = prev.filter((m) => m.id !== streamId);
                     const finalMessage = dtoToMessage(frame.message);
-                    if (streamMessage?.tools) {
-                        finalMessage.tools = streamMessage.tools;
-                    }
-                    
                     return sortMessages([
-                        ...withoutStreams.filter(
-                            (m) => m.id !== frame.message.id,
-                        ),
+                        ...withoutStream.filter((m) => m.id !== frame.message.id),
                         finalMessage,
                     ]);
                 });
@@ -239,14 +229,49 @@ export default function ChatPage() {
                 return;
             }
 
+            if (frame.type === 'input_requested') {
+                setIsTyping(false);
+                upsertMessage({
+                    id: `input-${frame.input_id}`,
+                    role: 'assistant',
+                    content: '',
+                    createdAt: Date.now(),
+                    kind: 'input_request',
+                    input: {
+                        inputId: frame.input_id,
+                        title: frame.title,
+                        question: frame.question,
+                        options: frame.options,
+                        multiSelect: frame.multi_select,
+                    },
+                });
+                return;
+            }
+
+            if (frame.type === 'input_resolved') {
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.input?.inputId === frame.input_id
+                            ? {
+                                  ...m,
+                                  input: {
+                                      ...m.input,
+                                      resolved: true,
+                                      selectedLabels: frame.selected_options,
+                                  },
+                              }
+                            : m,
+                    ),
+                );
+                return;
+            }
+
             if (frame.type === 'turn_complete') {
                 setIsTyping(false);
                 setMessages((prev) =>
                     prev.map((m) => {
                         if (m.id.startsWith('stream-')) {
-                            // If the stream message is still here, no final text replaced it.
-                            // We keep it (by changing its ID) so the tools remain visible.
-                            return { ...m, id: `tools-${m.id}`, kind: 'text' };
+                            return { ...m, id: `streamed-${m.id}`, kind: 'text' };
                         }
                         return m;
                     })
@@ -371,6 +396,21 @@ export default function ChatPage() {
         }
     }
 
+    async function resolveInput(inputId: string, selectedIds: string[]) {
+        if (!currentSessionId) return;
+        setBusyInputId(inputId);
+        setError(null);
+        setIsTyping(true);
+        try {
+            await backendApi.resolveChatInput(currentSessionId, inputId, selectedIds);
+        } catch (err) {
+            appendSystemMessage(errorText(err));
+            setIsTyping(false);
+        } finally {
+            setBusyInputId(null);
+        }
+    }
+
     async function rejectPlan(planId: string) {
         setBusyPlanId(planId);
         setError(null);
@@ -417,6 +457,8 @@ export default function ChatPage() {
                     onApprovePlan={approvePlan}
                     onRejectPlan={rejectPlan}
                     busyPlanId={busyPlanId}
+                    onResolveInput={resolveInput}
+                    busyInputId={busyInputId}
                 />
                 <ChatInput
                     onSend={handleSend}

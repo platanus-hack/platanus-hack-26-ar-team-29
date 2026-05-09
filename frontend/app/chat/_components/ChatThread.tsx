@@ -8,12 +8,16 @@ export function ChatThread({
     onApprovePlan,
     onRejectPlan,
     busyPlanId,
+    onResolveInput,
+    busyInputId,
 }: {
     messages: Message[];
     isTyping: boolean;
     onApprovePlan?: (planId: string) => void;
     onRejectPlan?: (planId: string) => void;
     busyPlanId?: string | null;
+    onResolveInput?: (inputId: string, selectedIds: string[]) => void;
+    busyInputId?: string | null;
 }) {
     const ref = useRef<HTMLDivElement>(null);
 
@@ -50,6 +54,8 @@ export function ChatThread({
                         onApprovePlan={onApprovePlan}
                         onRejectPlan={onRejectPlan}
                         busyPlanId={busyPlanId}
+                        onResolveInput={onResolveInput}
+                        busyInputId={busyInputId}
                     />
                 ))}
                 {isTyping && (

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Message } from "../types";
+import { InputQuestion } from "./InputQuestion";
 import { PlanConfirmation } from "./PlanConfirmation";
 
 type MarkdownBlock =
@@ -138,14 +139,32 @@ export function ChatMessage({
   onApprovePlan,
   onRejectPlan,
   busyPlanId,
+  onResolveInput,
+  busyInputId,
 }: {
   message: Message;
   onApprovePlan?: (planId: string) => void;
   onRejectPlan?: (planId: string) => void;
   busyPlanId?: string | null;
+  onResolveInput?: (inputId: string, selectedIds: string[]) => void;
+  busyInputId?: string | null;
 }) {
   const isUser = message.role === "user";
   const isSystem = message.role === "system";
+
+  if (message.input && onResolveInput) {
+    return (
+      <div className="flex justify-start">
+        <div className="flex w-full flex-col gap-3 sm:max-w-[88%] lg:max-w-[78%]">
+          <InputQuestion
+            input={message.input}
+            isBusy={busyInputId === message.input.inputId}
+            onResolve={onResolveInput}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (message.plan) {
     return (
