@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { backendApi } from '../lib/backend/client';
 import type { ChatSession } from '../lib/backend/types';
 
@@ -21,6 +21,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const isInitializing = useRef(false);
 
   const refreshSessions = async () => {
     try {
@@ -64,6 +65,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
+      if (isInitializing.current) return;
+      isInitializing.current = true;
+      
       setIsLoadingSessions(true);
       const fetched = await refreshSessions();
       if (fetched.length > 0 && !currentSessionId) {

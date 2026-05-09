@@ -84,6 +84,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) throw await parseError(res);
+  if (res.status === 204) return undefined as any;
   return (await res.json()) as T;
 }
 
