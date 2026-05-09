@@ -5,6 +5,10 @@ export interface Message {
   role: ChatRole;
   content: string;
   createdAt: number;
+  trade?: {
+    data: Trade;
+    status: TradeStatus;
+  };
 }
 
 export interface SendMessageRequest {
@@ -14,3 +18,14 @@ export interface SendMessageRequest {
 export interface SendMessageResponse {
   reply: Message;
 }
+
+export interface Trade {
+  id: string;
+  fromTicker: string;
+  fromAmount: number;
+  toTicker: string;
+  toAmount: number;
+  valueUSD: number;
+}
+
+export type TradeStatus = "pending" | "confirmed" | "rejected";

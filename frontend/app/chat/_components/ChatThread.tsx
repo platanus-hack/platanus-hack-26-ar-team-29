@@ -5,9 +5,13 @@ import { ChatMessage } from "./ChatMessage";
 export function ChatThread({
   messages,
   isTyping,
+  onConfirmTrade,
+  onRejectTrade,
 }: {
   messages: Message[];
   isTyping: boolean;
+  onConfirmTrade?: (messageId: string) => void;
+  onRejectTrade?: (messageId: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -20,7 +24,12 @@ export function ChatThread({
   return (
     <div ref={ref} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-6">
       {messages.map((m) => (
-        <ChatMessage key={m.id} message={m} />
+        <ChatMessage
+          key={m.id}
+          message={m}
+          onConfirmTrade={onConfirmTrade}
+          onRejectTrade={onRejectTrade}
+        />
       ))}
       {isTyping && (
         <div className="flex justify-start">
