@@ -306,6 +306,18 @@ Both share Claude calls, prompt scaffolding, plan executor, tool dispatcher.
 
 Simplest of the three: a single Claude call with a structured-output schema. No tools, no plan, no loop. Pure batch in / out. It's separate from the LLM-loop agents because *batching matters for cost* — re-classifying 12 months of history is one big call, not 12 small ones.
 
+### 6.5 Why not Managed Agents (yet)
+
+Anthropic's [Claude Managed Agents](https://platform.claude.com/docs/en/managed-agents/overview) (public beta since 2026-04-08, header `managed-agents-2026-04-01`) is a hosted agent harness that owns the loop, retries, and context compaction. Tempting at face value, but the wrong fit for v1 — our agent runtime exists primarily to enforce the "confirm-once-fire-all" plan-approval handshake (§6.1), and that primitive is custom enough that delegating the loop to Anthropic costs us more control than it buys us in scaffolding. The five concrete blockers:
+
+- **No "bundle N writes into one approval" primitive.** Managed Agents exposes `user.tool_confirmation` ([events and streaming docs](https://platform.claude.com/docs/en/managed-agents/events-and-streaming)) which fires **per tool call**, not per plan. Our UX gates on a `TradePlan` aggregate of N steps; replicating that on per-tool confirmations means racing to collect `agent.custom_tool_use` events for writes, force-denying each one, then synthesising our own plan — fighting the hosted loop instead of using it.
+- **Custom tools still round-trip our backend.** `agent.custom_tool_use` requires our server to respond with `user.custom_tool_result`, so we already need a public URL — and pay BA → Anthropic → BA latency on **every tool dispatch** on top of model latency. The "managed loop saves you infra" pitch evaporates the moment your tools live on your own server, which all of ours do.
+- **Streaming is SSE, our chat transport is WebSocket.** We'd be bridging SSE → WS in the demo critical path, an extra failure mode for zero product gain. The canonical plan §6.1 / §9a is built around a single bidirectional channel.
+- **Debuggability and demo reliability.** A self-hosted asyncio loop is a `pdb` / print / log-tail away; a hosted loop is an opaque session ID. The runtime billing is also $0.08 per running session-hour on top of token cost, and the `managed-agents-2026-04-01` header is explicit that behaviors may change between releases.
+- **BA latency budget.** Buenos Aires → Anthropic adds a per-tool-call round-trip that we do not need; with a self-hosted loop, only the model call crosses the WAN.
+
+**Re-evaluate post-MVP** if Anthropic ships a first-class plan-approval primitive or batched tool-confirmation policy that maps onto §6.1 cleanly. The `agents/` module already isolates the loop behind the `ToolDispatcher` and `PlanExecutor`, so swapping in is a localized change.
+
 ---
 
 ## 7. Background workers and runtime topology
@@ -615,6 +627,9 @@ backend/
 | 14 | HTTP client (outbound) | httpx (async) | Standard async HTTP for Python |
 | 15 | Ethereum client | web3.py | Standard EVM SDK |
 | 16 | Wallbit adapter sourcing | Hand-rolled adapter, with `wallbit-mcp` schemas + `wallbit-skills` examples as reference | First-party tools cover only 5 of ~10 endpoints; capability ABCs need behaviors MCP doesn't expose |
+| 17 | Agent runtime model | Self-hosted in-process asyncio loop (§6); reject Managed Agents | Plan-approval handshake (§6.1) needs per-plan, not per-tool, gating; custom tools already require a public URL so the hosted-loop convenience is moot; SSE-vs-WS mismatch; demo debuggability |
+| 18 | Backend hosting v1 | Local laptop running Uvicorn + Cloudflare Tunnel | Hackathon-typical; zero cold-start; native WebSocket; tunnel gives stable HTTPS public URL with auto-reconnect; full local logs / pdb / hot-reload during the build |
+| 19 | Backend hosting fallback | Fly.io (region `eze`, paid plan, no scale-to-zero) | Closest BA-region PaaS with first-class WebSocket; predictable IP; we pre-deploy a hot standby before demo block, switch DNS if the laptop fails |
 
 ---
 
@@ -637,6 +652,10 @@ backend/
 | *— Developer tooling (build-time reference, not runtime) —* | | | |
 | Wallbit MCP reference | `Wallbit/wallbit-mcp` (schemas + request shapes only) | First-party; saves rewriting 5 tool-use schemas | Hand-write all schemas |
 | Wallbit code-gen skill | `Wallbit/wallbit-skills` on Smithery, preloaded into Claude Code | First-party; reduces hallucinated endpoint shapes during build | Read OpenAPI manually |
+| *— Hosting —* | | | |
+| Backend runtime host | Local laptop, Uvicorn `--host 0.0.0.0 --port 8000` | Zero cold-start; full WebSocket support; native logs; one cable | Fly.io paid plan in `eze` region |
+| Public URL / TLS | Cloudflare Tunnel (`cloudflared`) on a stable hostname | Free tier; auto-reconnect on wifi blip; survives IP changes; HTTPS handled | ngrok paid (reserved subdomain) if Cloudflare Tunnel breaks |
+| Frontend host | Vercel (already locked in research brief §6.5 / §7) | Sponsor-aligned; zero ops; native Next.js | Netlify |
 
 ---
 

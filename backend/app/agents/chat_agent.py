@@ -76,8 +76,7 @@ class ChatAgentSession:
 
         if ClaudeSDKClient is None or ClaudeAgentOptions is None:
             raise RuntimeError(
-                "claude-agent-sdk is not installed. Install backend dependencies "
-                "before starting the live chat."
+                "claude-agent-sdk is not installed. Install backend dependencies " "before starting the live chat."
             )
 
         pre_tool_use_hook = (
@@ -100,9 +99,7 @@ class ChatAgentSession:
             permission_mode="default",
             allowed_tools=WALLBIT_TOOLS,
             can_use_tool=self._approval_bridge.can_use_tool,
-            hooks={
-                "PreToolUse": [pre_tool_use_hook]
-            },
+            hooks={"PreToolUse": [pre_tool_use_hook]},
         )
         self._client = ClaudeSDKClient(options=options)
         await self._client.connect()
@@ -273,9 +270,7 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
                     {
                         "tool_use_id": getattr(content_block, "id", None),
                         "tool_name": getattr(content_block, "name", None),
-                        "input_summary": summarize_value(
-                            getattr(content_block, "input", None)
-                        ),
+                        "input_summary": summarize_value(getattr(content_block, "input", None)),
                     },
                 )
             ]
