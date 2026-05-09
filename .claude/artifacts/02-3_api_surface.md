@@ -30,6 +30,7 @@
    - 5.10 [Home (composite summary)](#510-home-composite-summary)
    - 5.11 [Tools registry (introspection)](#511-tools-registry-introspection)
    - 5.12 [Health and meta](#512-health-and-meta)
+   - 5.13 [Custodial Ethereum wallets and DeFi (Aave + Morpho)](#513-custodial-ethereum-wallets-and-defi-aave--morpho)
 6. [WebSocket frame catalog](#6-websocket-frame-catalog)
 7. [Plan-approval ceremony — end-to-end sequence](#7-plan-approval-ceremony--end-to-end-sequence)
 8. [Tab-to-chat deep-link contract](#8-tab-to-chat-deep-link-contract)
@@ -1114,6 +1115,241 @@ The frontend uses `/api/v1/tools` for two things: (a) "tool definition reference
 | GET | `/api/v1/meta` | — | — | — | Version, build sha, supported locales, server time. |
 | GET | `/api/v1/me` | — | `get_me` | — | Current user (lightweight). |
 
+### 5.13 Custodial Ethereum wallets and DeFi (Aave + Morpho)
+
+Adds **custodial** Ethereum wallet management and DeFi protocol access. The user supplies (or we generate) a private key that the backend stores encrypted with Fernet (`02-1` §11 row 13); writes are signed server-side and broadcast directly. This is distinct from §5.8's non-custodial Ethereum flow, which only proves address ownership via signature challenge and asks the user's wallet to sign every write client-side.
+
+Both flows produce a `Connection` row; `connection_type` distinguishes them: `ethereum` (non-custodial) vs `ethereum_custodial` (custodial). All read endpoints (§5.3 Portfolio, §5.4 Activity) work uniformly across both.
+
+**Network parameter** accepts testnets only for v1: `sepolia`, `holesky`, `polygon-amoy`, `arbitrum-sepolia`, `base-sepolia` (server resolves to `chain_id` internally). Mainnet support (`mainnet`, `polygon`, `arbitrum`, `optimism`, `base`) is **deliberately not exposed** in v1 — see §14 row 28. Submitting a mainnet network value returns `400 NETWORK_NOT_ALLOWED`.
+
+**ETH, USDC, and USDT live in the same EOA** — `primary_asset_hint` is a label for the dashboard, not a chain-level partition. ERC-20 contract addresses are resolved server-side per network.
+
+#### 5.13.1 Wallet management
+
+| M | Path | Med? | Tool | Idem-Key | Purpose |
+|---|---|---|---|---|---|
+| POST | `/api/v1/connections/ethereum-custodial/import` | direct | `import_ethereum_custodial_connection` | **R** | Accept a hex private key (or BIP-39 mnemonic), encrypt, derive address, create connection. |
+| POST | `/api/v1/connections/ethereum-custodial/create` | direct | `create_ethereum_custodial_connection` | **R** | Generate a new keypair server-side; return mnemonic ONCE for user backup. |
+
+##### POST /api/v1/connections/ethereum-custodial/import
+
+```json
+{
+  "network": "sepolia",
+  "private_key": "0xabc...",
+  "label": "Mi Sepolia",
+  "primary_asset_hint": "USDC"
+}
+```
+
+`private_key` accepts a 0x-prefixed 32-byte hex string OR a 12/24-word BIP-39 mnemonic (server detects by shape; §16 q14). Response matches the standard connection envelope from §5.8:
+
+```json
+{
+  "data": {
+    "id": "conn_...",
+    "connection_type": "ethereum_custodial",
+    "label": "Mi Sepolia",
+    "address": "0x1234...abcd",
+    "network": "sepolia",
+    "chain_id": 11155111,
+    "primary_asset_hint": "USDC",
+    "capabilities": ["read_balance", "read_transactions", "send_onchain", "supply_defi", "withdraw_defi"],
+    "created_at": "2026-05-09T15:30:00.000Z"
+  }
+}
+```
+
+The private key is encrypted before persistence and never returned by any subsequent endpoint. Audit-log redaction (§16 q6) covers `private_key`, `mnemonic`, and `signature` keys.
+
+##### POST /api/v1/connections/ethereum-custodial/create
+
+```json
+{ "network": "sepolia", "label": "Demo wallet", "primary_asset_hint": "USDC" }
+```
+
+Response (one-time only):
+
+```json
+{
+  "data": {
+    "id": "conn_...",
+    "address": "0x...",
+    "network": "sepolia",
+    "mnemonic": "abandon abandon abandon ... art",
+    "warning_es": "Esta es la única vez que verás esta frase. Guardala ahora si querés exportar la billetera."
+  }
+}
+```
+
+Subsequent reads of this connection (`GET /api/v1/connections/{id}`) omit `mnemonic`. The server retains only the encrypted private key — the mnemonic is derived once and discarded.
+
+#### 5.13.2 On-chain transfers
+
+| M | Path | Med? | Tool | Idem-Key | Purpose |
+|---|---|---|---|---|---|
+| GET | `/api/v1/connections/{id}/onchain/gas` | — | `get_onchain_gas` | — | Current network fee suggestion (slow / standard / fast). |
+| POST | `/api/v1/connections/{id}/onchain/simulate` | direct | `simulate_onchain_transfer` | O | `eth_call` dry-run; returns gas estimate, revert reason if any. |
+| POST | `/api/v1/connections/{id}/onchain/transfer` | direct | `send_onchain_transfer` | **R** | Sign + broadcast ETH or ERC-20 transfer. Mediated when invoked via chat (write tool). |
+
+##### POST /api/v1/connections/{id}/onchain/transfer
+
+```json
+{
+  "asset": "USDC",
+  "to": "0xrecipient...",
+  "amount": "10.5",
+  "gas_speed": "standard"
+}
+```
+
+`amount` is a decimal string in token units (USDC = 6 decimals, USDT = 6, ETH = 18). Response:
+
+```json
+{
+  "data": {
+    "tx_hash": "0xabc...",
+    "status": "pending",
+    "block_explorer_url": "https://sepolia.etherscan.io/tx/0xabc...",
+    "gas_estimate_gwei": 5.2,
+    "fee_estimate_eth": "0.00021"
+  }
+}
+```
+
+Status transitions stream over the `connection.<id>` topic (§6): `pending` → `confirmed` after N block confirmations (3 for testnets, 12 for mainnet, default). When the agent issues this via chat, it lands in a `TradePlan` step like any other write (§7).
+
+#### 5.13.3 DeFi (Aave V3 + Morpho Blue)
+
+| M | Path | Med? | Tool | Idem-Key | Purpose |
+|---|---|---|---|---|---|
+| GET | `/api/v1/defi/markets` | — | `list_defi_markets` | — | List markets with current APYs, filtered by protocol/network/asset. |
+| GET | `/api/v1/defi/markets/{protocol}/{market_id}` | — | `get_defi_market` | — | Full market detail (rates, liquidity, params, oracle, IRM). |
+| GET | `/api/v1/connections/{id}/defi/positions` | — | `list_defi_positions` | — | User's current supplied/borrowed positions across protocols. |
+| POST | `/api/v1/connections/{id}/defi/supply` | direct | `supply_to_defi` | **R** | Approve + supply asset to a market. |
+| POST | `/api/v1/connections/{id}/defi/withdraw` | direct | `withdraw_from_defi` | **R** | Withdraw supplied amount (or `"max"`). |
+
+##### GET /api/v1/defi/markets
+
+Query params: `protocol` (`aave` | `morpho`), `network`, `asset` (`USDC` | `USDT` | `ETH`), `min_apy` (decimal, optional).
+
+```json
+{
+  "data": [
+    {
+      "protocol": "aave",
+      "market_id": "aave-v3-sepolia-USDC",
+      "asset": { "symbol": "USDC", "contract_address": "0x...", "decimals": 6 },
+      "network": "sepolia",
+      "supply_apy": 0.0432,
+      "borrow_apy": 0.0612,
+      "total_supplied_usd": "12345678.9",
+      "utilization": 0.71,
+      "tvl_usd": "23456789.0"
+    },
+    {
+      "protocol": "morpho",
+      "market_id": "0xabc...market_hash",
+      "asset": { "symbol": "USDC", "contract_address": "0x...", "decimals": 6 },
+      "network": "mainnet",
+      "loan_token": "USDC",
+      "collateral_token": "WETH",
+      "lltv": 0.86,
+      "supply_apy": 0.0518,
+      "borrow_apy": 0.0739,
+      "total_supplied_usd": "98765432.1",
+      "utilization": 0.84
+    }
+  ]
+}
+```
+
+`market_id` is `aave-{version}-{network}-{symbol}` for Aave; for Morpho Blue it's the bytes32 market hash.
+
+##### POST /api/v1/connections/{id}/defi/supply
+
+```json
+{
+  "protocol": "aave",
+  "market_id": "aave-v3-sepolia-USDC",
+  "asset": "USDC",
+  "amount": "100"
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "approve_tx_hash": "0xabc...",
+    "supply_tx_hash": "0xdef...",
+    "position_id": "pos_...",
+    "supplied_amount": "100",
+    "estimated_annual_yield_usd": "4.32",
+    "block_explorer_urls": [
+      "https://sepolia.etherscan.io/tx/0xabc...",
+      "https://sepolia.etherscan.io/tx/0xdef..."
+    ]
+  }
+}
+```
+
+Two transactions on first supply per (asset, spender) pair: an ERC-20 `approve()` then the protocol's `supply()` / `deposit()`. Subsequent supplies for the same (asset, spender) pair skip approve — `approve_tx_hash` is `null` when no approve was needed. Status transitions stream over `connection.<id>`.
+
+#### 5.13.4 Capabilities map
+
+The `ethereum_custodial` connection advertises additional capabilities beyond `ethereum`:
+
+| Capability | `ethereum` | `ethereum_custodial` | Notes |
+|---|---|---|---|
+| `read_balance`, `read_transactions`, `read_asset_price` | ✓ | ✓ | Both can read on-chain. |
+| `send_onchain` (server-signed) | — | ✓ | Custodial path signs server-side. |
+| `sign_message` (server-signed) | — | ✓ | Same. |
+| `wallet_action_request` (client-signed) | ✓ | — | Non-custodial path surfaces unsigned tx for the user's wallet to sign (§10.2 / §16 q11). |
+| `supply_defi`, `withdraw_defi` | — | ✓ | v1 demoes the custodial flow only; non-custodial DeFi support deferred. |
+| `list_defi_markets`, `get_defi_market`, `list_defi_positions` | ✓ | ✓ | Read-only protocol queries work uniformly. |
+
+If a non-custodial user wants to supply to DeFi, the agent surfaces it as a `wallet_action_request` rather than calling `/defi/supply` server-side. v1 ships the server-signed custodial path; non-custodial DeFi is deferred.
+
+#### 5.13.5 Wallet export (user-initiated private key retrieval)
+
+Custodial wallets are user-controllable: the user can retrieve the raw private key on demand. This is **never** exposed as a Claude tool (`chat_excluded` per §13 — agent must never request a user's private key) and is invoked only from the dashboard.
+
+| M | Path | Med? | Tool | Idem-Key | Purpose |
+|---|---|---|---|---|---|
+| POST | `/api/v1/connections/{id}/export-private-key` | direct | — (chat_excluded) | O | Return the raw private key for a custodial wallet. User-initiated only. |
+
+##### POST /api/v1/connections/{id}/export-private-key
+
+```json
+{ "confirm": true }
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "private_key": "0xabc...",
+    "address": "0x1234...abcd",
+    "network": "sepolia",
+    "warning_es": "Esta clave privada controla tu billetera. No la compartas. Si la perdés o la filtrás, perdés los fondos."
+  }
+}
+```
+
+**Security obligations** the build phase must enforce:
+
+- `connection_type` must be `ethereum_custodial`; non-custodial connections (`ethereum`) return `400 NOT_EXPORTABLE` (no private key on server to return).
+- Audit-log entry is written with `tool: "export_private_key"`, `success: true|false`, redacting the `private_key` value (it never lands in any log or persisted record beyond the encrypted credential row).
+- Rate-limited at the gateway: max 5 exports per connection per hour. Repeated attempts return `429 RATE_LIMITED`.
+- Re-auth requirement deferred to the auth pass — v1 trusts the bearer token; a future revision adds password-confirm or 2FA before returning the key (see §16 q17).
+- Response `Cache-Control: no-store, private`; `Content-Type: application/json` only — never set as a downloadable file.
+
+The endpoint exists for **legitimate user self-custody**: the user wants to import the wallet into Metamask, sweep funds out, or stop using the app. It is intentionally NOT a Claude tool because a misbehaving agent or a prompt-injection attack must never be able to extract private keys.
+
 ---
 
 ## 6. WebSocket frame catalog
@@ -1644,6 +1880,13 @@ Per `02-1_backend_architechture.md` §6.2 and `02-2_frontend_design.md` §8, eve
 | `POST /connections/{id}/test` | `test_connection` | — | |
 | `POST /connections/{id}/refresh` | `refresh_connection` | — | |
 | `DELETE /connections/{id}` | `disconnect_connection` | — | |
+| `POST /connections/ethereum-custodial/import` | `import_ethereum_custodial_connection` | — | Custodial — server stores encrypted private key. |
+| `POST /connections/ethereum-custodial/create` | `create_ethereum_custodial_connection` | — | Server-side keypair generation; mnemonic returned once. |
+| `POST /connections/{id}/onchain/simulate` | `simulate_onchain_transfer` | — | Dry-run; useful for preflight in plan ceremony. |
+| `POST /connections/{id}/onchain/transfer` | `send_onchain_transfer` | — | Mediated when invoked via chat (write tool). |
+| `POST /connections/{id}/defi/supply` | `supply_to_defi` | — | Mediated when invoked via chat. |
+| `POST /connections/{id}/defi/withdraw` | `withdraw_from_defi` | — | Mediated when invoked via chat. |
+| `POST /connections/{id}/export-private-key` | — | yes (security: agent must never request user's private key) | Direct user-initiated action only; rate-limited; audit-redacted. |
 
 **Read endpoints are paired with read tools** so the agent can answer questions:
 
@@ -1672,6 +1915,10 @@ Per `02-1_backend_architechture.md` §6.2 and `02-2_frontend_design.md` §8, eve
 | `GET /connections` | `list_connections` |
 | `GET /connections/schemas` | `list_connection_schemas` |
 | `GET /connections/{id}` | `get_connection` |
+| `GET /connections/{id}/onchain/gas` | `get_onchain_gas` |
+| `GET /defi/markets` | `list_defi_markets` |
+| `GET /defi/markets/{protocol}/{market_id}` | `get_defi_market` |
+| `GET /connections/{id}/defi/positions` | `list_defi_positions` |
 | `GET /audit` | `list_audit_entries` |
 | `GET /audit/{id}` | `get_audit_entry` |
 | `GET /home` | `get_home_summary` |
@@ -1704,7 +1951,7 @@ The agent's actual tool registry at runtime is filtered per the user's connected
 | 15 | Plan transport | REST CRUD on `/plans`, WS on `plan.<id>` | Plans are first-class, not chat-internal |
 | 16 | Refresh rate limit | 12/min/user; client SHOULD disable affordance for 30s after click | Defends upstream provider rate limits |
 | 17 | Connection-add | Per-type endpoint (`/connections/wallbit`, `/connections/ethereum/{challenge,verify}`); generic OAuth shape stubbed | Per-type forms via `/connections/schemas` |
-| 18 | Wallet-side signing | `send_onchain` returns wallet-action-request frame, never holds private key | Security; matches Ethereum trust model |
+| 18 | Wallet-side signing (non-custodial only) | For `connection_type: "ethereum"`, `send_onchain` returns a wallet-action-request frame; the server never holds the key. Custodial flow (`ethereum_custodial`) is server-signed — see rows 28–31. | Security; matches Ethereum trust model where applicable |
 | 19 | Locale header | `Accept-Language`, default `es-AR` | Standard; future-proof |
 | 20 | Tool ↔ endpoint parity | Every write endpoint has a tool name or explicit `chat_excluded` (UX-state only) | Enforces "everything in app doable via chat" |
 | 21 | Synthetic user-fan-in topics | `plans.user`, `bots.user`, `connections.user`, `ingests.user` | Avoid client wildcard subscriptions |
@@ -1714,6 +1961,10 @@ The agent's actual tool registry at runtime is filtered per the user's connected
 | 25 | Asset identity | `(symbol, asset_class, network?)` sub-object, not synthetic id | No global asset-registry coordination |
 | 26 | Currency strings | ISO 4217 for fiat; uppercase symbol for stablecoins/crypto; full identity in `asset` sub-object when ambiguous | Practical |
 | 27 | Audit redaction | Server redacts secrets (API keys, signatures) before persisting; redacted fields surfaced via `args_redacted_keys` | Trust ceremony without leaking creds |
+| 28 | Custodial Ethereum mainnet posture | Testnets only for v1 (`sepolia`, `holesky`, `polygon-amoy`, `arbitrum-sepolia`, `base-sepolia`); mainnet not exposed | Real-money risk demands attestation flow + 2FA + KYC posture v1 doesn't ship; reduces hackathon blast radius |
+| 29 | Gas funding for new custodial wallets | Manual faucet — user funds the wallet themselves before any tx. Server-generated wallet returns `address` + warning that 0 ETH is present and a tx will revert until funded | Testnet faucets are public and trivial; team-pool / sponsored-gas deferred |
+| 30 | DeFi slippage / deadline params (v1) | None exposed. Aave V3 supply/withdraw has no slippage (rate is current). Morpho Blue defaults to no user-tunable slippage in v1; revisit if reviewer flags | Hackathon scope; full IRM + slippage controls deferred |
+| 31 | Custodial wallet export | User-callable `POST /connections/{id}/export-private-key`, audit-redacted, `chat_excluded`. Agent must NEVER have a tool that returns private keys | Self-custody must remain user-controllable; a misbehaving agent or prompt-injection attack must not be able to exfiltrate keys |
 
 ---
 
@@ -1751,6 +2002,9 @@ These are the questions the build phase resolves; this contract intentionally le
 10. **Webhook in-bound from Wallbit.** None documented as of `01_research_brief.md` §3 — if Wallbit ships them during the hack, add `POST /api/v1/webhooks/wallbit/{event}`.
 11. **Wallet-action-request ceremony.** §10.2 defers the exact frame shape; build phase decides whether the agent emits a `wallet_action_request` system message with raw tx, or whether the Ethereum adapter exposes a "prepare and surface" tool.
 12. **Multi-document upload.** Out of scope; if demo requires bulk upload, build phase wraps with a client-side loop, not a server-side batch endpoint.
+14. **Mnemonic vs. private-key import shape detection.** §5.13.1 accepts both via input-shape detection (32-byte hex vs. 12/24-word BIP-39). Build phase confirms the detection heuristic and the error message when the input matches neither.
+15. **DeFi protocol coverage on testnets.** Aave V3 has a Sepolia deployment; Morpho Blue's testnet coverage is partial as of 2026-05-09. Build phase enumerates exact contract addresses per network and surfaces a graceful "no markets available on this network" response for the dashboard.
+17. **Re-auth before private-key export.** §5.13.5 v1 trusts the bearer token. Build phase or a future revision adds password-confirm or 2FA before returning the key. Numbering preserved for cross-references; q13 and q16 resolved into §14 rows 28 and 29.
 
 ---
 
