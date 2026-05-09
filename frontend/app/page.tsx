@@ -446,21 +446,16 @@ export default function ChatPage() {
 
     return (
         <Sidebar>
-            <div className='flex h-[100dvh] w-full flex-col bg-background md:h-full'>
-                <header className='flex min-h-[74px] items-center border-b border-line bg-background px-10'>
+            <div className='flex h-full w-full flex-col bg-background'>
+                <header className='hidden md:flex min-h-[74px] items-center border-b border-line bg-background px-10 flex-shrink-0'>
                     <div className='flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between'>
                         <div className='min-w-0'>
                             <h1 className='text-2xl font-semibold tracking-tight text-foreground'>
                                 Open<span className='text-accent'>Fi</span>{' '}
-                                Chat
+                                <span className='text-muted'>Agent</span>
                             </h1>
                         </div>
                     </div>
-                    {error && (
-                        <div className='mt-2 rounded-xl bg-error/10 border border-error/20 px-3 py-2 text-sm leading-6 text-error'>
-                            {error}
-                        </div>
-                    )}
                 </header>
                 <ChatThread
                     messages={messages}
