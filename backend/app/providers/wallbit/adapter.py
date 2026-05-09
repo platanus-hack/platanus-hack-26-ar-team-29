@@ -13,6 +13,13 @@ def _ensure_list(payload: Any, key_candidates: tuple[str, ...] = ()) -> list[Any
     if isinstance(payload, list):
         return payload
     if isinstance(payload, dict):
+        if (
+            "data" in payload
+            and isinstance(payload["data"], dict)
+            and "data" in payload["data"]
+            and isinstance(payload["data"]["data"], list)
+        ):
+            return payload["data"]["data"]
         for k in key_candidates:
             if k in payload and isinstance(payload[k], list):
                 return payload[k]
@@ -72,17 +79,29 @@ def transactions_to_rows(payload: Any) -> list[dict[str, Any]]:
     for it in items:
         if not isinstance(it, dict):
             continue
+        currency = it.get("currency") or it.get("ccy") or it.get("symbol")
+        if not currency and "source_currency" in it and isinstance(it["source_currency"], dict):
+            currency = it["source_currency"].get("code")
+
+        amount = it.get("amount") or it.get("source_amount") or it.get("value")
+
+        desc = it.get("description") or it.get("memo") or it.get("comment")
+        if not desc and "trade_info" in it and isinstance(it["trade_info"], dict):
+            direction = it["trade_info"].get("direction", "")
+            symbol = it["trade_info"].get("symbol", "")
+            desc = f"{direction} {symbol}".strip()
+
         rows.append(
             {
                 "id": it.get("id") or it.get("transaction_id") or it.get("uuid"),
                 "type": it.get("type") or it.get("kind") or it.get("category"),
                 "status": it.get("status") or it.get("state"),
-                "amount": it.get("amount") or it.get("value"),
-                "currency": it.get("currency") or it.get("ccy") or it.get("symbol"),
+                "amount": amount,
+                "currency": currency,
                 "created_at": (
                     it.get("created_at") or it.get("timestamp") or it.get("date") or it.get("ts")
                 ),
-                "description": it.get("description") or it.get("memo"),
+                "description": desc,
                 "raw": it,
             }
         )

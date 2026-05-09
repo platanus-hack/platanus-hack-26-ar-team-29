@@ -120,11 +120,12 @@ class WallbitClient:
     ) -> Any:
         payload: dict[str, Any] = {
             "symbol": symbol,
-            "side": side.upper(),
-            "type": "MARKET",
+            "direction": side.upper(),
+            "order_type": "MARKET",
+            "currency": "USD",
         }
         if amount_usd is not None:
-            payload["amount_usd"] = amount_usd
+            payload["amount"] = amount_usd
         if shares is not None:
             payload["shares"] = shares
         headers: dict[str, str] = {}

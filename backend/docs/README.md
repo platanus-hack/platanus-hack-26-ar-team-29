@@ -14,7 +14,7 @@ Backend-specific notes that complement (do not replace) the canonical design art
 |---|---|
 | [`architecture.md`](./architecture.md) | Backend module layout summary; import-direction rules; pointers to authoritative design |
 | [`deviations.md`](./deviations.md) | What this MVP slice intentionally skips vs the locked design (idempotency, audit log, canonical ledger, workers, etc.) |
-| *(more land as features ship)* | endpoint cookbooks, provider integration notes, runbooks |
+| [`wallbit_api.md`](./wallbit_api.md) | Full API surface documentation and schema mappings discovered for Wallbit |
 
 ## Canonical design artifacts (upstream — authoritative)
 
