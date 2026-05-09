@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatInput } from "./chat/_components/ChatInput";
 import { ChatThread } from "./chat/_components/ChatThread";
 import type { Message } from "./chat/types";
-import { BackendApiError, backendApi, getApiBaseUrl } from "./lib/backend/client";
+import { BackendApiError, backendApi } from "./lib/backend/client";
 import { openSessionWebSocket, type BackendWsSubscription } from "./lib/backend/ws";
 import type { BackendWsFrame, ChatMessageDto, TradePlan } from "./lib/backend/types";
 
@@ -40,15 +40,9 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isBooting, setIsBooting] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const connectionLabel = useMemo(() => {
-    if (isBooting) return "Inicializando";
-    if (!sessionId) return "Sin sesión";
-    return isConnected ? "WS conectado" : "WS desconectado";
-  }, [isBooting, isConnected, sessionId]);
 
   const upsertMessage = useCallback((message: Message) => {
     setMessages((prev) => {
@@ -78,7 +72,7 @@ export default function ChatPage() {
   const handleWsFrame = useCallback(
     (frame: BackendWsFrame) => {
       if (frame.type === "subscribed") {
-        setIsConnected(true);
+        return;
         return;
       }
 
@@ -206,7 +200,7 @@ export default function ChatPage() {
     wsRef.current = openSessionWebSocket({
       sessionId,
       onFrame: handleWsFrame,
-      onClose: () => setIsConnected(false),
+      onClose: () => undefined,
       onError: () => setError("No pudimos conectar el WebSocket del chat."),
     });
 
@@ -275,35 +269,104 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-zinc-100 text-zinc-950 dark:bg-black dark:text-zinc-50 sm:p-3 lg:p-6">
-      <section className="mx-auto flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-sm dark:bg-zinc-950 sm:h-[calc(100dvh-1.5rem)] sm:max-w-3xl sm:rounded-3xl sm:border sm:border-zinc-200 sm:shadow-xl sm:dark:border-zinc-800 lg:max-w-4xl">
-        <header className="shrink-0 border-b border-zinc-200 bg-white/95 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95 sm:px-5 sm:py-4">
-          <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
-            <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold sm:text-lg">Pampa Chat</h1>
-              <p className="truncate text-[11px] leading-4 text-zinc-500 sm:text-xs">
-                Backend: {getApiBaseUrl()}
-              </p>
-            </div>
-            <span className="w-fit rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300 sm:text-xs">
-              {connectionLabel}
+    <main className="min-h-[100dvh] bg-white text-zinc-950 dark:bg-black dark:text-zinc-50">
+      <div className="flex h-[100dvh]">
+        <aside className="hidden w-56 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50 px-4 pb-6 pt-5 dark:border-zinc-800 dark:bg-zinc-950 md:flex lg:w-64">
+          <div className="flex items-center gap-2 text-lg font-semibold">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-zinc-900 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
+              P
             </span>
+            Pampa
           </div>
-          {error && (
-            <div className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-700 dark:bg-red-950/30 dark:text-red-200 sm:text-sm">
-              {error}
+          <nav className="mt-6 space-y-1 text-sm">
+            <a
+              className="flex items-center gap-2 rounded-xl bg-zinc-900 px-3 py-2 text-white dark:bg-white dark:text-zinc-900"
+              href="#chat"
+            >
+              Chat
+            </a>
+            <a
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              href="#investments"
+            >
+              Inversiones
+            </a>
+            <a
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              href="#balances"
+            >
+              Balances
+            </a>
+            <a
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              href="#activity"
+            >
+              Actividad
+            </a>
+            <a
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              href="#connections"
+            >
+              Conexiones
+            </a>
+          </nav>
+          <div className="mt-auto space-y-3 pt-6">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                  AL
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate font-medium">Alen Davies</div>
+                  <div className="truncate text-xs text-zinc-500">Cuenta personal</div>
+                </div>
+              </div>
+              <button
+                className="mt-3 w-full rounded-xl border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                type="button"
+              >
+                Gestionar cuenta
+              </button>
             </div>
-          )}
-        </header>
-        <ChatThread
-          messages={messages}
-          isTyping={isTyping || isBooting}
-          onApprovePlan={approvePlan}
-          onRejectPlan={rejectPlan}
-          busyPlanId={busyPlanId}
-        />
-        <ChatInput onSend={handleSend} disabled={isTyping || isBooting || !sessionId} />
-      </section>
+          </div>
+        </aside>
+
+        <section className="flex flex-1 flex-col">
+          <div className="border-b border-zinc-200 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] dark:border-zinc-800 md:hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-xs font-semibold text-white dark:bg-white dark:text-zinc-900">
+                  P
+                </span>
+                Pampa
+              </div>
+            </div>
+          </div>
+
+          <div className="flex h-[100dvh] w-full flex-col border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 md:h-full md:border-l">
+            <header className="shrink-0 border-b border-zinc-200 bg-white/95 px-4 pb-3 pt-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95 sm:px-6 sm:py-5 lg:px-10">
+              <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
+                <div className="min-w-0">
+                  <h1 className="truncate text-lg font-semibold sm:text-xl">Pampa Chat</h1>
+                </div>
+              </div>
+              {error && (
+                <div className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-700 dark:bg-red-950/30 dark:text-red-200 sm:text-sm">
+                  {error}
+                </div>
+              )}
+            </header>
+            <ChatThread
+              messages={messages}
+              isTyping={isTyping || isBooting}
+              onApprovePlan={approvePlan}
+              onRejectPlan={rejectPlan}
+              busyPlanId={busyPlanId}
+            />
+            <ChatInput onSend={handleSend} disabled={isTyping || isBooting || !sessionId} />
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

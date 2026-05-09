@@ -26,7 +26,7 @@ function stateLabel(state: string) {
 
 export function PlanSummary({ plan }: { plan: TradePlan }) {
   return (
-    <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60">
+    <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60 sm:p-4">
       <div className="flex flex-col gap-2 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between min-[360px]:gap-3">
         <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           Plan #{plan.id.slice(0, 8)}
@@ -37,7 +37,7 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
       </div>
 
       {plan.total_estimated_usd != null && (
-        <div className="text-2xl font-semibold tabular-nums">
+        <div className="text-2xl font-semibold tabular-nums sm:text-3xl">
           {formatUSD(plan.total_estimated_usd)}
         </div>
       )}

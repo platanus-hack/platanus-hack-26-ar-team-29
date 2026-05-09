@@ -17,6 +17,12 @@ Status: maintained by Coder.
 - Replaced mocked `/chat` flow with real session boot, message history hydration, WS streaming, plan proposal rendering, and approve/reject actions.
 - Moved chat experience to `/` so `localhost:3000` opens the chat directly; removed `/chat` route page.
 - Made chat layout mobile-first and responsive: full-height mobile shell, safe-area aware header/input, wider desktop container, adaptive message widths, empty state, touch-sized controls, and stacked plan actions on narrow screens.
+- Tuned layout to a ChatGPT/Claude-style desktop width with centered column, full-height thread, and breakpoints across sm/md/lg/xl for spacing and bubble widths.
+- Added a left sidebar (desktop) with app name and navigation tabs (Chat, Inversiones, Balances, Actividad, Conexiones) to match ChatGPT-style layout.
+- Added a left sidebar account card (avatar, name, account type, manage button) to mirror ChatGPT-style profile section.
+- Removed debug UI strings (backend URL, WS status badge, and footer version text) from the visible layout.
+- Expanded main chat column to use full remaining width (no centered max-width) and increased font sizes for a more desktop-oriented chat experience.
+- Refined chat UX: larger bubbles, improved spacing, larger input, and richer empty-state text.
 - Replaced mock trade card with real plan summary/confirmation components.
 - Updated frontend context documentation with backend integration details and env vars.
 
@@ -31,10 +37,19 @@ Status: maintained by Coder.
 | `frontend/app/chat/page.tsx` | Removed; `/chat` route no longer exists. |
 | `frontend/app/chat/types.ts` | Updated UI message model to support assistant/system roles and real plans. |
 | `frontend/app/chat/_components/ChatInput.tsx` | Spanish copy. |
-| `frontend/app/chat/_components/ChatMessage.tsx` | Render real plan confirmation cards and system messages; mobile-first bubble sizing. |
-| `frontend/app/chat/_components/ChatThread.tsx` | Pass plan action handlers and busy state; responsive scroll area and empty state. |
+| `frontend/app/chat/_components/ChatMessage.tsx` | Render real plan confirmation cards and system messages; desktop-sized bubble widths. |
+| `frontend/app/chat/_components/ChatThread.tsx` | Responsive scroll area and inner content width for desktop layout. |
 | `frontend/app/chat/_components/PlanConfirmation.tsx` | Approval/rejection component for backend `TradePlan`; stacked mobile actions. |
 | `frontend/app/chat/_components/PlanSummary.tsx` | Plan/step summary component; responsive labels and step rows. |
+| `frontend/app/page.tsx` | ChatGPT-style centered column with breakpoints for desktop view. |
+| `frontend/app/page.tsx` | Added desktop sidebar with primary navigation tabs. |
+| `frontend/app/page.tsx` | Added sidebar account/profile card (avatar + manage button). |
+| `frontend/app/page.tsx` | Full-width main chat area beside sidebar; larger header typography. |
+| `frontend/app/chat/_components/ChatMessage.tsx` | Increased bubble sizes and desktop widths. |
+| `frontend/app/chat/_components/ChatThread.tsx` | Larger spacing and empty-state copy. |
+| `frontend/app/chat/_components/ChatInput.tsx` | Larger input and send button for desktop UX. |
+| `frontend/app/chat/_components/PlanConfirmation.tsx` | Increased typography for plan confirmation. |
+| `frontend/app/chat/_components/PlanSummary.tsx` | Larger total amount typography. |
 | `frontend/app/chat/api.ts` | Removed obsolete mock chat API. |
 | `frontend/app/chat/_components/TradeConfirmation.tsx` | Removed obsolete mock trade card. |
 | `frontend/app/chat/_components/TradeSummary.tsx` | Removed obsolete mock trade summary. |
@@ -71,6 +86,19 @@ Status: maintained by Coder.
 | `npm run lint` after responsive changes | OK | ESLint passed. |
 | `npm run build` after responsive changes | OK | Build passed. |
 | HTTP smoke `/` after responsive changes | OK | `/` returns 200 and contains `Pampa Chat`. |
+| `npm run lint` after desktop layout changes | OK | ESLint passed. |
+| `npm run build` after desktop layout changes | OK | Build passed; routes `/` and `/_not-found` only. |
+| HTTP smoke `/` after desktop layout changes | OK | `/` returns 200 and contains `Pampa Chat`. |
+| `npm run lint` after sidebar layout | OK | ESLint passed. |
+| `npm run build` after sidebar layout | OK | Build passed. |
+| HTTP smoke `/` after sidebar layout | OK | `/` returns 200; markup contains sidebar tabs (e.g., "Inversiones"). |
+| `npm run lint` after sidebar account card | OK | ESLint passed. |
+| `npm run build` after sidebar account card | OK | Build passed. |
+| HTTP smoke `/` after sidebar account card | OK | `/` returns 200; markup contains "Gestionar cuenta" and user name. |
+| `npm run lint` after removing debug strings | OK | ESLint passed. |
+| `npm run build` after removing debug strings | OK | Build passed; routes unchanged. |
+| `npm run lint` after UX sizing changes | OK | ESLint passed. |
+| `npm run build` after UX sizing changes | OK | Build passed. |
 
 ## Tests And Checks
 
