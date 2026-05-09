@@ -627,6 +627,47 @@ These are the issues to ask Wallbit reps about in the first hour on-site.
 
 ---
 
+### 4.5 Wallbit API ecosystem: who else consumes it
+
+**Compiled 2026-05-09. Confidence labels: CONFIRMED = explicit on the cited page; PARTIAL = inferred or paraphrased from indexed snippet; UNCONFIRMED = no evidence either way; ABSENCE CONFIRMED = checked, not present.**
+
+The ecosystem of public Wallbit-API consumers is **very small and Wallbit-controlled**. We found 3 confirmed first-party tools, 1 confirmed third-party product (wallsync.cc), and zero independent SDKs / hackathon projects / community apps. This is a finding: as of 2026-05-09 the public Wallbit-API ecosystem appears to be days/weeks old.
+
+**Confirmed consumers:**
+
+- **wallsync.cc** - "AI-Powered Financial Intelligence & Wealth Management." Tracks 4,000+ assets (stocks, ETFs, crypto, commodities), live allocation/risk views, one-click market+limit orders, multi-agent dashboard. **CONFIRMED** as Wallbit consumer: indexed snippet of [wallsync.cc](https://wallsync.cc) reads "wallsync is built in collaboration with Wallbit and is powered by Wallbit's global financial API" (the live page returned 403 to our fetcher, but Google search cache surfaced this exact phrasing on 2026-05-09). Endpoints inferred from feature surface: `/balance/checking`, `/balance/stocks`, `/assets`, `/trades` (read+trade scope, both order types). LatAm relevance: English-first global wealth-management aesthetic; not specifically Argentine. **Direct competitor to our pitch: yes - closest analog by far. Strong tagline overlap on "AI-powered" + "wealth management". Differentiator below.**
+- **wallbit-mcp** ([github.com/Wallbit/wallbit-mcp](https://github.com/Wallbit/wallbit-mcp)) - **First-party** MCP server "that lets AI agents interact with the Wallbit API using their own API keys." Exposes 5 tools: `get_checking_balance`, `get_stocks_balance`, `list_transactions`, `get_asset`, `create_trade`. Stdio + HTTP/SSE deployment modes. **CONFIRMED** by the org owning the repo (Wallbit). Endpoints: `/balance/checking`, `/balance/stocks`, `/transactions`, `/assets/{symbol}`, `/trades`. **Not a competitor - it's a tool we can directly fork or use as the wiring layer for our agent. This is hackathon-gold.**
+- **wallbit-skills** ([github.com/Wallbit/wallbit-skills](https://github.com/Wallbit/wallbit-skills), also indexed at [smithery.ai/skills/wallbit/wallbit-skills](https://smithery.ai/skills/wallbit/wallbit-skills)) - **First-party** Claude/Cursor skill that teaches the AI assistant how to write correct Wallbit-API code. Covers 9 endpoints (balances, transactions, trades, assets, wallets, account, operations). PHP/Laravel + JS Fetch + Python Requests examples. **CONFIRMED** first-party. Not a runtime consumer - it's a code-generation aid. **Not a competitor - it's another tool we should pre-load into Claude Code on Day 1.**
+- **markets.wallbit.io** ([markets.wallbit.io](https://markets.wallbit.io/)) - Wallbit's own market-explorer surface. **PARTIAL**: clearly a Wallbit-built UI on top of the same Alpaca/W2B brokerage backend, but the page does not explicitly say "consumes the public API"; it might use private internal endpoints. Endpoints likely overlap with `/assets`, `/assets/{symbol}`. Not a competitor.
+- **Wallbit core mobile/web app** ([app.wallbit.io](https://app.wallbit.io/), Google Play, App Store) - The Wallbit consumer app itself. **PARTIAL** that it "consumes the public API" specifically; more likely consumes private internal endpoints. Not a competitor.
+
+**Searched and ABSENCE CONFIRMED:**
+
+- **Independent SDKs / npm / PyPI packages**: searched npm + PyPI + GitHub for "wallbit", "api.wallbit.io", "X-API-Key wallbit". Result: **zero** community SDKs found ([github.com/Wallbit](https://github.com/Wallbit) shows only the 2 first-party repos above; the only other "wallbit" repo is [goncy/wallbit-challenge](https://github.com/goncy/wallbit-challenge), an unrelated frontend interview test that uses the Fake Store API, not the Wallbit API). ABSENCE CONFIRMED.
+- **Past Platanus Hack projects on Wallbit**: [vote.hack.platan.us](https://vote.hack.platan.us/) project list (Hack 25) shows 26 projects; **none** mention Wallbit. Wallbit is **not** listed as a sponsor on [hack.platan.us/tour/sponsor](https://hack.platan.us/tour/sponsor) for Hack 24, 25, or 26. ABSENCE CONFIRMED for prior-hack precedent.
+- **Product Hunt / Devpost**: no Wallbit-API consumers found (searches returned only Wallbit's own page and unrelated "walbit"/"wallbot" products). ABSENCE CONFIRMED.
+- **Reddit / dev.to / Medium / Hacker News chatter**: no posts mentioning building on the Wallbit API surfaced in our searches on 2026-05-09. ABSENCE CONFIRMED.
+- **Conversational/chat agent on top of Wallbit**: zero direct consumers found. ABSENCE CONFIRMED.
+
+**Bucketed competitive map:**
+
+- **(a) Wallbit's own products consuming the API**: `wallbit-mcp`, `wallbit-skills` (first-party, code-gen + tool-use scaffolding); `markets.wallbit.io` and Wallbit core app (partial, likely internal-API but on same data).
+- **(b) Direct competitors to our pitch (chat/AI agent over personal finance)**: **wallsync.cc - the only one**. They ship a multi-agent **dashboard**, not a single conversational chat. We are differentiated by being chat-first / Spanish-first / LatAm-first; they are dashboard-first / English-first / global-wealth aesthetic. ([wallsync.cc](https://wallsync.cc)).
+- **(c) Tangential consumers (read-only dashboards, trading bots, MCP wrappers)**: only the first-party `wallbit-mcp` exists. No third-party trading bots, dashboards, or analytics tools. ABSENCE CONFIRMED.
+- **(d) White space we can claim**: (i) **First conversational-chat agent over Wallbit** (wallsync is dashboard, not chat). (ii) **First Spanish/LatAm-first product** on Wallbit (wallsync is English-first). (iii) **First voice-mode product** on Wallbit (no ElevenLabs / voice consumers found). (iv) **First open-source / hackathon-grade demo** on Wallbit (no community projects found).
+
+**Defensibility verdict:** **Not crowded.** The Wallbit-API ecosystem is essentially: Wallbit + wallsync.cc. Wallsync is the only meaningful third-party consumer, and it occupies the "dashboard" lane, not the "chat agent" lane. We are walking into a near-empty room with one neighbor whose UX framing differs from ours. **Caveat**: wallsync exists, is polished, ships trading, and explicitly partners with Wallbit - we should expect Wallbit reps at the hack to know wallsync well. We must position **alongside** wallsync, not against it.
+
+**Pitch implications:**
+
+- **DO NOT claim** "the first product built on Wallbit's API" - wallsync.cc beat us to that and Wallbit will know.
+- **DO NOT claim** "the first AI-powered Wallbit consumer" - same reason.
+- **DO claim** "the first **conversational** AI agent on Wallbit" (wallsync ships a multi-agent dashboard, not a chat). PARTIAL on first-ness; safer phrasing: "an LLM-native, chat-first companion to the Wallbit account."
+- **DO claim** "Spanish-first / Argentine-context / voice-mode" - all three are uncontested white space on Wallbit per our scan on 2026-05-09.
+- **Safer framing**: "if wallsync.cc is the Bloomberg terminal for your Wallbit, we are the WhatsApp chat with your Wallbit." Position as a complement, not a competitor.
+
+---
+
 ## 5. Reference Deep-Dive: LemonGPT & the conversational-finance pattern
 
 **Honest disclosure:** Our public-web searches on 2026-05-09 returned **no indexed product called "LemonGPT" from Lemon Cash**. Searches for "LemonGPT," "Lemon GPT," "Lemon Cash AI chatbot," and Spanish equivalents returned only generic Lemon Cash company info plus generic AI-finance content. The team has direct knowledge of this product; we treat its existence/spirit as **team-confirmed but not externally citable**. **(Unconfirmed in public sources - team to provide a direct link if the pitch needs to name-drop it.)** Safer pitch posture: invoke the *pattern* ("a Lemon-style chat over your money"), not the specific brand name.
