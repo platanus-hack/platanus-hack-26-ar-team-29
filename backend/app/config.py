@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/pampa"
 
     anthropic_api_key: str = ""
-    wallbit_api_key: str = ""
     ethereum_rpc_url: str = "https://ethereum-rpc.publicnode.com"
     fernet_key: str = ""
 

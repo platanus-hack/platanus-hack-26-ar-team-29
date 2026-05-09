@@ -6,7 +6,7 @@ from typing import Any
 
 from app.agents.approval import ApprovalBridge
 from app.agents.events import AgentEvent, error_event, summarize_value
-from app.config import get_settings
+from app.agents.wallbit_tools import wallbit_mcp_server
 
 try:  # pragma: no cover - exercised only when the SDK is installed.
     from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, HookMatcher
@@ -25,21 +25,42 @@ Reglas de seguridad:
 - Antes de cualquier operacion que mueva dinero o ejecute una trade, explica que vas a hacer.
 - Nunca digas que una operacion fue ejecutada hasta que el resultado de la herramienta lo confirme.
 - Si el usuario rechaza una accion, respetalo y ofrece ajustar el plan.
-- Si falta informacion critica para una operacion financiera, pregunta antes de actuar.
+- Si falta informacion critica para una operacion financiera, usa AskUserQuestion
+  con 2 a 4 opciones cortas en vez de preguntar con texto largo.
+- Usa AskUserQuestion para aclarar moneda, cantidad vs monto, cuenta origen,
+  tipo de orden, o cualquier dato necesario antes de una operacion.
+- Elegir una opcion en AskUserQuestion no aprueba una operacion financiera:
+  las trades siempre requieren confirmacion aparte.
+- Despues de recibir respuestas de AskUserQuestion, continua el mismo flujo.
+  No repitas la pregunta ni termines el turno silenciosamente.
+- Para una compra de acciones, una vez aclarados monto/cantidad, cuenta y tipo
+  de orden, consulta precio/balance si hace falta y luego intenta la tool de
+  trade para que el backend pida confirmacion explicita al usuario.
+- La herramienta de trading de Wallbit esta disponible como
+  mcp__wallbit__create_trade. No digas que no esta conectada: si el usuario
+  confirma una compra/venta, intenta usar esa tool.
 """.strip()
 
 
-WALLBIT_MCP_URL = "https://api.dev.wallbit.io"
 WALLBIT_READ_TOOLS = [
+    "get_checking_balance",
+    "get_stocks_balance",
+    "list_transactions",
+    "get_asset",
     "mcp__wallbit__get_checking_balance",
     "mcp__wallbit__get_stocks_balance",
     "mcp__wallbit__list_transactions",
     "mcp__wallbit__get_asset",
 ]
 WALLBIT_WRITE_TOOLS = [
+    "create_trade",
     "mcp__wallbit__create_trade",
 ]
 WALLBIT_TOOLS = WALLBIT_READ_TOOLS + WALLBIT_WRITE_TOOLS
+AGENT_UI_TOOLS = ["AskUserQuestion"]
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS
+AGENT_MODEL = "haiku"
+AGENT_FALLBACK_MODEL = "sonnet"
 
 
 async def _allow_pre_tool_use_hook(
@@ -56,11 +77,9 @@ class ChatAgentSession:
         self,
         *,
         system_prompt: str = SYSTEM_PROMPT,
-        wallbit_mcp_url: str | None = None,
         approval_bridge: ApprovalBridge | None = None,
     ) -> None:
         self._system_prompt = system_prompt
-        self._wallbit_mcp_url = wallbit_mcp_url or get_settings().wallbit_mcp_url
         self._approval_bridge = approval_bridge or ApprovalBridge()
         self._client: Any | None = None
         self._connected = False
@@ -85,20 +104,15 @@ class ChatAgentSession:
             if HookMatcher is not None
             else {"matcher": {}, "hooks": [_allow_pre_tool_use_hook]}
         )
-        wallbit_headers = self._wallbit_headers()
         options = ClaudeAgentOptions(
+            model=AGENT_MODEL,
+            fallback_model=AGENT_FALLBACK_MODEL,
             system_prompt=self._system_prompt,
             include_partial_messages=True,
-            mcp_servers={
-                "wallbit": {
-                    "type": "http",
-                    "url": self._wallbit_mcp_url,
-                    **({"headers": wallbit_headers} if wallbit_headers else {}),
-                }
-            },
+            mcp_servers={"wallbit": wallbit_mcp_server()},
             strict_mcp_config=True,
             permission_mode="default",
-            allowed_tools=WALLBIT_TOOLS,
+            allowed_tools=AUTO_ALLOWED_TOOLS,
             can_use_tool=self._approval_bridge.can_use_tool,
             hooks={
                 "PreToolUse": [pre_tool_use_hook]
@@ -107,12 +121,6 @@ class ChatAgentSession:
         self._client = ClaudeSDKClient(options=options)
         await self._client.connect()
         self._connected = True
-
-    def _wallbit_headers(self) -> dict[str, str]:
-        api_key = get_settings().wallbit_api_key
-        if not api_key:
-            return {}
-        return {"X-API-Key": api_key}
 
     async def disconnect(self) -> None:
         if self._client is not None:
@@ -139,6 +147,9 @@ class ChatAgentSession:
 
     def resolve_approval(self, approval_id: str, decision: str) -> bool:
         return self._approval_bridge.resolve(approval_id, decision)
+
+    def resolve_input(self, input_id: str, selected_options: list[str] | str) -> bool:
+        return self._approval_bridge.resolve_input(input_id, selected_options)
 
     async def interrupt(self) -> AgentEvent:
         if self._client is None:

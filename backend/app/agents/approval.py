@@ -10,6 +10,8 @@ from app.agents.events import (
     AgentEvent,
     approval_requested_event,
     approval_resolved_event,
+    input_requested_event,
+    input_resolved_event,
 )
 
 try:  # pragma: no cover - exercised only when the SDK is installed.
@@ -29,6 +31,10 @@ except ImportError:  # pragma: no cover - local fallback keeps tests importable.
 
 
 READ_WALLBIT_TOOLS = {
+    "get_checking_balance",
+    "get_stocks_balance",
+    "list_transactions",
+    "get_asset",
     "mcp__wallbit__get_checking_balance",
     "mcp__wallbit__get_stocks_balance",
     "mcp__wallbit__list_transactions",
@@ -36,11 +42,13 @@ READ_WALLBIT_TOOLS = {
 }
 
 WRITE_WALLBIT_TOOLS = {
+    "create_trade",
     "mcp__wallbit__create_trade",
 }
 
 ApprovalResult = PermissionResultAllow | PermissionResultDeny
 EventSink = Callable[[AgentEvent], Awaitable[None]]
+ASK_USER_QUESTION_TOOL = "AskUserQuestion"
 
 
 def requires_approval(tool_name: str) -> bool:
@@ -51,10 +59,11 @@ def requires_approval(tool_name: str) -> bool:
     return tool_name.startswith("mcp__wallbit__")
 
 
-class ApprovalBridge:
+class UserInteractionBridge:
     def __init__(self) -> None:
         self._event_sink: EventSink | None = None
         self._pending: dict[str, asyncio.Future[str]] = {}
+        self._pending_inputs: dict[str, asyncio.Future[list[str]]] = {}
 
     def set_event_sink(self, event_sink: EventSink) -> None:
         self._event_sink = event_sink
@@ -68,7 +77,8 @@ class ApprovalBridge:
         input_data: dict[str, Any],
         options: dict[str, Any] | None = None,
     ) -> ApprovalResult:
-        del options
+        if tool_name == ASK_USER_QUESTION_TOOL:
+            return await self._handle_ask_user_question(input_data, options)
 
         if not requires_approval(tool_name):
             return PermissionResultAllow(updated_input=input_data)
@@ -118,3 +128,130 @@ class ApprovalBridge:
             return False
         future.set_result(normalized)
         return True
+
+    def resolve_input(self, input_id: str, selected_options: list[str] | str) -> bool:
+        if isinstance(selected_options, str):
+            normalized = [selected_options]
+        else:
+            normalized = selected_options
+
+        future = self._pending_inputs.get(input_id)
+        if future is None or future.done():
+            return False
+        future.set_result(normalized)
+        return True
+
+    async def _handle_ask_user_question(
+        self,
+        input_data: dict[str, Any],
+        options: dict[str, Any] | None,
+    ) -> ApprovalResult:
+        del options
+
+        if self._event_sink is None:
+            return PermissionResultDeny(
+                message="No user input channel is available for this question."
+            )
+
+        answers: dict[str, str | list[str]] = {}
+        for question in _questions(input_data):
+            input_id = uuid.uuid4().hex
+            loop = asyncio.get_running_loop()
+            future: asyncio.Future[list[str]] = loop.create_future()
+            self._pending_inputs[input_id] = future
+
+            normalized_options = _question_options(question)
+            multi_select = _question_multi_select(question)
+            question_text = _question_text(question)
+            await self._event_sink(
+                input_requested_event(
+                    input_id=input_id,
+                    title=_question_title(question),
+                    question=question_text,
+                    options=normalized_options,
+                    multi_select=multi_select,
+                )
+            )
+
+            try:
+                selected_options = await future
+            finally:
+                self._pending_inputs.pop(input_id, None)
+
+            selected_labels = _selected_labels(normalized_options, selected_options)
+            await self._event_sink(
+                input_resolved_event(
+                    input_id=input_id,
+                    selected_options=selected_labels,
+                )
+            )
+            answers[question_text] = selected_labels if multi_select else selected_labels[0]
+
+        return PermissionResultAllow(
+            updated_input={
+                "questions": input_data.get("questions", []),
+                "answers": answers,
+            }
+        )
+
+
+def _questions(input_data: dict[str, Any]) -> list[dict[str, Any]]:
+    questions = input_data.get("questions")
+    if isinstance(questions, list):
+        normalized = [question for question in questions if isinstance(question, dict)]
+        if normalized:
+            return normalized
+    return [input_data]
+
+
+def _question_title(question: dict[str, Any]) -> str:
+    raw = question.get("header") or question.get("title") or "Elegir opcion"
+    return str(raw)
+
+
+def _question_text(question: dict[str, Any]) -> str:
+    raw = question.get("question") or question.get("prompt") or _question_title(question)
+    return str(raw)
+
+
+def _question_multi_select(question: dict[str, Any]) -> bool:
+    return bool(question.get("multiSelect") or question.get("multi_select"))
+
+
+def _question_options(question: dict[str, Any]) -> list[dict[str, str]]:
+    raw_options = question.get("options")
+    if not isinstance(raw_options, list):
+        return []
+
+    normalized: list[dict[str, str]] = []
+    for index, option in enumerate(raw_options, start=1):
+        if isinstance(option, str):
+            normalized.append({"id": option, "label": option, "description": ""})
+            continue
+
+        if not isinstance(option, dict):
+            label = str(option)
+            normalized.append({"id": label, "label": label, "description": ""})
+            continue
+
+        label = str(option.get("label") or option.get("value") or option.get("id") or index)
+        option_id = str(option.get("id") or option.get("value") or label)
+        description = str(option.get("description") or "")
+        normalized.append({"id": option_id, "label": label, "description": description})
+
+    return normalized
+
+
+def _selected_labels(
+    options: list[dict[str, str]],
+    selected_options: list[str],
+) -> list[str]:
+    labels_by_id = {option["id"]: option["label"] for option in options}
+    labels_by_label = {option["label"]: option["label"] for option in options}
+    return [
+        labels_by_id.get(selected, labels_by_label.get(selected, selected))
+        for selected in selected_options
+    ]
+
+
+ApprovalBridge = UserInteractionBridge
