@@ -50,17 +50,18 @@ Background workers (`app/workers/`) are separate process entrypoints that import
 - `cryptography.Fernet` credential vault, key in env
 - Combined web + workers in one process for v1; architecture allows split with no code change
 
-## Out-of-scope guardrails (per the scaffold's plan)
+## Current scope (MVP slice)
 
-The scaffold ships only the layout, error envelope, settings/logging, persistence plumbing, the `Provider`/`Capability` ABC anchor, and a health endpoint. The following are **not** in the scaffold and land per-feature:
+Implemented: chat sessions/messages, plan approve/reject, Wallbit connection, balances + transactions reads, `/api/v1/ws` WebSocket, ChatAgent + PlanExecutor + ToolDispatcher, WallbitProvider with read/trade capabilities. ORM models for `users`, `provider_connections`, `chat_sessions`, `chat_messages`, `trade_plans`, `trade_plan_steps`. Migration `0001_init_mvp` creates them plus `pgcrypto` and the `set_updated_at()` trigger.
 
-- Auth flow
-- Endpoint handlers
-- Service implementations
-- Agent runtimes / tool registry contents
-- Provider adapters
-- ORM models / migrations
-- WebSocket protocol implementation
-- Background-worker logic
+Deferred (with rationale in [`./deviations.md`](./deviations.md)):
+- Auth flow (hardcoded dev user UUID for v1)
+- Idempotency keys table + middleware
+- Audit log entries
+- Canonical ledger cluster (replaced by direct provider fetch)
+- Background workers (`tasks` table, poller, ingest, tradebot runner)
+- User profile / goals / rules
+- WebSocket sequence/replay
+- Tradebots, document ingestion, Ethereum provider
 
-When implementing one of these, update this file's recipe table if the path or pattern shifts in any way from what's documented above.
+When implementing one of these, update this file's recipe table if the path or pattern shifts in any way from what's documented above, and remove the corresponding deferred entry from [`./deviations.md`](./deviations.md).

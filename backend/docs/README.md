@@ -13,7 +13,8 @@ Backend-specific notes that complement (do not replace) the canonical design art
 | Doc | Purpose |
 |---|---|
 | [`architecture.md`](./architecture.md) | Backend module layout summary; import-direction rules; pointers to authoritative design |
-| *(more land as features ship)* | endpoint cookbooks, provider integration notes, deviation log, runbooks |
+| [`deviations.md`](./deviations.md) | What this MVP slice intentionally skips vs the locked design (idempotency, audit log, canonical ledger, workers, etc.) |
+| *(more land as features ship)* | endpoint cookbooks, provider integration notes, runbooks |
 
 ## Canonical design artifacts (upstream — authoritative)
 

@@ -34,7 +34,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
-ignore = ["E501"]
+# B008: Depends/Query in defaults is the FastAPI idiom.
+# SIM105: try/except/pass during teardown is intentional.
+ignore = ["E501", "B008", "SIM105"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

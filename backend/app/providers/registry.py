@@ -13,7 +13,5 @@ class ProviderRegistry:
     def get(self, name: str) -> Provider:
         return self._providers[name]
 
-    def find_for_capability(
-        self, user_id: str, capability: type[Capability]
-    ) -> list[Provider]:
+    def find_for_capability(self, user_id: str, capability: type[Capability]) -> list[Provider]:
         raise NotImplementedError("Implemented when first provider lands.")

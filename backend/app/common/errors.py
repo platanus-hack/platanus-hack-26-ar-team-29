@@ -89,9 +89,7 @@ def register_error_handlers(app: FastAPI) -> None:
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
         trace_id = uuid.uuid4().hex
-        details = {
-            ".".join(str(p) for p in err["loc"]): err["msg"] for err in exc.errors()
-        }
+        details = {".".join(str(p) for p in err["loc"]): err["msg"] for err in exc.errors()}
         return JSONResponse(
             status_code=422,
             content=_envelope(
