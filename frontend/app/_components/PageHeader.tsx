@@ -6,10 +6,10 @@ export function PageHeader({
   description?: string;
 }) {
   return (
-    <header className="shrink-0 border-b border-zinc-200 bg-white/95 px-4 pb-3 pt-4 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95 sm:px-6 sm:py-5 lg:px-10">
-      <div className="flex flex-col gap-2">
-        <h1>{title}</h1>
-        {description && <p>{description}</p>}
+    <header className="flex min-h-[74px] shrink-0 flex-col justify-center border-b border-[#1A1A1A] bg-[#050505] px-4 py-3 sm:px-6 lg:px-10">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-[#F4F8FB]">{title}</h1>
+        {description && <p className="text-[#A8B3C2] text-sm">{description}</p>}
       </div>
     </header>
   );

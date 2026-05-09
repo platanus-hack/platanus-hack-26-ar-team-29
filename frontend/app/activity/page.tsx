@@ -37,24 +37,24 @@ export default function ActivityPage() {
     <AppShell>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader title="Actividad" description="Movimientos recientes y estado de planes." />
-        <div className="flex-1 bg-zinc-50 px-4 py-6 dark:bg-zinc-950 sm:px-6 lg:px-10">
-          <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex-1 overflow-y-auto overscroll-contain bg-[#050505] px-4 py-6 sm:px-6 lg:px-10">
+          <div className="mx-auto max-w-5xl rounded-3xl border border-[#1A1A1A] bg-[#080C0D] shadow-[0_0_24px_rgba(56,217,198,0.03)]">
             {activity.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-col gap-2 border-b border-zinc-100 px-4 py-4 last:border-b-0 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 border-b border-[#1A1A1A] px-5 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:bg-[#38D9C6]/5"
               >
                 <div>
-                  <div className="text-base font-medium">{item.title}</div>
-                  <div className="text-xs text-zinc-500">{item.detail}</div>
+                  <div className="text-base font-medium text-[#F4F8FB]">{item.title}</div>
+                  <div className="mt-1 text-xs text-[#A8B3C2] font-mono">{item.detail}</div>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-xs text-zinc-500">{item.time}</span>
+                <div className="flex items-center gap-4 text-sm mt-2 sm:mt-0">
+                  <span className="text-xs text-[#6B7788]">{item.time}</span>
                   <span
-                    className={`rounded-full px-2 py-1 text-xs font-medium ${
+                    className={`rounded-full px-2 py-1 text-xs font-medium border ${
                       item.status === "Pendiente"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200"
-                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
+                        ? "bg-[#F5B84B]/10 text-[#F5B84B] border-[#F5B84B]/20"
+                        : "bg-[#3EE98A]/10 text-[#3EE98A] border-[#3EE98A]/20 shadow-[0_0_10px_rgba(62,233,138,0.05)]"
                     }`}
                   >
                     {item.status}

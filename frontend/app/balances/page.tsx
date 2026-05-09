@@ -37,24 +37,24 @@ export default function BalancesPage() {
     <AppShell>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader title="Balances" description="Saldos por proveedor y moneda." />
-        <div className="flex-1 bg-zinc-50 px-4 py-6 dark:bg-zinc-950 sm:px-6 lg:px-10">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex-1 overflow-y-auto overscroll-contain bg-[#050505] px-4 py-6 sm:px-6 lg:px-10">
+          <div className="mx-auto max-w-5xl grid gap-4 sm:grid-cols-2">
             {balances.map((item) => (
               <div
                 key={`${item.provider}-${item.account}`}
-                className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-3xl border border-[#1A1A1A] bg-[#080C0D] p-6 shadow-[0_0_24px_rgba(56,217,198,0.03)] transition-all duration-200 hover:border-[#38D9C6]/25 hover:shadow-[0_0_30px_rgba(56,217,198,0.06)]"
               >
-                <div className="flex items-center justify-between text-xs text-zinc-500">
+                <div className="flex items-center justify-between text-xs text-[#A8B3C2] font-mono">
                   <span>
-                    {item.provider} · {item.account}
+                    {item.provider} <span className="mx-1 text-[#38D9C6]/50">·</span> {item.account}
                   </span>
                   <span>{item.updated}</span>
                 </div>
-                <div className="mt-2 text-lg font-semibold">{item.available}</div>
-                <div className="text-xs text-zinc-500">{item.currency}</div>
+                <div className="mt-3 text-2xl font-semibold tabular-nums text-[#F4F8FB]">{item.available}</div>
+                <div className="text-xs text-[#6B7788] font-mono">{item.currency}</div>
                 <button
                   type="button"
-                  className="mt-4 w-full rounded-xl border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="mt-5 w-full rounded-xl border border-[#38D9C6]/25 bg-[#050505] px-3 py-2 text-xs font-medium text-[#A8B3C2] transition-all duration-200 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] hover:border-[#38D9C6]/50 active:scale-[0.98]"
                 >
                   Pedir a OpenFi
                 </button>

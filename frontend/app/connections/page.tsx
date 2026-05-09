@@ -30,23 +30,23 @@ export default function ConnectionsPage() {
           title="Conexiones"
           description="Gestioná las cuentas y wallets vinculadas."
         />
-        <div className="flex-1 bg-zinc-50 px-4 py-6 dark:bg-zinc-950 sm:px-6 lg:px-10">
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex-1 overflow-y-auto overscroll-contain bg-[#050505] px-4 py-6 sm:px-6 lg:px-10">
+          <div className="mx-auto max-w-5xl grid gap-4 md:grid-cols-2">
             {connections.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-3xl border border-[#1A1A1A] bg-[#080C0D] p-6 shadow-[0_0_24px_rgba(56,217,198,0.03)] transition-all duration-200 hover:border-[#38D9C6]/25 hover:shadow-[0_0_30px_rgba(56,217,198,0.06)]"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-base font-medium">{item.name}</div>
-                    <div className="text-xs text-zinc-500">{item.description}</div>
+                    <div className="text-base font-medium text-[#F4F8FB]">{item.name}</div>
+                    <div className="mt-1 text-xs text-[#A8B3C2] font-mono">{item.description}</div>
                   </div>
                   <span
-                    className={`rounded-full px-2 py-1 text-xs font-medium ${
+                    className={`rounded-full px-2 py-1 text-xs font-medium border ${
                       item.status === "Conectado"
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
-                        : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                        ? "bg-[#3EE98A]/10 text-[#3EE98A] border-[#3EE98A]/20 shadow-[0_0_10px_rgba(62,233,138,0.05)]"
+                        : "bg-[#050505] text-[#6B7788] border-[#1A1A1A]"
                     }`}
                   >
                     {item.status}
@@ -54,7 +54,7 @@ export default function ConnectionsPage() {
                 </div>
                 <button
                   type="button"
-                  className="mt-4 w-full rounded-xl border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="mt-6 w-full rounded-xl border border-[#38D9C6]/25 bg-[#050505] px-3 py-2 text-xs font-medium text-[#A8B3C2] transition-all duration-200 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] hover:border-[#38D9C6]/50 active:scale-[0.98]"
                 >
                   {item.status === "Conectado" ? "Ver detalles" : "Conectar"}
                 </button>
