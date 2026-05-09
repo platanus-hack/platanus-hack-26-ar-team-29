@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Send } from "lucide-react";
+import { Button } from "../../_components/Button";
 
 export function ChatInput({
   onSend,
@@ -33,14 +34,15 @@ export function ChatInput({
           placeholder="Escribí un mensaje..."
           className="h-12 flex-1 rounded-full border border-input bg-background px-5 text-sm text-foreground placeholder:text-subdued outline-none transition-all duration-200 focus:border-accent focus:ring-4 focus:ring-accent/10"
         />
-        <button
+        <Button
           type="submit"
           disabled={disabled || false}
           suppressHydrationWarning
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-background shadow-send transition-all duration-200 hover:bg-accent-hover hover:shadow-send-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          variant="primary"
+          size="icon"
         >
           <Send className="h-5 w-5 ml-[-2px]" />
-        </button>
+        </Button>
       </div>
     </form>
   );

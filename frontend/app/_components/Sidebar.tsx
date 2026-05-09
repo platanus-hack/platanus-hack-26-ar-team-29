@@ -7,6 +7,7 @@ import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
 import { useState } from 'react';
 import { Tab } from './Tab';
+import { Button } from './Button';
 
 const NAV_ITEMS = [
     { label: 'Chat', href: '/' },
@@ -87,13 +88,15 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                                         />
                                         
                                         {isChat && (
-                                            <button 
+                                            <Button 
+                                                variant="ghost"
+                                                size="icon-sm"
                                                 onClick={handleCreateChat}
-                                                className="absolute right-2 p-1.5 text-muted hover:text-accent hover:bg-accent/20 rounded-md transition-colors"
+                                                className="absolute right-2"
                                                 title="Nuevo chat"
                                             >
                                                 <Plus size={16} />
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                     
@@ -112,27 +115,31 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                                                     <span className="truncate pr-2">
                                                         {session.title || 'Nuevo chat'}
                                                     </span>
-                                                    <button
+                                                    <Button
+                                                        variant="danger"
+                                                        size="icon-sm"
                                                         onClick={(e) => handleDeleteChat(e, session.id)}
-                                                        className="opacity-0 group-hover:opacity-100 p-1 text-muted hover:text-red-400 transition-all rounded"
+                                                        className="opacity-0 group-hover:opacity-100 p-1 rounded"
                                                         title="Eliminar chat"
                                                     >
                                                         <Trash2 size={12} />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             ))}
                                             
                                             {sessions.length > 5 && (
-                                                <button
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={() => setShowAllChats(!showAllChats)}
-                                                    className="flex items-center gap-1 px-2 py-1.5 text-xs text-subdued hover:text-muted transition-colors mt-1"
+                                                    className="gap-1 px-2 py-1.5 text-subdued hover:text-muted mt-1 !justify-start hover:bg-transparent"
                                                 >
                                                     {showAllChats ? (
                                                         <><ChevronUp size={12} /> Mostrar menos</>
                                                     ) : (
                                                         <><ChevronDown size={12} /> Mostrar {sessions.length - 5} más</>
                                                     )}
-                                                </button>
+                                                </Button>
                                             )}
                                         </div>
                                     )}
@@ -155,12 +162,15 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                className='mt-3 h-9 w-full rounded-xl border border-accent/25 bg-background text-xs font-medium text-muted transition-all duration-200 hover:border-accent/50 hover:bg-accent/10 hover:text-foreground active:scale-[0.98]'
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                fullWidth
+                                className="mt-3 text-xs"
                                 type='button'
                             >
                                 Gestionar cuenta
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </aside>
