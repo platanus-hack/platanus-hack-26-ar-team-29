@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { InputRequest } from '../types';
+import { Button } from '../../_components/Button';
 
 export function InputQuestion({
   input,
@@ -51,34 +52,35 @@ export function InputQuestion({
         {input.options.map((opt) => {
           const isSelected = selected.has(opt.id);
           return (
-            <button
+            <Button
               key={opt.id}
               type="button"
               disabled={isBusy}
               onClick={() => toggle(opt.id)}
-              className={`rounded-xl border px-4 py-2.5 text-left text-sm transition disabled:opacity-50 ${
-                isSelected
-                  ? 'border-accent bg-accent/15 text-foreground'
-                  : 'border-line bg-background text-foreground hover:border-accent/50 hover:bg-card'
-              }`}
+              variant={isSelected ? 'primary' : 'outline'}
+              className="justify-start h-auto py-2.5 flex-col items-start gap-0.5"
+              fullWidth
             >
               <div className="font-medium">{opt.label}</div>
               {opt.description && (
-                <div className="mt-0.5 text-xs text-muted">{opt.description}</div>
+                <div className={`mt-0.5 text-xs ${isSelected ? 'text-background/80' : 'text-muted'}`}>{opt.description}</div>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
       {input.multiSelect && (
-        <button
-          type="button"
-          disabled={isBusy || selected.size === 0}
-          onClick={submitMulti}
-          className="mt-3 w-full rounded-xl border border-accent bg-accent/15 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent/25 disabled:opacity-50"
-        >
-          Confirmar
-        </button>
+        <div className="mt-3">
+          <Button
+            type="button"
+            disabled={isBusy || selected.size === 0}
+            onClick={submitMulti}
+            variant="primary"
+            fullWidth
+          >
+            Confirmar
+          </Button>
+        </div>
       )}
     </div>
   );

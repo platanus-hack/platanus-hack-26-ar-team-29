@@ -149,6 +149,7 @@ class ChatAgentSession:
             mcp_servers={"wallbit": wallbit_mcp_server()},
             strict_mcp_config=True,
             permission_mode="default",
+            tools=AGENT_UI_TOOLS,
             allowed_tools=AUTO_ALLOWED_TOOLS,
             can_use_tool=self._approval_bridge.can_use_tool,
             hooks={"PreToolUse": [pre_tool_use_hook]},
@@ -546,6 +547,7 @@ class ChatAgent:
     ) -> None:
         try:
             from anthropic import AsyncAnthropic
+
             from app.config import get_settings
 
             settings = get_settings()
