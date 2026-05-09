@@ -224,6 +224,13 @@ How the abstraction absorbs these without leaking detail upward:
 - `RateLimitTracker` lives inside each adapter, is checked before each outbound call, and obeys the provider's documented header shape.
 - `Capability.preflight_check(connection, args)` returns a list of `PreflightIssue`s (`KYC_REQUIRED`, `INSUFFICIENT_GAS`, `ACCOUNT_LOCKED`, `INSUFFICIENT_FUNDS`) so the chatbot can tell the user *before* a write is attempted, not after a 412 / on-chain revert.
 
+### 5.2 First-party Wallbit tooling — leverage but don't depend
+
+Wallbit ships two first-party assets (research brief §4.5) that we use as **reference + accelerator only**, not as runtime dependencies. `wallbit-mcp` (`github.com/Wallbit/wallbit-mcp`) is an MCP server exposing 5 endpoints (`get_checking_balance`, `get_stocks_balance`, `list_transactions`, `get_asset`, `create_trade`) as Anthropic-compatible tool-use schemas with stdio + HTTP/SSE transport. `wallbit-skills` (`github.com/Wallbit/wallbit-skills`, hosted at `smithery.ai/skills/wallbit/wallbit-skills`) is a Claude/Cursor Skill teaching correct Wallbit-API code with PHP/Laravel + JS Fetch + Python Requests examples for 9 endpoints. We do **not** vendor `wallbit-mcp` as a runtime dependency: the Capability ABCs require behaviors it does not expose (`preflight_check`, `PendingTransaction` settlement model, `RateLimitTracker`, `confirmation_policy`, plus `InternalTransfer` and `DepositRoboadvisor` capabilities entirely absent from its surface).
+
+- **From `wallbit-mcp`:** copy the 5 tool-use schemas verbatim into our `ToolDispatcher`; lift its request/response shapes for those 5 endpoints into `providers/wallbit/adapter.py`.
+- **From `wallbit-skills`:** preload into Claude Code during the build to reduce hallucinated endpoint shapes; use its snippets as the canonical reference when hand-writing the remaining 4–5 endpoints (internal-transfer, deposit-to-roboadvisor, plus auth and account ops) in `adapter.py` and `capabilities.py`, sourced from the Wallbit OpenAPI.
+
 ---
 
 ## 6. AI / agent runtime architecture
@@ -607,6 +614,7 @@ backend/
 | 13 | Encryption at rest | Fernet (cryptography lib), key in env | Simple; KMS-ready upgrade path |
 | 14 | HTTP client (outbound) | httpx (async) | Standard async HTTP for Python |
 | 15 | Ethereum client | web3.py | Standard EVM SDK |
+| 16 | Wallbit adapter sourcing | Hand-rolled adapter, with `wallbit-mcp` schemas + `wallbit-skills` examples as reference | First-party tools cover only 5 of ~10 endpoints; capability ABCs need behaviors MCP doesn't expose |
 
 ---
 
@@ -626,6 +634,9 @@ backend/
 | Crypto integration | web3.py | Standard EVM SDK | Direct JSON-RPC |
 | Logging | structlog or stdlib logging + JSON formatter | Coder choice | Either |
 | Testing | pytest + pytest-asyncio | Standard | unittest |
+| *— Developer tooling (build-time reference, not runtime) —* | | | |
+| Wallbit MCP reference | `Wallbit/wallbit-mcp` (schemas + request shapes only) | First-party; saves rewriting 5 tool-use schemas | Hand-write all schemas |
+| Wallbit code-gen skill | `Wallbit/wallbit-skills` on Smithery, preloaded into Claude Code | First-party; reduces hallucinated endpoint shapes during build | Read OpenAPI manually |
 
 ---
 
