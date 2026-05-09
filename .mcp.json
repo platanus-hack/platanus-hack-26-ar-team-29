@@ -2,7 +2,10 @@
   "mcpServers": {
     "wallbit": {
       "type": "http",
-      "url": "https://mcp.wallbit.io/mcp"
+      "url": "https://mcp.wallbit.io/mcp",
+      "headers": {
+        "X-API-Key": "${WALLBIT_API_KEY}"
+      }
     }
   }
 }
