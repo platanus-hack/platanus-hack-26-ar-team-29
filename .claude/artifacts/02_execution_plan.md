@@ -299,10 +299,6 @@ Both share Claude calls, prompt scaffolding, plan executor, tool dispatcher.
 
 Simplest of the three: a single Claude call with a structured-output schema. No tools, no plan, no loop. Pure batch in / out. It's separate from the LLM-loop agents because *batching matters for cost* — re-classifying 12 months of history is one big call, not 12 small ones.
 
-### 6.5 Voice-mode seam (reserved, not built)
-
-Reserved for v1, not built. The chat-protocol message shape carries pure text + structured plan blocks alongside, with an optional `audio_url` field on agent messages. A future TTS layer reads the text channel without parsing UI; STT pipes through the same WebSocket as a text message tagged `source="voice"`. ElevenLabs can clip in later without touching the agent runtime.
-
 ---
 
 ## 7. Background workers and runtime topology
@@ -608,10 +604,9 @@ backend/
 | 10 | UserProfile freshness | Persisted denormalized, dirty bit, lazy recompute | Fast chat reads |
 | 11 | Threading | Pure asyncio, no OS threads | Stay in the async lane |
 | 12 | Job queue | Postgres-backed (in-house) | No Redis / Celery dependency |
-| 13 | Voice mode | Reserved seam, not built in v1 | Stretch only after MVP locks |
-| 14 | Encryption at rest | Fernet (cryptography lib), key in env | Simple; KMS-ready upgrade path |
-| 15 | HTTP client (outbound) | httpx (async) | Standard async HTTP for Python |
-| 16 | Ethereum client | web3.py | Standard EVM SDK |
+| 13 | Encryption at rest | Fernet (cryptography lib), key in env | Simple; KMS-ready upgrade path |
+| 14 | HTTP client (outbound) | httpx (async) | Standard async HTTP for Python |
+| 15 | Ethereum client | web3.py | Standard EVM SDK |
 
 ---
 
@@ -624,7 +619,6 @@ backend/
 | DB | Supabase (hosted Postgres) | Sponsor + managed | Local Postgres (Docker) |
 | ORM / DB access | SQLAlchemy 2.x async OR asyncpg directly | Decision deferred to coder | The other |
 | AI | Anthropic Claude — Sonnet (dev) / Opus (demo) | Sponsor + reasoning quality | Cached / canned demo path |
-| Voice | ElevenLabs (stretch) | Sponsor | Text-only |
 | Background queue | Postgres-backed (in-house) | Avoid extra infra | Add Redis if scale demands |
 | Frontend | Next.js / React (separate doc) | Team choice | n/a |
 | Encryption | cryptography.Fernet | Standard | KMS later |
