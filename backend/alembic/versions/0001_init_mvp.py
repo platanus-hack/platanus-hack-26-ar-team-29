@@ -5,6 +5,7 @@ Revises:
 Create Date: 2026-05-09
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -255,9 +256,7 @@ def upgrade() -> None:
             "kind IN ('text','tool_call','plan_proposal','plan_step_update','navigation')",
             name="chat_messages_kind_check",
         ),
-        sa.ForeignKeyConstraint(
-            ["session_id"], ["chat_sessions.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["session_id"], ["chat_sessions.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -298,9 +297,7 @@ def upgrade() -> None:
         ),
         sa.Column("origin_session_id", sa.UUID(), nullable=True),
         sa.Column("origin_message_id", sa.UUID(), nullable=True),
-        sa.Column(
-            "total_estimated_usd", sa.Numeric(precision=28, scale=10), nullable=True
-        ),
+        sa.Column("total_estimated_usd", sa.Numeric(precision=28, scale=10), nullable=True),
         sa.Column(
             "failure_policy",
             sa.String(),
@@ -336,12 +333,8 @@ def upgrade() -> None:
             "'partially_failed','rejected','expired')",
             name="trade_plans_state_check",
         ),
-        sa.ForeignKeyConstraint(
-            ["origin_message_id"], ["chat_messages.id"], ondelete="SET NULL"
-        ),
-        sa.ForeignKeyConstraint(
-            ["origin_session_id"], ["chat_sessions.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["origin_message_id"], ["chat_messages.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(["origin_session_id"], ["chat_sessions.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -380,9 +373,7 @@ def upgrade() -> None:
         ),
         sa.Column("provider_capability", sa.String(), nullable=True),
         sa.Column("connection_id", sa.UUID(), nullable=True),
-        sa.Column(
-            "estimated_usd", sa.Numeric(precision=28, scale=10), nullable=True
-        ),
+        sa.Column("estimated_usd", sa.Numeric(precision=28, scale=10), nullable=True),
         sa.Column(
             "state",
             sa.String(),
@@ -409,9 +400,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.CheckConstraint(
-            "category IN ('read','write')", name="trade_plan_steps_category_check"
-        ),
+        sa.CheckConstraint("category IN ('read','write')", name="trade_plan_steps_category_check"),
         sa.CheckConstraint(
             "state IN ('pending','executing','ok','failed','skipped')",
             name="trade_plan_steps_state_check",
@@ -419,14 +408,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["connection_id"], ["provider_connections.id"], ondelete="SET NULL"
         ),
-        sa.ForeignKeyConstraint(
-            ["plan_id"], ["trade_plans.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["plan_id"], ["trade_plans.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "plan_id", "ordinal", name="uq_trade_plan_steps_plan_ordinal"
-        ),
+        sa.UniqueConstraint("plan_id", "ordinal", name="uq_trade_plan_steps_plan_ordinal"),
     )
     op.create_index(
         "ix_trade_plan_steps_plan_state",

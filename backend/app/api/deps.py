@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.api.ws.manager import ConnectionManager
     from app.services.chat import ChatService
     from app.services.connections import ConnectionService
+    from app.services.onchain import OnchainService
     from app.services.plans import PlanService
     from app.services.portfolio import PortfolioService
 
@@ -78,3 +79,21 @@ def get_portfolio_service(
 
 def get_connection_manager(request: Request) -> ConnectionManager:
     return request.app.state.connection_manager
+
+
+def get_onchain_service(
+    session: AsyncSession = Depends(get_session),
+    request: Request = None,  # type: ignore[assignment]
+) -> OnchainService:
+    from app.services.connections import ConnectionService
+    from app.services.onchain import OnchainService
+
+    eth_provider = request.app.state.ethereum_provider
+    return OnchainService(
+        session=session,
+        connection_service=ConnectionService(
+            session=session,
+            wallbit_base_url=request.app.state.wallbit_base_url,
+        ),
+        eth_client=eth_provider.client,
+    )

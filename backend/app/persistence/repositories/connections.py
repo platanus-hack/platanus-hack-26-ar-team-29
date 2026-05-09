@@ -67,3 +67,39 @@ class ConnectionRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def create_ethereum_custodial(
+        self,
+        user_id: UUID,
+        label: str | None,
+        credentials_encrypted: bytes,
+        capabilities: list[str],
+        metadata: dict[str, Any],
+    ) -> ProviderConnection:
+        conn = ProviderConnection(
+            user_id=user_id,
+            connection_type="ethereum_custodial",
+            label=label,
+            auth_kind="private_key",
+            credentials_encrypted=credentials_encrypted,
+            capabilities=capabilities,
+            status="healthy",
+            connection_metadata=metadata,
+        )
+        self.session.add(conn)
+        await self.session.flush()
+        await self.session.refresh(conn)
+        return conn
+
+    async def get_active_ethereum_custodial(
+        self, connection_id: UUID, user_id: UUID
+    ) -> ProviderConnection | None:
+        stmt = (
+            select(ProviderConnection)
+            .where(ProviderConnection.id == connection_id)
+            .where(ProviderConnection.user_id == user_id)
+            .where(ProviderConnection.connection_type == "ethereum_custodial")
+            .where(ProviderConnection.disconnected_at.is_(None))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()

@@ -27,11 +27,11 @@ class ProviderConnection(Base):
     __tablename__ = "provider_connections"
     __table_args__ = (
         CheckConstraint(
-            "connection_type IN ('wallbit','ethereum')",
+            "connection_type IN ('wallbit','ethereum','ethereum_custodial')",
             name="provider_connections_type_check",
         ),
         CheckConstraint(
-            "auth_kind IN ('api_key','wallet_signature','oauth')",
+            "auth_kind IN ('api_key','wallet_signature','oauth','private_key')",
             name="provider_connections_auth_kind_check",
         ),
         CheckConstraint(

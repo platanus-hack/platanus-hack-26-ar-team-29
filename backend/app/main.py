@@ -32,13 +32,16 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
     from app.agents.tool_dispatcher import ToolDispatcher
     from app.ai.anthropic import AnthropicClient
     from app.api.ws.manager import ConnectionManager
+    from app.providers.ethereum.capabilities import EthereumCustodialProvider
     from app.providers.registry import ProviderRegistry
     from app.providers.wallbit.capabilities import WallbitProvider
 
     connection_manager = ConnectionManager()
     provider_registry = ProviderRegistry()
     wallbit_provider = WallbitProvider(base_url=settings.wallbit_base_url)
+    ethereum_provider = EthereumCustodialProvider(rpc_urls=settings.ethereum_rpc_urls)
     provider_registry.register(wallbit_provider)
+    provider_registry.register(ethereum_provider)
 
     anthropic_client = AnthropicClient(
         api_key=settings.anthropic_api_key,
@@ -66,6 +69,7 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
     app.state.connection_manager = connection_manager
     app.state.provider_registry = provider_registry
     app.state.wallbit_provider = wallbit_provider
+    app.state.ethereum_provider = ethereum_provider
     app.state.anthropic_client = anthropic_client
     app.state.dispatcher = dispatcher
     app.state.chat_agent = chat_agent

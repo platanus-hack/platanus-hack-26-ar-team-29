@@ -237,3 +237,124 @@ curl -X POST "http://localhost:8000/api/v1/plans/$PID/approve"
     `app/providers/wallbit/adapter.py` if the row keys don't line up.
   - Optional: swap to streaming Anthropic if `tool_use` partial-JSON parsing is
     desired; non-streaming is the safer default per the plan.
+
+---
+
+## 2026-05-09 — Phase 1: custodial Ethereum endpoints
+
+### What shipped
+
+Six new REST endpoints landing the wallet-management + on-chain-transfer + private-key-export surface from `02-3` §5.13.1, §5.13.2, §5.13.5. Spec compliance follows the locked decisions in §14 rows 28–31 (testnets only, manual gas funding, custodial encryption, export = `chat_excluded`).
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/api/v1/connections/ethereum-custodial/import` | Accepts hex (with or without `0x`) **or** 12/24-word BIP-39 mnemonic. Shape detection in `_normalize_private_key_input`. |
+| `POST` | `/api/v1/connections/ethereum-custodial/create` | Returns mnemonic + address **once**; only the encrypted private key is persisted. |
+| `GET` | `/api/v1/connections/{id}/onchain/gas` | Three-tier (slow/standard/fast) suggestion with multipliers `0.85 / 1.0 / 1.25`. |
+| `POST` | `/api/v1/connections/{id}/onchain/simulate` | `eth_call` + `estimate_gas` dry-run; raw revert text never leaks to the client. |
+| `POST` | `/api/v1/connections/{id}/onchain/transfer` | ETH and ERC-20 (USDC where supported). Response shape per artifact: `tx_hash`, `status:"pending"`, `block_explorer_url`, `gas_estimate_gwei`, `fee_estimate_eth`. |
+| `POST` | `/api/v1/connections/{id}/export-private-key` | `Cache-Control: no-store, private`; non-custodial connections return `400 NOT_EXPORTABLE`. **Not** registered as a Claude tool. |
+
+### Files Changed
+
+| File | Purpose |
+| --- | --- |
+| `backend/app/config.py` | Replaced single `ethereum_rpc_url` with five per-network env vars (Sepolia, Holesky, Polygon Amoy, Arb Sepolia, Base Sepolia). Exposes `ethereum_rpc_urls` dict. |
+| `backend/.env.example` | Added the five `ETHEREUM_RPC_URL_*` entries. |
+| `backend/app/common/errors.py` | New codes `NETWORK_NOT_ALLOWED`, `NOT_EXPORTABLE`, `INVALID_ADDRESS`, `ASSET_NOT_SUPPORTED`. |
+| `backend/app/persistence/models/connections.py` | CHECK constraints extended: `connection_type` + `'ethereum_custodial'`, `auth_kind` + `'private_key'`. |
+| `backend/alembic/versions/0002_ethereum_custodial_constraints.py` | Migration for the constraint widen. Hand-written (autogenerate would not pick up CHECK-constraint string changes). **Not applied** — local DB unreachable in this pass. |
+| `backend/app/persistence/repositories/connections.py` | Added `create_ethereum_custodial`, `get_active_ethereum_custodial`. |
+| `backend/app/providers/ethereum/__init__.py` | Package init (new). |
+| `backend/app/providers/ethereum/auth.py` | `EthereumCustodialCredentials` dataclass with `to_blob()` / `from_blob()` (mirrors `WallbitCredentials`). |
+| `backend/app/providers/ethereum/networks.py` | Network registry: `chain_id`, explorer URL template, ERC-20 contract map. Includes `MAINNET_NETWORK_SLUGS` for the rejection allow-list. |
+| `backend/app/providers/ethereum/abi.py` | Minimal ERC-20 ABI. |
+| `backend/app/providers/ethereum/client.py` | `EthereumClient` — sync web3.py wrapped via `asyncio.to_thread`. ETH + ERC-20 reads, gas, simulate, send, receipt. |
+| `backend/app/providers/ethereum/capabilities.py` | `EthereumCustodialProvider(Provider)` with Phase 1 capabilities (`read_balance`, `read_transactions`, `send_onchain`). |
+| `backend/app/providers/ethereum/adapter.py` | Placeholder for Phase 2. |
+| `backend/app/services/connections.py` | New methods: `import_ethereum_custodial`, `create_ethereum_custodial`, `export_private_key`, `get_active_ethereum_custodial`. Calls `Account.enable_unaudited_hdwallet_features()` once at module load. |
+| `backend/app/services/onchain.py` | New `OnchainService` — gas, simulate, transfer. Insufficient-balance reverts surface as `400 INSUFFICIENT_FUNDS` (not raw text). |
+| `backend/app/api/rest/connections.py` | Added the three connection-management routes + the export endpoint. |
+| `backend/app/api/rest/onchain.py` | New file with `/connections/{id}/onchain/{gas,simulate,transfer}`. |
+| `backend/app/api/__init__.py` | Mounted the onchain router under `/connections`. |
+| `backend/app/api/deps.py` | New `get_onchain_service` factory. |
+| `backend/app/main.py` | Registers `EthereumCustodialProvider` in the lifespan, exposes it on `app.state.ethereum_provider`. |
+| `backend/tests/test_ethereum_credentials.py` | 8 pure-unit tests: round-trip encrypt/decrypt, hex/mnemonic shape detection, canonical mnemonic vector, malformed-input rejection. |
+| `backend/tests/test_connections_ethereum_custodial.py` | 7 REST-shape tests gated on a reachable Postgres + `FERNET_KEY`. |
+| `backend/docs/README.md` | Index entries for the two new docs. |
+| `backend/docs/ethereum_custodial.md` | Backend-side endpoint index + file map + audit-log notes. |
+| `backend/docs/testing.md` | What runs vs. what skips; manual-test recipe for live testnet flows. |
+
+### Commands Run
+
+| Command | Result |
+| --- | --- |
+| `uv sync` | OK (no new deps; `web3` and `cryptography` were already in `pyproject.toml`). |
+| `uv run alembic revision -m "ethereum custodial constraints"` | Generated stub; renamed to `0002_ethereum_custodial_constraints.py` and filled the up/down migration by hand. |
+| `uv run ruff check . --fix` then `uv run ruff format .` | Clean (75 files unchanged after format). |
+| `uv run mypy app` | Success: no issues found in 64 source files. Six narrow `# type: ignore[arg-type]` comments added in `client.py` for web3.py's overly-strict TxParams typing — limited to the call sites. |
+| `uv run pytest tests/test_ethereum_credentials.py -q` | 8 passed. |
+| `uv run pytest tests/test_connections_ethereum_custodial.py -q` | 7 skipped (no DB / no Fernet key in this environment). Will execute once the user runs them with a configured `.env`. |
+| `uv run alembic upgrade head` | **NOT run** — no Postgres reachable on the dev machine for this pass. The migration file is staged for the user to apply. |
+
+### Tests And Checks
+
+| Check | Result |
+| --- | --- |
+| `uv run ruff check .` | All checks passed. |
+| `uv run ruff format --check .` | 75 files already formatted. |
+| `uv run mypy app` | Success: no issues found in 64 source files. |
+| `uv run pytest tests/test_ethereum_credentials.py -q` | 8 passed. |
+| `uv run pytest -q` (full suite) | Pre-existing 4 errors are unchanged from baseline (chat / plan / ws smoke require Postgres + `FERNET_KEY`, neither of which is set up on this machine). New custodial Ethereum tests skip gracefully under the same condition. |
+
+### Environment Variables (new / changed)
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `ETHEREUM_RPC_URL_SEPOLIA` | RPC endpoint for Sepolia | `https://ethereum-sepolia-rpc.publicnode.com` |
+| `ETHEREUM_RPC_URL_HOLESKY` | RPC endpoint for Holesky | `https://ethereum-holesky-rpc.publicnode.com` |
+| `ETHEREUM_RPC_URL_POLYGON_AMOY` | RPC endpoint for Polygon Amoy | `https://polygon-amoy-bor-rpc.publicnode.com` |
+| `ETHEREUM_RPC_URL_ARBITRUM_SEPOLIA` | RPC endpoint for Arbitrum Sepolia | `https://arbitrum-sepolia-rpc.publicnode.com` |
+| `ETHEREUM_RPC_URL_BASE_SEPOLIA` | RPC endpoint for Base Sepolia | `https://base-sepolia-rpc.publicnode.com` |
+
+The previous single `ETHEREUM_RPC_URL` is **removed**. `Settings.extra="ignore"` means leaving it in `.env` won't break anything but it's no longer read.
+
+### Decisions And Shortcuts
+
+- **Custodial encryption pattern.** Mirrors `WallbitCredentials` exactly: a `@dataclass(slots=True)` with `to_blob()` / `from_blob()` going through `app.persistence.crypto`. Address is **not** stored in the encrypted blob; it lives in `connection_metadata` (JSONB column) for fast list-without-decrypt reads.
+- **Async wrapping of web3.py.** `web3>=7` ships an `AsyncWeb3` but its providers and contract API are still maturing; for hackathon-grade reliability we use the sync `Web3` and wrap each call in `asyncio.to_thread`. Cached one `Web3` per network so HTTP keep-alive sticks.
+- **Gas tier multipliers** (`0.85` / `1.0` / `1.25`) are deliberately simple — the artifact doesn't pin them and testnets don't have the volatility that justifies a richer model. Easy to swap for an EIP-1559 fee-history call later.
+- **ERC-20 simulate path** hand-encodes the `transfer(address,uint256)` call (selector `0xa9059cbb`) instead of pulling another helper, avoiding a `build_transaction` that needs a nonce just for a dry-run.
+- **Shape-detection precedence.** Hex-key regex runs first because a 64-char hex string with valid characters is unambiguous; mnemonic detection accepts 12 / 15 / 18 / 21 / 24 word counts (BIP-39's full set).
+- **`Account.enable_unaudited_hdwallet_features()`** called once at the import of `app.services.connections`. Idempotent in eth-account; documented as the official opt-in for mnemonic support.
+- **Insufficient-balance handling** uses a substring heuristic (`"insufficient"` or `"exceeds balance"` in the lowered raw error) to map to a structured `400 INSUFFICIENT_FUNDS`. Other errors return `502 PROVIDER_UNAVAILABLE` with the Spanish-first user-facing message; raw revert strings are never surfaced.
+- **mypy ignores** are limited to six call sites in `client.py` where web3.py's `TxParams` requires `TypedDict` literal kwargs that conflict with our generic `dict[str, Any]` flow. All other code is strict-clean.
+- **Connection list shape.** `GET /api/v1/connections` now surfaces `address`, `network`, `chain_id`, and `primary_asset_hint` for `ethereum_custodial` rows by reading `connection_metadata`. Other connection types still return the lean shape (no behavior change for Wallbit).
+
+### What's deferred (NOT in this pass)
+
+- **DeFi (`§5.13.3`, `§5.13.4`)** — Aave V3 + Morpho Blue. The provider package is structured so adding Phase 2 means a new `defi/` subpackage (markets, positions, supply/withdraw, capability extensions). No refactor of Phase 1 needed.
+- **Re-auth / 2FA on `/export-private-key`** (`§16 q17`).
+- **Rate-limit on `/export-private-key`** (5/hour, `§5.13.5`). `TODO(phase-1.1)` marker in `app/api/rest/connections.py`.
+- **WebSocket transfer status** on `connection.<id>` (`§5.13.2`). Topic doesn't exist yet; `TODO(phase-1.1)` marker in `app/services/onchain.py`.
+- **Idempotency middleware** (deferred globally per `§16 q3`).
+- **Audit-log entries** — no `audit_log_entries` table in MVP yet; when it lands, the export endpoint must redact `private_key`.
+
+### Known Issues / Gaps
+
+- **Holesky has no USDC.** Calling `/onchain/transfer` with `asset: "USDC"` on Holesky returns `400 ASSET_NOT_SUPPORTED`. Documented in `backend/docs/ethereum_custodial.md`.
+- **USDT not shipped.** Testnet USDT is inconsistent across chains; we explicitly don't include any USDT contracts. Returns `400 ASSET_NOT_SUPPORTED`.
+- **Tests for connections REST shape skip** without a reachable Postgres + `FERNET_KEY`. Bring up the existing docker-compose Postgres + generate a Fernet key per `backend/README.md`, then `uv run alembic upgrade head` to apply both `0001_init_mvp` and `0002_ethereum_custodial_constraints` before re-running the test file.
+- **`docker_ps` was unreachable** in this pass; the migration was generated and inspected but **not applied**. Reviewer should run `uv run alembic upgrade head` against a fresh DB and confirm the constraint update succeeds without rewriting existing rows.
+
+### Conflicts found vs. the artifact
+
+- **None substantive.** One minor wording note: the artifact's import response example (`§5.13.1`) shows the connection `id` as `"conn_..."` but the rest of the surface uses unprefixed UUIDv4 strings (per `02-3` §3.1). I returned a UUID v4 string (`str(conn.id)`) to match the existing Wallbit pattern. Flag for the spec author if a `conn_` prefix is actually wanted.
+- **Capabilities list** in the §5.13.1 example includes `supply_defi` / `withdraw_defi`. Phase 1 advertises `["read_balance", "read_transactions", "send_onchain"]` only; the DeFi capabilities will be added when §5.13.3 ships. Documented in `backend/docs/ethereum_custodial.md`.
+
+### Reviewer next steps
+
+1. `uv run alembic upgrade head` on a reachable Postgres so `0002_ethereum_custodial_constraints` actually applies.
+2. With `FERNET_KEY` set and Postgres running, `uv run pytest -q` should now show 7 additional passes from `tests/test_connections_ethereum_custodial.py` (15 new + the existing suite). The 4 pre-existing chat/plan/ws errors should also resolve — they're DB-related, not custodial-related.
+3. Run the manual recipe in `backend/docs/testing.md` against Sepolia using a faucet-funded wallet to validate gas / simulate / transfer end-to-end.
+4. Spot-check the structlog output during a transfer to confirm no `private_key` or `mnemonic` appears in any log line.
