@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:3000"
 
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/pampa"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/openfi"
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-haiku-4-5"

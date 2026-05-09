@@ -29,8 +29,8 @@ export function ChatThread({
         {messages.length === 0 && !isTyping && (
           <div className="mx-auto flex min-h-full max-w-sm flex-col items-center justify-center px-4 py-10 text-center">
             <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
-              <div className="text-xl font-semibold">Hablá con Pampa</div>
-              <p className="mt-2 text-base leading-7 text-zinc-500">
+              <h2>Hablá con OpenFi</h2>
+              <p className="mt-2">
                 Probá con: “comprá 7 usd de apple” para ver una propuesta de plan.
               </p>
             </div>

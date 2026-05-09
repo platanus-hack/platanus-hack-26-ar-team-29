@@ -38,7 +38,7 @@ A Spanish-first (Argentine register) conversational AI agent that lives on top o
 - **Ingest** and **classify** financial documents (receipts, statements, exported CSVs) plus provider-pulled transactions.
 - **Maintain** a persistent **user financial context** (profile, goals, rules, recurring income/spend) that grounds every agent turn — this is the main innovation.
 
-**Working name:** TBD. The research brief recommends "Pampa" but the team has not locked it. This document refers to "the agent" / "the app" / "the backend" until the name is decided.
+**Working name:** TBD. The research brief recommends "OpenFi" but the team has not locked it. This document refers to "the agent" / "the app" / "the backend" until the name is decided.
 
 **Track:** Agentic Money (Platanus Hack 26 BA).
 
@@ -677,7 +677,7 @@ The following are deliberately deferred to subsequent design passes:
 
 These are not blockers for backend architecture, but must be resolved before the build phase:
 
-- **Project name** — TBD; research brief recommends "Pampa."
+- **Project name** — TBD; research brief recommends "OpenFi."
 - **Wallbit-as-track-sponsor confirmation** (research brief §7 item 1).
 - **Wallbit demo-account custodian + KYC completion** (§7 item 3).
 - **Claude model for production demo** — Sonnet vs Opus (§7 item 4).

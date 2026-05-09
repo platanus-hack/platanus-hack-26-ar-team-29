@@ -20,7 +20,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0002_ethereum_custodial_constraints"
+revision: str = "0002_eth_custodial_constraints"
 down_revision: str | None = "0001_init_mvp"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

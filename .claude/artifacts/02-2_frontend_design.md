@@ -58,7 +58,7 @@ The frontend is **one chat application with several attached lenses**. The chat 
 
 Three relationships hold this together:
 
-- **Chat ↔ tab** — every tab has an "Ask Pampa about this" affordance that deep-links into chat with a seeded prompt and a context payload (e.g. "show me the cost basis of my SPY position" carries `{symbol: "SPY", provider: "wallbit"}`). Conversely, the agent can navigate the user to a tab as part of a turn ("abrí la pestaña de Posiciones para que veas tu CEDEAR").
+- **Chat ↔ tab** — every tab has an "Ask OpenFi about this" affordance that deep-links into chat with a seeded prompt and a context payload (e.g. "show me the cost basis of my SPY position" carries `{symbol: "SPY", provider: "wallbit"}`). Conversely, the agent can navigate the user to a tab as part of a turn ("abrí la pestaña de Posiciones para que veas tu CEDEAR").
 - **Tab ↔ tab** — tabs cross-link by entity. Clicking a transaction in Activity opens the originating Document (if ingested) or Plan (if agent-issued). Clicking a bot tick in Tradebots opens the resulting Plan in Pending Plans or Audit. Clicking a balance row in Balances opens the underlying provider in Connections.
 - **Server → client** — a single WebSocket per session multiplexes per-topic frames: `chat.<session_id>`, `plan.<plan_id>`, `bot.<bot_id>`, `balance.<connection_id>`, `ingest.<doc_id>`, `notification.user`. Tabs subscribe on mount, unsubscribe on unmount.
 
@@ -108,7 +108,7 @@ graph TB
     end
 
     subgraph SHARED["Shared chrome"]
-        AskBtn["'Ask Pampa about this'<br/>floating affordance,<br/>visible on every tab"]
+        AskBtn["'Ask OpenFi about this'<br/>floating affordance,<br/>visible on every tab"]
         Toast["Toast layer<br/>WS-driven<br/>plan / balance / ingest events"]
         Badge["Pending-plans badge<br/>on top nav"]
     end
@@ -185,7 +185,7 @@ Each surface section follows the same shape:
 - Open / rename / pin / archive a session (direct CRUD; not mediated because they're metadata not money).
 
 **Real-time channels.**
-- `chat.<session_id>` — token streaming, message frames, plan-proposal frames, plan-step-update frames, tool-call frames (visible as collapsible "Pampa consultó: read_balances" rows).
+- `chat.<session_id>` — token streaming, message frames, plan-proposal frames, plan-step-update frames, tool-call frames (visible as collapsible "OpenFi consultó: read_balances" rows).
 - `plan.<plan_id>` for any plan emitted in this session — keeps streaming after the chat tab is closed so a partial-failure resume from another tab still surfaces here.
 
 **Cross-links.**
@@ -241,7 +241,7 @@ Each surface section follows the same shape:
 
 **Cross-links.**
 - Per-row provider chip → Connections detail for that provider.
-- Per-row "Ask Pampa" → chat seeded with currency + provider context.
+- Per-row "Ask OpenFi" → chat seeded with currency + provider context.
 
 **Provider variability.** Renders one section per connected provider, each with its own internal-account breakdown if applicable. With zero providers, an onboarding empty state.
 
@@ -264,7 +264,7 @@ Each surface section follows the same shape:
 
 **Cross-links.**
 - Per-row asset → asset detail panel (renders `/assets/{symbol}` data when the provider supports it; otherwise minimal). The asset detail panel is *not a top-level tab* — it's a slide-over from Holdings and Activity.
-- Per-row "Ask Pampa about this position" → chat with seeded analysis prompt.
+- Per-row "Ask OpenFi about this position" → chat with seeded analysis prompt.
 
 **Provider variability.** Renders the union of position types across providers. A pure-Ethereum user sees ERC-20 positions and no stocks; a pure-Wallbit user sees stocks + robo-advisor and no on-chain. Robo-advisor as a position class only appears for providers that expose `DepositRoboadvisorCapability`.
 
@@ -289,7 +289,7 @@ Each surface section follows the same shape:
 
 **Cross-links.**
 - Per-row source chip → Documents (if ingested) or Plan (if agent-issued).
-- Per-row "Ask Pampa about this" → chat with seeded transaction context.
+- Per-row "Ask OpenFi about this" → chat with seeded transaction context.
 
 **Provider variability.** Filter chips include each connected provider; transactions across all providers merge into one feed by default.
 
@@ -369,7 +369,7 @@ Each surface section follows the same shape:
 
 **Cross-links.**
 - Per-tick row → the originating plan in Pending Plans / Audit / chat thread (bot escalations show as agent messages in chat).
-- Per-bot "Ask Pampa about this bot" → chat seeded with bot config + recent tick history for the agent to summarize.
+- Per-bot "Ask OpenFi about this bot" → chat seeded with bot config + recent tick history for the agent to summarize.
 
 **Provider variability.** Bots are configured against a `provider_capability`, not a hard-coded provider. A "DCA into ETFs" bot only appears as creatable when at least one connected provider supports `PlaceTradeCapability`. The list view filters bots by which provider they target.
 
@@ -485,7 +485,7 @@ The principle "everything doable in the app is doable via chat" is preserved by 
 
 1. **No surface introduces a write that has no tool-registry equivalent.** Every write button on every tab maps to a service method, and per `02_execution_plan.md` §6.2 every public service method has a tool registration or `@chat_excluded` annotation. The frontend's lint check is: every `onClick` that calls a write endpoint must have a comment pointing to the corresponding chat tool, or be an explicitly-marked chrome action (rename a chat session, pause a sync — pure UX-state writes).
 
-2. **Every "Ask Pampa about this" deep-link carries entity context.** The chat-as-universal-surface is only useful if "asking Pampa" from a tab gives the agent enough context to act without re-asking the user. Each tab defines the context payload it seeds (`{symbol, provider, period, ...}`); the chat surface accepts a `seed_prompt` + `seed_context` pair on session open and the agent's first turn includes that context in its system message.
+2. **Every "Ask OpenFi about this" deep-link carries entity context.** The chat-as-universal-surface is only useful if "asking OpenFi" from a tab gives the agent enough context to act without re-asking the user. Each tab defines the context payload it seeds (`{symbol, provider, period, ...}`); the chat surface accepts a `seed_prompt` + `seed_context` pair on session open and the agent's first turn includes that context in its system message.
 
 These two rules together mean: the API surface design pass needs to ensure that every write-capable REST endpoint has a paired tool definition, and every tab-to-chat deep-link has a documented context shape.
 

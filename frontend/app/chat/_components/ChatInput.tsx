@@ -34,7 +34,8 @@ export function ChatInput({
         />
         <button
           type="submit"
-          disabled={disabled}
+          disabled={disabled || false}
+          suppressHydrationWarning
           className="min-h-12 shrink-0 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:rounded-full sm:px-6 sm:text-base lg:min-h-12"
         >
           <span className="hidden min-[360px]:inline">Enviar</span>

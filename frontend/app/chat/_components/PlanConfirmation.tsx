@@ -18,7 +18,7 @@ export function PlanConfirmation({
 }) {
   return (
     <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-950 sm:p-4 lg:p-5">
-      <div className="text-base font-semibold">Confirmá el plan</div>
+      <h3>Confirmá el plan</h3>
       <PlanSummary plan={plan} />
       {isActionable(plan.state) ? (
         <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">

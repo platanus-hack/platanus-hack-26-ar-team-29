@@ -195,7 +195,7 @@ All write endpoints require scope `trade` and only the `X-API-Key` header. **No 
 
 ### 3.10 End-to-end read/write flow: fetching assets and executing a trade
 
-**Purpose:** definitive, step-by-step walkthrough of the agent loop a Pampa-style chat agent runs for a single "the user wants to invest some money" interaction. Every endpoint, request shape, response shape, and error code below is cited to the public Wallbit docs as fetched 2026-05-09. Anything not in those docs is labeled. The planner and coder lift this into the execution plan as-is.
+**Purpose:** definitive, step-by-step walkthrough of the agent loop a OpenFi-style chat agent runs for a single "the user wants to invest some money" interaction. Every endpoint, request shape, response shape, and error code below is cited to the public Wallbit docs as fetched 2026-05-09. Anything not in those docs is labeled. The planner and coder lift this into the execution plan as-is.
 
 #### Step 1 - Authenticate
 
@@ -440,7 +440,7 @@ Persist a row in Supabase `audit_log` with: tool name, request body, response bo
 
 **KYC pre-check.** No endpoint documented. ABSENCE CONFIRMED. Mitigation: the demo account completes KYC on Day 1, hour 1. The agent's defensive code path: catch 412, surface "necesitas completar el KYC de inversion antes de operar - te paso el link de Wallbit," and end the action gracefully.
 
-**Single-user model.** One key reads only one user's account ([quickstart](https://developer.wallbit.io/docs/quickstart)). The Pampa app stores keys per user in Supabase encrypted at rest; the agent's tool layer reads the current user's key from session, never from a global env var.
+**Single-user model.** One key reads only one user's account ([quickstart](https://developer.wallbit.io/docs/quickstart)). The OpenFi app stores keys per user in Supabase encrypted at rest; the agent's tool layer reads the current user's key from session, never from a global env var.
 
 #### LLM-agent translation (Anthropic tool-use shape)
 
@@ -700,16 +700,16 @@ This is what we are building.
 
 ### Name candidates (team picks one)
 
-1. **Pampa** - Argentine-resonant, short, brandable. "Tu Pampa financiera: vasto, calmo, todo a la vista." Domain `pampa.money` / `pampa.ai` likely available - **(unverified, team to check on Sunday morning).**
+1. **OpenFi** - Argentine-resonant, short, brandable. "Tu OpenFi financiera: vasto, calmo, todo a la vista." Domain `openfi.money` / `openfi.ai` likely available - **(unverified, team to check on Sunday morning).**
 2. **Plata** - "Plata" is colloquial Argentine for money. Direct, memorable. Risk: generic, harder to SEO.
 3. **Cuy** - The agent is "your cuy" (Andean reference: a small, alert, ever-watching companion). Memorable, weird, demo-friendly. Best for going viral on the public vote.
 
-**Recommendation:** **Pampa**. Calm, dignified, speaks Argentine without being a meme, easy to draw a logo for in 30 minutes (a horizon line + a sun).
+**Recommendation:** **OpenFi**. Calm, dignified, speaks Argentine without being a meme, easy to draw a logo for in 30 minutes (a horizon line + a sun).
 
 ### One-liners
 
-- **English:** "Pampa is the AI agent that runs your Wallbit account so you don't have to."
-- **Spanish (for `platanus-hack-project.json`):** "Pampa es el agente de IA que maneja tu cuenta Wallbit por vos: te avisa, te sugiere, y mueve la plata cuando se lo permitis."
+- **English:** "OpenFi is the AI agent that runs your Wallbit account so you don't have to."
+- **Spanish (for `platanus-hack-project.json`):** "OpenFi es el agente de IA que maneja tu cuenta Wallbit por vos: te avisa, te sugiere, y mueve la plata cuando se lo permitis."
 
 Keep the Spanish version casual, "vos"-form, Argentine. Avoid neutral Spanish.
 
@@ -724,7 +724,7 @@ Keep the Spanish version casual, "vos"-form, Argentine. Avoid neutral Spanish.
 - Hates logging into Wallbit. Forgets dividends. Doesn't know his runway. Doesn't know if his cash is "working."
 - Wants someone to **just handle it** - but with audit and consent, not blind autopilot.
 
-This persona is exactly Wallbit's existing user base ([wallbit.io/en](https://www.wallbit.io/en) pitches "remote workers, freelancers, developers, digital creators"). Pampa is a **wrapper that makes Wallbit accounts feel managed** without leaving Wallbit.
+This persona is exactly Wallbit's existing user base ([wallbit.io/en](https://www.wallbit.io/en) pitches "remote workers, freelancers, developers, digital creators"). OpenFi is a **wrapper that makes Wallbit accounts feel managed** without leaving Wallbit.
 
 ### Core wedge (what makes us 10x better than wallsync.cc or a generic dashboard)
 
@@ -732,18 +732,18 @@ This persona is exactly Wallbit's existing user base ([wallbit.io/en](https://ww
 2. **Action, not advice.** Every agent message ends with an actionable button (Approve / Modify / Skip). The agent calls Wallbit's `trade`-scoped endpoints when approved. This is the **Agentic Money** core.
 3. **Spanish-first, Argentine-context aware.** The agent knows what "el dolar blue," "MEP," "plazo fijo," and "USDT" mean in their specific cultural register. wallsync.cc does not.
 4. **Memory and rules.** The agent stores standing rules ("siempre dejame 500 USD liquido," "si entra mas de 3000, mande 30% al robo-advisor automaticamente, pero pregunta primero"). Stored in Supabase ([Supabase is a tour sponsor](https://hack.platan.us/)).
-5. **Voice mode (stretch).** Press-to-talk via ElevenLabs. "Pampa, cuanto tengo en dolares?" Voice answers in natural Argentine Spanish. **ElevenLabs is a tour sponsor** ([hack.platan.us](https://hack.platan.us/)) - free credit angle.
-6. **Audit trail.** Every action has a chat message + a row in Supabase. The user can scroll and see "Pampa moved 200 USD on Friday at 3pm because you approved it." Trust ceremony built in.
+5. **Voice mode (stretch).** Press-to-talk via ElevenLabs. "OpenFi, cuanto tengo en dolares?" Voice answers in natural Argentine Spanish. **ElevenLabs is a tour sponsor** ([hack.platan.us](https://hack.platan.us/)) - free credit angle.
+6. **Audit trail.** Every action has a chat message + a row in Supabase. The user can scroll and see "OpenFi moved 200 USD on Friday at 3pm because you approved it." Trust ceremony built in.
 
 ### Demo-day money shot (the 30-second moment that wins votes)
 
 **Set-up (10s):** "Tomas just got paid - 4,500 USD landed in his Wallbit checking." Show real Wallbit `/balance/checking` updating live (or trigger the demo by sending the team treasurer a small USD transfer right before walking on stage).
 
-**The shot (15s):** Pampa's chat window pops a notification: *"Hola Tomas, te entraron 4,500 USD. Segun tu regla, propongo: dejar 1,800 para gastos, mover 800 al robo-advisor, comprar 300 USD de SPY, y dejar 1,600 en stablecoin. Te aviso?"*
+**The shot (15s):** OpenFi's chat window pops a notification: *"Hola Tomas, te entraron 4,500 USD. Segun tu regla, propongo: dejar 1,800 para gastos, mover 800 al robo-advisor, comprar 300 USD de SPY, y dejar 1,600 en stablecoin. Te aviso?"*
 
 User taps **Aprobar**. Four animated chips light up in sequence, each calling a real Wallbit endpoint. Live API responses. The balance card on the side updates in real time.
 
-**The kicker (5s):** Tomas now does press-to-hold voice: *"Pampa, cuando es mi proximo dividendo?"* ElevenLabs voice answers in natural Argentine Spanish: *"Eh, el 15 de mayo cobras 12 dolares de Coca-Cola."*
+**The kicker (5s):** Tomas now does press-to-hold voice: *"OpenFi, cuando es mi proximo dividendo?"* ElevenLabs voice answers in natural Argentine Spanish: *"Eh, el 15 de mayo cobras 12 dolares de Coca-Cola."*
 
 That's the vote-winning clip. Record it. Tweet it. Done.
 
@@ -775,9 +775,9 @@ The MVP is *only* this flow:
 In rough priority order:
 
 1. **Voice mode** - press-to-talk, ElevenLabs TTS in Argentine Spanish, browser STT. Sponsor angle: ElevenLabs.
-2. **Proactive notifications** - a Supabase scheduled function polls `/transactions` every 60s; new transaction triggers a chat message from Pampa. Real "agentic" feel.
+2. **Proactive notifications** - a Supabase scheduled function polls `/transactions` every 60s; new transaction triggers a chat message from OpenFi. Real "agentic" feel.
 3. **Rule engine** - parse natural-language rules into structured triggers (Claude does this in one call) and persist them.
-4. **Card actions** - "Pampa, freezame la tarjeta" calls `/cards/{id}/status` with SUSPENDED.
+4. **Card actions** - "OpenFi, freezame la tarjeta" calls `/cards/{id}/status` with SUSPENDED.
 5. **Anomaly detection** - "este gasto de 800 USD no parece tuyo, queres que freeze la tarjeta?" - using transaction history.
 6. **Goal mode** - "quiero juntar 10k para un viaje en diciembre" - the agent splits paychecks toward the goal.
 
@@ -822,7 +822,7 @@ Resolve these in the first 60 minutes on-site:
 7. **Persistence:** Supabase. (Sponsor.) Use `auth.users` for user accounts, one table for `agent_rules`, one table for `audit_log`, one table (encrypted column) for `wallbit_keys`.
 8. **Voice mode commitment:** stretch, only if MVP is locked by 2026-05-09 23:59 ART (Saturday night).
 9. **What chains for crypto observation?** Wallbit's `/wallets` returns USDT/USDC/BTC/ETH addresses across networks. **Recommendation: don't try to query on-chain balances ourselves.** Just show the addresses Wallbit returns and let `/transactions` track flows. Stay inside Wallbit's data model.
-10. **Project name:** Pampa / Plata / Cuy. **Recommendation: Pampa.** Decide by 2026-05-09 19:00 ART so logo + Spanish copy can be finalized.
+10. **Project name:** OpenFi / Plata / Cuy. **Recommendation: OpenFi.** Decide by 2026-05-09 19:00 ART so logo + Spanish copy can be finalized.
 11. **`platanus-hack-project.json` Spanish copy:** lock the Spanish one-liner by 2026-05-09 19:00 ART. Suggested above.
 12. **Open-source license:** MIT (Platanus past requirement; carry-over). ([hack.platan.us/24](https://hack.platan.us/24))
 13. **Backup demo video:** committed by 2026-05-09 23:59 ART. No exceptions.

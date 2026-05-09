@@ -1,0 +1,41 @@
+INFO:     Started server process [131717]
+INFO:     Waiting for application startup.
+[2m2026-05-09T18:21:33.090705Z[0m [[32m[1minfo     [0m] [1mapp_startup                   [0m [36menv[0m=[35mdev[0m
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:40556 - "GET /api/v1/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50840 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50840 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50840 - "OPTIONS /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50840 - "POST /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50848 - "POST /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50850 - "WebSocket /api/v1/ws?session_id=13fe1e61-9d40-4d6c-b92e-1e15c53f2788" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:50840 - "GET /api/v1/chat/sessions/13fe1e61-9d40-4d6c-b92e-1e15c53f2788/messages HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:33178 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33178 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33178 - "GET /api/v1/chat/sessions/13fe1e61-9d40-4d6c-b92e-1e15c53f2788/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33190 - "WebSocket /api/v1/ws?session_id=13fe1e61-9d40-4d6c-b92e-1e15c53f2788" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52892 - "WebSocket /api/v1/ws?session_id=13fe1e61-9d40-4d6c-b92e-1e15c53f2788" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:45714 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45714 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45714 - "GET /api/v1/chat/sessions/13fe1e61-9d40-4d6c-b92e-1e15c53f2788/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45718 - "WebSocket /api/v1/ws?session_id=13fe1e61-9d40-4d6c-b92e-1e15c53f2788" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:34494 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34494 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34494 - "GET /api/v1/chat/sessions/13fe1e61-9d40-4d6c-b92e-1e15c53f2788/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34496 - "WebSocket /api/v1/ws?session_id=13fe1e61-9d40-4d6c-b92e-1e15c53f2788" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55458 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55458 - "GET /api/v1/chat/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55458 - "GET /api/v1/chat/sessions/13fe1e61-9d40-4d6c-b92e-1e15c53f2788/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55466 - "WebSocket /api/v1/ws?session_id=13fe1e61-9d40-4d6c-b92e-1e15c53f2788" [accepted]
+INFO:     connection open

@@ -19,7 +19,7 @@ import pytest
 def _parse_db_host_port() -> tuple[str, int]:
     url = os.environ.get(
         "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/pampa",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/openfi",
     )
     parsed = urlparse(url.replace("postgresql+asyncpg", "postgresql"))
     return parsed.hostname or "localhost", parsed.port or 5432

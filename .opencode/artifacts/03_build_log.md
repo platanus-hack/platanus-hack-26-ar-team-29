@@ -23,6 +23,8 @@ Status: maintained by Coder.
 - Removed debug UI strings (backend URL, WS status badge, and footer version text) from the visible layout.
 - Expanded main chat column to use full remaining width (no centered max-width) and increased font sizes for a more desktop-oriented chat experience.
 - Refined chat UX: larger bubbles, improved spacing, larger input, and richer empty-state text.
+- Added static tabs (Inversiones, Balances, Actividad, Conexiones) with mock data and layouts; sidebar now navigates to real routes.
+- Expanded main chat area to full remaining width and increased typography sizes for a more desktop-native chat experience.
 - Replaced mock trade card with real plan summary/confirmation components.
 - Updated frontend context documentation with backend integration details and env vars.
 
@@ -50,6 +52,16 @@ Status: maintained by Coder.
 | `frontend/app/chat/_components/ChatInput.tsx` | Larger input and send button for desktop UX. |
 | `frontend/app/chat/_components/PlanConfirmation.tsx` | Increased typography for plan confirmation. |
 | `frontend/app/chat/_components/PlanSummary.tsx` | Larger total amount typography. |
+| `frontend/app/_components/AppShell.tsx` | Shared layout with sidebar navigation and account card. |
+| `frontend/app/_components/PageHeader.tsx` | Shared header for tabs. |
+| `frontend/app/investments/page.tsx` | Mock Investments dashboard and positions list. |
+| `frontend/app/balances/page.tsx` | Mock Balances cards. |
+| `frontend/app/activity/page.tsx` | Mock Activity feed. |
+| `frontend/app/connections/page.tsx` | Mock Connections cards. |
+| `frontend/app/page.tsx` | Chat now fills remaining width beside sidebar; larger header text. |
+| `frontend/app/chat/_components/ChatThread.tsx` | Larger spacing and empty-state typography. |
+| `frontend/app/chat/_components/ChatMessage.tsx` | Larger bubble typography and max-widths. |
+| `frontend/app/chat/_components/PlanConfirmation.tsx` | Header uses normalized h3 styles. |
 | `frontend/app/chat/api.ts` | Removed obsolete mock chat API. |
 | `frontend/app/chat/_components/TradeConfirmation.tsx` | Removed obsolete mock trade card. |
 | `frontend/app/chat/_components/TradeSummary.tsx` | Removed obsolete mock trade summary. |
@@ -70,11 +82,11 @@ Status: maintained by Coder.
 | `npm run lint` | Failed then fixed | First run found `react-hooks/set-state-in-effect` in `app/chat/page.tsx`; removed synchronous state set from effect. |
 | `npm run lint` | OK | ESLint passed after fix. |
 | `npm run build` | OK | Next production build and TypeScript passed; routes `/` and `/chat` generated. |
-| `npm run dev -- --port 3000` + HTTP fetch `/chat` | OK | Returned 200 and rendered `Pampa Chat`. |
+| `npm run dev -- --port 3000` + HTTP fetch `/chat` | OK | Returned 200 and rendered `OpenFi Chat`. |
 | Fetch `http://localhost:8000/api/v1/health` | Failed | Backend not running in this environment. |
 | `python3 -m venv .venv && .venv/bin/pip install -e .` | Failed | Backend package lacks explicit package discovery for flat layout (`app`, `alembic`). |
 | `.venv/bin/pip install ...` | OK | Installed backend runtime dependencies manually from `pyproject.toml`. |
-| `docker run -d --name pampa-pg ... postgres:16` | OK | Started local Postgres on `localhost:5432`, DB `pampa`. |
+| `docker run -d --name openfi-pg ... postgres:16` | OK | Started local Postgres on `localhost:5432`, DB `openfi`. |
 | `PYTHONPATH=. .venv/bin/alembic upgrade head` | OK | Applied migration `0001_init_mvp`. |
 | `PYTHONPATH=. .venv/bin/uvicorn app.main:app --port 8000` | OK | Backend running in background; health returns 200. |
 | `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev -- --port 3000` | OK | Frontend running in background; `/chat` returns 200. |
@@ -82,13 +94,13 @@ Status: maintained by Coder.
 | Final HTTP status check | OK | Backend `/api/v1/health` 200; frontend `/chat` 200. |
 | `npm run lint` after root-route move | OK | ESLint passed. |
 | `npm run build` after root-route move | OK | Build passed; route list now only `/` and `/_not-found`. |
-| HTTP smoke `/` and `/chat` | OK | `/` returns 200 and contains `Pampa Chat`; `/chat` returns 404. |
+| HTTP smoke `/` and `/chat` | OK | `/` returns 200 and contains `OpenFi Chat`; `/chat` returns 404. |
 | `npm run lint` after responsive changes | OK | ESLint passed. |
 | `npm run build` after responsive changes | OK | Build passed. |
-| HTTP smoke `/` after responsive changes | OK | `/` returns 200 and contains `Pampa Chat`. |
+| HTTP smoke `/` after responsive changes | OK | `/` returns 200 and contains `OpenFi Chat`. |
 | `npm run lint` after desktop layout changes | OK | ESLint passed. |
 | `npm run build` after desktop layout changes | OK | Build passed; routes `/` and `/_not-found` only. |
-| HTTP smoke `/` after desktop layout changes | OK | `/` returns 200 and contains `Pampa Chat`. |
+| HTTP smoke `/` after desktop layout changes | OK | `/` returns 200 and contains `OpenFi Chat`. |
 | `npm run lint` after sidebar layout | OK | ESLint passed. |
 | `npm run build` after sidebar layout | OK | Build passed. |
 | HTTP smoke `/` after sidebar layout | OK | `/` returns 200; markup contains sidebar tabs (e.g., "Inversiones"). |
@@ -99,6 +111,11 @@ Status: maintained by Coder.
 | `npm run build` after removing debug strings | OK | Build passed; routes unchanged. |
 | `npm run lint` after UX sizing changes | OK | ESLint passed. |
 | `npm run build` after UX sizing changes | OK | Build passed. |
+| `npm run lint` after adding tabs | OK | ESLint passed. |
+| `npm run build` after adding tabs | OK | Build passed; routes added. |
+| HTTP smoke tabs | OK | `/investments`, `/balances`, `/activity`, `/connections` return 200. |
+| `npm run lint` after full-width chat | OK | ESLint passed. |
+| `npm run build` after full-width chat | OK | Build passed; routes unchanged. |
 
 ## Tests And Checks
 
@@ -124,7 +141,7 @@ Do not paste secret values here. Document names only.
 - Backend MVP exposes direct arrays/objects, not the ideal `{data: ...}` envelopes from the canonical API artifact.
 - Backend MVP WebSocket uses simple `type` frames and one session per socket; no `kind/topic/seq`, no replay, no multiplexing.
 - Frontend intentionally targets the implemented backend documented in `backend/README.md` and `backend/docs/deviations.md`.
-- Current local processes: Postgres Docker container `pampa-pg`, backend on `http://localhost:8000`, frontend on `http://localhost:3000`.
+- Current local processes: Postgres Docker container `openfi-pg`, backend on `http://localhost:8000`, frontend on `http://localhost:3000`.
 
 ## Decisions And Shortcuts
 

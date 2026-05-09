@@ -1,6 +1,6 @@
-# Pampa Backend
+# OpenFi Backend
 
-Backend for **Pampa** — a Spanish-first conversational AI agent that lives on top of an account-agnostic personal-finance backend. Built for **Platanus Hack 26 (Buenos Aires)** in the *Agentic Money* track.
+Backend for **OpenFi** — a Spanish-first conversational AI agent that lives on top of an account-agnostic personal-finance backend. Built for **Platanus Hack 26 (Buenos Aires)** in the *Agentic Money* track.
 
 The user chats with one agent that can read balances and history across all connected financial accounts (Wallbit today, Ethereum and others later), execute multi-step money-moving plans with one approval gate per plan, and stream every step back over WebSocket. Hexagonal architecture (`api → services → agents/providers/persistence`); see [`docs/architecture.md`](./docs/architecture.md) and [`../.claude/artifacts/`](../.claude/artifacts/) for the locked design.
 
@@ -38,9 +38,9 @@ Paste the result into `FERNET_KEY` in `.env`. Then fill in `ANTHROPIC_API_KEY` a
 Bring up Postgres (one-shot Docker option):
 
 ```bash
-docker run -d --name pampa-pg -p 5432:5432 \
+docker run -d --name openfi-pg -p 5432:5432 \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=pampa \
+  -e POSTGRES_DB=openfi \
   postgres:16
 ```
 
@@ -163,8 +163,8 @@ All commands run from `backend/`.
 ## Docker
 
 ```bash
-docker build -t pampa-backend .
-docker run --env-file .env -p 8000:8000 pampa-backend
+docker build -t openfi-backend .
+docker run --env-file .env -p 8000:8000 openfi-backend
 ```
 
 The image is app-only; bring your own Postgres reachable via `DATABASE_URL`.
