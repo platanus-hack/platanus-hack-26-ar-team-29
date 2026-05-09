@@ -10,6 +10,7 @@ _DEFAULT_RPC_URLS: dict[str, str] = {
     "polygon-amoy": "https://polygon-amoy-bor-rpc.publicnode.com",
     "arbitrum-sepolia": "https://arbitrum-sepolia-rpc.publicnode.com",
     "base-sepolia": "https://base-sepolia-rpc.publicnode.com",
+    "base": "https://base-rpc.publicnode.com",
 }
 
 
@@ -25,7 +26,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:3000"
 
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/pampa"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/openfi"
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-haiku-4-5"
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
     ethereum_rpc_url_polygon_amoy: str = _DEFAULT_RPC_URLS["polygon-amoy"]
     ethereum_rpc_url_arbitrum_sepolia: str = _DEFAULT_RPC_URLS["arbitrum-sepolia"]
     ethereum_rpc_url_base_sepolia: str = _DEFAULT_RPC_URLS["base-sepolia"]
+    ethereum_rpc_url_base: str = _DEFAULT_RPC_URLS["base"]
 
     fernet_key: str = ""
 
@@ -55,6 +57,7 @@ class Settings(BaseSettings):
             "polygon-amoy": self.ethereum_rpc_url_polygon_amoy,
             "arbitrum-sepolia": self.ethereum_rpc_url_arbitrum_sepolia,
             "base-sepolia": self.ethereum_rpc_url_base_sepolia,
+            "base": self.ethereum_rpc_url_base,
         }
 
 

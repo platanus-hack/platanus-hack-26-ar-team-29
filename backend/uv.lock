@@ -1834,7 +1834,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pampa-backend"
+name = "openfi-backend"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

@@ -54,10 +54,10 @@ def _validate_network(network: str) -> None:
             NETWORK_NOT_ALLOWED,
             http_status=400,
             message_es=(
-                "Sólo aceptamos redes de prueba en esta versión: "
-                "sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia."
+                "Esta red mainnet no está habilitada. Redes permitidas: "
+                "sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base."
             ),
-            message_en="Mainnet networks are not allowed in v1.",
+            message_en="This mainnet network is not allowed.",
             params={"network": network},
         )
     if network not in SUPPORTED_NETWORKS:
@@ -66,7 +66,7 @@ def _validate_network(network: str) -> None:
             http_status=400,
             message_es=(
                 "Red desconocida. Usá una de: "
-                "sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia."
+                "sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base."
             ),
             message_en="Unsupported network slug.",
             params={"network": network},

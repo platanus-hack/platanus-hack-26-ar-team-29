@@ -1,7 +1,7 @@
 [project]
-name = "pampa-backend"
+name = "openfi-backend"
 version = "0.1.0"
-description = "Backend for the Pampa agentic-finance app (Platanus Hack 26)"
+description = "Backend for the OpenFi agentic-finance app (Platanus Hack 26)"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",

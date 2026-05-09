@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.api.ws.manager import ConnectionManager
     from app.services.chat import ChatService
     from app.services.connections import ConnectionService
+    from app.services.defi import DefiService
     from app.services.onchain import OnchainService
     from app.services.plans import PlanService
     from app.services.portfolio import PortfolioService
@@ -89,6 +90,24 @@ def get_onchain_service(
 
     eth_provider = request.app.state.ethereum_provider
     return OnchainService(
+        session=session,
+        connection_service=ConnectionService(
+            session=session,
+            wallbit_base_url=request.app.state.wallbit_base_url,
+        ),
+        eth_client=eth_provider.client,
+    )
+
+
+def get_defi_service(
+    session: AsyncSession = Depends(get_session),
+    request: Request = None,  # type: ignore[assignment]
+) -> DefiService:
+    from app.services.connections import ConnectionService
+    from app.services.defi import DefiService
+
+    eth_provider = request.app.state.ethereum_provider
+    return DefiService(
         session=session,
         connection_service=ConnectionService(
             session=session,

@@ -16,6 +16,7 @@ Backend-specific notes that complement (do not replace) the canonical design art
 | [`deviations.md`](./deviations.md) | What this MVP slice intentionally skips vs the locked design (idempotency, audit log, canonical ledger, workers, etc.) |
 | [`wallbit_api.md`](./wallbit_api.md) | Full API surface documentation and schema mappings discovered for Wallbit |
 | [`ethereum_custodial.md`](./ethereum_custodial.md) | Phase 1 custodial Ethereum endpoints (wallet import / create / on-chain transfer / private-key export). |
+| [`defi.md`](./defi.md) | Phase 2 DeFi endpoints — Aave V3 supply / withdraw / markets / positions on Base mainnet. |
 | [`testing.md`](./testing.md) | What runs in `uv run pytest -q`, what skips, manual-test recipe for live testnet flows. |
 | *(more land as features ship)* | endpoint cookbooks, provider integration notes, runbooks |
 

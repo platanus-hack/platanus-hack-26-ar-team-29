@@ -19,6 +19,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 from web3.exceptions import ContractLogicError, Web3Exception
 
+from app.providers.ethereum.aave import AAVE_V3_POOL_ABI, ERC20_APPROVE_ABI
 from app.providers.ethereum.abi import ERC20_ABI
 
 log = structlog.get_logger(__name__)
@@ -252,6 +253,233 @@ class EthereumClient:
             except Web3Exception as exc:
                 raise EthereumClientError(
                     user_message_es="El nodo rechazó la transacción.",
+                    raw=str(exc),
+                ) from exc
+            return {
+                "tx_hash": tx_hash.hex() if isinstance(tx_hash, bytes) else str(tx_hash),
+                "gas": int(tx.get("gas") or 0),
+                "gas_price_wei": gas_price,
+            }
+
+        return await asyncio.to_thread(_call)
+
+    # ---------- ERC-20 approve / allowance / totalSupply ----------
+
+    async def erc20_allowance(
+        self, network: str, owner: str, token_contract: str, spender: str
+    ) -> int:
+        def _call() -> int:
+            w3 = self._web3(network)
+            contract = w3.eth.contract(
+                address=Web3.to_checksum_address(token_contract),
+                abi=ERC20_APPROVE_ABI,
+            )
+            return int(
+                contract.functions.allowance(
+                    Web3.to_checksum_address(owner),
+                    Web3.to_checksum_address(spender),
+                ).call()
+            )
+
+        return await asyncio.to_thread(_call)
+
+    async def erc20_total_supply(self, network: str, token_contract: str) -> int:
+        def _call() -> int:
+            w3 = self._web3(network)
+            contract = w3.eth.contract(
+                address=Web3.to_checksum_address(token_contract),
+                abi=ERC20_APPROVE_ABI,
+            )
+            return int(contract.functions.totalSupply().call())
+
+        return await asyncio.to_thread(_call)
+
+    async def erc20_approve(
+        self,
+        network: str,
+        from_priv: str,
+        token_contract: str,
+        spender: str,
+        amount_raw: int,
+    ) -> dict[str, Any]:
+        def _call() -> dict[str, Any]:
+            w3 = self._web3(network)
+            acct = Account.from_key(from_priv)
+            token_addr = Web3.to_checksum_address(token_contract)
+            spender_addr = Web3.to_checksum_address(spender)
+            chain_id = int(w3.eth.chain_id)
+            nonce = int(w3.eth.get_transaction_count(acct.address))
+            gas_price = int(w3.eth.gas_price)
+            contract = w3.eth.contract(address=token_addr, abi=ERC20_APPROVE_ABI)
+            try:
+                tx = contract.functions.approve(spender_addr, int(amount_raw)).build_transaction(
+                    {  # type: ignore[arg-type]
+                        "from": acct.address,
+                        "nonce": nonce,
+                        "chainId": chain_id,
+                        "gasPrice": gas_price,
+                    }
+                )
+            except (ContractLogicError, Web3Exception) as exc:
+                raise EthereumClientError(
+                    user_message_es="No se pudo construir el approve.",
+                    raw=str(exc),
+                ) from exc
+            signed = acct.sign_transaction(tx)
+            try:
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            except Web3Exception as exc:
+                raise EthereumClientError(
+                    user_message_es="El nodo rechazó el approve.",
+                    raw=str(exc),
+                ) from exc
+            return {
+                "tx_hash": tx_hash.hex() if isinstance(tx_hash, bytes) else str(tx_hash),
+                "gas": int(tx.get("gas") or 0),
+                "gas_price_wei": gas_price,
+            }
+
+        return await asyncio.to_thread(_call)
+
+    # ---------- Aave V3 Pool ----------
+
+    async def aave_get_reserve_data(
+        self, network: str, pool_address: str, asset_address: str
+    ) -> dict[str, Any]:
+        """Read `getReserveData(asset)` and return a flat dict.
+
+        Subset of ReserveData useful to the service layer:
+        currentLiquidityRate, currentVariableBorrowRate (RAY APR),
+        aTokenAddress, variableDebtTokenAddress.
+        """
+
+        def _call() -> dict[str, Any]:
+            w3 = self._web3(network)
+            contract = w3.eth.contract(
+                address=Web3.to_checksum_address(pool_address), abi=AAVE_V3_POOL_ABI
+            )
+            data = contract.functions.getReserveData(
+                Web3.to_checksum_address(asset_address)
+            ).call()
+            # Tuple positions match the struct definition in aave.py.
+            return {
+                "configuration": int(data[0][0]),
+                "liquidity_index": int(data[1]),
+                "current_liquidity_rate": int(data[2]),
+                "variable_borrow_index": int(data[3]),
+                "current_variable_borrow_rate": int(data[4]),
+                "current_stable_borrow_rate": int(data[5]),
+                "last_update_timestamp": int(data[6]),
+                "id": int(data[7]),
+                "a_token_address": str(data[8]),
+                "stable_debt_token_address": str(data[9]),
+                "variable_debt_token_address": str(data[10]),
+                "interest_rate_strategy_address": str(data[11]),
+                "accrued_to_treasury": int(data[12]),
+                "unbacked": int(data[13]),
+                "isolation_mode_total_debt": int(data[14]),
+            }
+
+        return await asyncio.to_thread(_call)
+
+    async def aave_supply(
+        self,
+        network: str,
+        from_priv: str,
+        pool_address: str,
+        asset_address: str,
+        amount_raw: int,
+    ) -> dict[str, Any]:
+        def _call() -> dict[str, Any]:
+            w3 = self._web3(network)
+            acct = Account.from_key(from_priv)
+            pool = w3.eth.contract(
+                address=Web3.to_checksum_address(pool_address), abi=AAVE_V3_POOL_ABI
+            )
+            chain_id = int(w3.eth.chain_id)
+            nonce = int(w3.eth.get_transaction_count(acct.address))
+            gas_price = int(w3.eth.gas_price)
+            try:
+                tx = pool.functions.supply(
+                    Web3.to_checksum_address(asset_address),
+                    int(amount_raw),
+                    acct.address,
+                    0,
+                ).build_transaction(
+                    {  # type: ignore[arg-type]
+                        "from": acct.address,
+                        "nonce": nonce,
+                        "chainId": chain_id,
+                        "gasPrice": gas_price,
+                    }
+                )
+            except (ContractLogicError, Web3Exception) as exc:
+                raise EthereumClientError(
+                    user_message_es=(
+                        "No se pudo construir el supply (¿faltó approve o saldo insuficiente?)."
+                    ),
+                    raw=str(exc),
+                ) from exc
+            signed = acct.sign_transaction(tx)
+            try:
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            except Web3Exception as exc:
+                raise EthereumClientError(
+                    user_message_es="El nodo rechazó el supply.",
+                    raw=str(exc),
+                ) from exc
+            return {
+                "tx_hash": tx_hash.hex() if isinstance(tx_hash, bytes) else str(tx_hash),
+                "gas": int(tx.get("gas") or 0),
+                "gas_price_wei": gas_price,
+            }
+
+        return await asyncio.to_thread(_call)
+
+    async def aave_withdraw(
+        self,
+        network: str,
+        from_priv: str,
+        pool_address: str,
+        asset_address: str,
+        amount_raw: int,
+        to: str,
+    ) -> dict[str, Any]:
+        def _call() -> dict[str, Any]:
+            w3 = self._web3(network)
+            acct = Account.from_key(from_priv)
+            pool = w3.eth.contract(
+                address=Web3.to_checksum_address(pool_address), abi=AAVE_V3_POOL_ABI
+            )
+            chain_id = int(w3.eth.chain_id)
+            nonce = int(w3.eth.get_transaction_count(acct.address))
+            gas_price = int(w3.eth.gas_price)
+            try:
+                tx = pool.functions.withdraw(
+                    Web3.to_checksum_address(asset_address),
+                    int(amount_raw),
+                    Web3.to_checksum_address(to),
+                ).build_transaction(
+                    {  # type: ignore[arg-type]
+                        "from": acct.address,
+                        "nonce": nonce,
+                        "chainId": chain_id,
+                        "gasPrice": gas_price,
+                    }
+                )
+            except (ContractLogicError, Web3Exception) as exc:
+                raise EthereumClientError(
+                    user_message_es=(
+                        "No se pudo construir el withdraw (¿saldo en Aave insuficiente?)."
+                    ),
+                    raw=str(exc),
+                ) from exc
+            signed = acct.sign_transaction(tx)
+            try:
+                tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            except Web3Exception as exc:
+                raise EthereumClientError(
+                    user_message_es="El nodo rechazó el withdraw.",
                     raw=str(exc),
                 ) from exc
             return {

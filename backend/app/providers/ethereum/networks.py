@@ -1,16 +1,17 @@
 """Network registry for the custodial Ethereum provider.
 
-Locked decision (02-3 §14 row 28): testnets only in v1. Submitting any mainnet
-slug returns 400 NETWORK_NOT_ALLOWED at the service layer.
+Locked decision (02-3 §14 row 28) was testnets only in v1. Documented deviation
+(`docs/deviations.md` §9) opens Base mainnet to enable a USDC live-money demo.
+All other mainnet slugs still return 400 NETWORK_NOT_ALLOWED.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Mainnet slugs — explicitly rejected (helps surface a clear error).
+# Mainnet slugs that remain rejected. "base" was removed per deviation §9.
 MAINNET_NETWORK_SLUGS: frozenset[str] = frozenset(
-    {"mainnet", "ethereum", "polygon", "arbitrum", "optimism", "base"}
+    {"mainnet", "ethereum", "polygon", "arbitrum", "optimism"}
 )
 
 
@@ -60,6 +61,13 @@ _NETWORKS: dict[str, NetworkInfo] = {
         chain_id=84532,
         explorer_tx_template="https://sepolia.basescan.org/tx/{hash}",
         erc20_contracts={"USDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"},
+    ),
+    # Mainnet — Circle native USDC (6 decimals).
+    "base": NetworkInfo(
+        slug="base",
+        chain_id=8453,
+        explorer_tx_template="https://basescan.org/tx/{hash}",
+        erc20_contracts={"USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"},
     ),
 }
 

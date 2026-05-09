@@ -1073,7 +1073,7 @@ Response:
       {
         "kind": "plan_completed" | "plan_partially_failed" | "plan_rejected" | "tradebot_tick" | "ingestion_completed",
         "ts": "...",
-        "summary_es": "Pampa compró 500 USD de SPY",
+        "summary_es": "OpenFi compró 500 USD de SPY",
         "link": "/plans/<id>"
       }
     ],
@@ -1303,7 +1303,7 @@ Identical wire sequence except the entry point is `POST /api/v1/plans/{id}/appro
 
 ## 8. Tab-to-chat deep-link contract
 
-Every "Ask Pampa about this" affordance and every mediated-write flow opens or focuses a chat session with a `seed_prompt` and `seed_context`. The seed is consumed by the agent's first turn so the user doesn't have to re-state context.
+Every "Ask OpenFi about this" affordance and every mediated-write flow opens or focuses a chat session with a `seed_prompt` and `seed_context`. The seed is consumed by the agent's first turn so the user doesn't have to re-state context.
 
 **Endpoint:** `POST /api/v1/chat/sessions` (or, for resuming an existing session: `POST /api/v1/chat/sessions/{id}/messages` with the seed in the message body — see below).
 
@@ -1326,7 +1326,7 @@ Every "Ask Pampa about this" affordance and every mediated-write flow opens or f
 | `tradebot_create` | `proposed_strategy_text` | Tradebots "create new" |
 | `transaction_reverse` | `transaction_id` | Activity reverse-this affordance |
 | `internal_transfer` | `connection_id`, `from_account`, `to_account`, `proposed_amount?`, `currency?` | Balances "mover entre cuentas" |
-| `audit_query` | `audit_id` | Audit row "preguntale a Pampa por esto" |
+| `audit_query` | `audit_id` | Audit row "preguntale a OpenFi por esto" |
 
 **Seeding into an existing message thread** — the seed travels in `seed_context` on the message body:
 
@@ -1473,7 +1473,7 @@ Response (200):
     "challenge_id": "...",
     "address": "0xabc...",
     "chain_id": 1,
-    "message_to_sign": "Pampa wants you to connect this wallet.\n\nNonce: 7f3a1c...\nIssued: 2026-05-09T14:30:00Z\nExpires: 2026-05-09T14:35:00Z",
+    "message_to_sign": "OpenFi wants you to connect this wallet.\n\nNonce: 7f3a1c...\nIssued: 2026-05-09T14:30:00Z\nExpires: 2026-05-09T14:35:00Z",
     "expires_at": "2026-05-09T14:35:00.000Z"
   }
 }
@@ -1493,7 +1493,7 @@ Request:
 
 Server verifies with `eth_sig_recover`, confirms the recovered address matches, and persists the connection.
 
-Response (201): same shape as 10.1 but with capabilities `["read_balance", "read_transactions", "read_asset_price", "send_onchain", "sign_message"]`. The user-controlled wallet keeps custody of the private key; Pampa stores only the address. **The `send_onchain` capability requires per-transaction wallet signing** — the agent's tool for `send_onchain` returns a "please sign this transaction" frame to chat (a `wallet_action_request` system message), the frontend re-prompts the wallet, and the user signs in their wallet UI. Pampa never holds the private key.
+Response (201): same shape as 10.1 but with capabilities `["read_balance", "read_transactions", "read_asset_price", "send_onchain", "sign_message"]`. The user-controlled wallet keeps custody of the private key; OpenFi stores only the address. **The `send_onchain` capability requires per-transaction wallet signing** — the agent's tool for `send_onchain` returns a "please sign this transaction" frame to chat (a `wallet_action_request` system message), the frontend re-prompts the wallet, and the user signs in their wallet UI. OpenFi never holds the private key.
 
 (The exact `send_onchain` UX is specified in the build phase under the agent runtime; the API surface here merely defines that the connection is signature-based and that downstream write tools yield wallet-action-request frames rather than executing server-side.)
 
@@ -1507,7 +1507,7 @@ Request:
 ```json
 {
   "label": "Mi Bitso",
-  "redirect_uri": "https://app.pampa/connections/oauth/callback"
+  "redirect_uri": "https://app.openfi/connections/oauth/callback"
 }
 ```
 
@@ -1541,7 +1541,7 @@ This is a *placeholder* — no OAuth provider ships in v1 (per backend doc and r
 
 ## 11. Cross-tab navigation handshake
 
-The agent can issue a navigation request to the frontend. This is the inverse of "Ask Pampa about this" — instead of the user pulling context into chat, the agent pushes the user to a tab.
+The agent can issue a navigation request to the frontend. This is the inverse of "Ask OpenFi about this" — instead of the user pulling context into chat, the agent pushes the user to a tab.
 
 **Wire:** the agent's tool registry includes `request_navigation(to, prompt_es)` (chat-included, write-mediated only when the destination would itself trigger a write — most navigations are read-only and direct). The tool emits a chat message of `kind: "navigation"`:
 
@@ -1597,7 +1597,7 @@ All refreshes are direct (no chat mediation) and rate-limited per §3.6 (12/min 
 This avoids hammering Wallbit / Ethereum behind us, since our `/refresh` endpoints fan out to upstream provider calls.
 
 **Rate-limit hit semantics:**
-- `429 RATE_LIMITED` — local Pampa rate limit; `params.retry_after_seconds`.
+- `429 RATE_LIMITED` — local OpenFi rate limit; `params.retry_after_seconds`.
 - `502 PROVIDER_UNAVAILABLE` with `params.cause: "upstream_rate_limited"` — upstream (Wallbit, Ethereum) rate-limited us; the connection's `connection.<id>` topic emits `rate_limit_hit` so other surfaces can disable affordances too.
 
 ---
@@ -1724,11 +1724,11 @@ Deliberately deferred:
 - **Auth flow** — token issuance, refresh, revoke, multi-device, session expiry, rate-limit-on-auth. Lives in the auth pass.
 - **Detailed OpenAPI / schema generation** — this doc is the prose contract; the build phase generates the OpenAPI YAML from FastAPI introspection.
 - **Per-endpoint exhaustive validation rules** — the build phase derives these from Pydantic models.
-- **Webhook / callback URLs** — Pampa does not yet receive webhooks from providers; everything is poll-based per `02-1` §7. Future providers with webhooks add a `/api/v1/webhooks/{provider}/{event}` family.
+- **Webhook / callback URLs** — OpenFi does not yet receive webhooks from providers; everything is poll-based per `02-1` §7. Future providers with webhooks add a `/api/v1/webhooks/{provider}/{event}` family.
 - **Bulk endpoints** — no batch updates exposed; if needed they're added per use case (e.g. `POST /transactions/bulk-correct`).
 - **GraphQL** — not used; REST + WS sufficient for v1.
 - **gRPC / Protobuf** — n/a.
-- **API key management for third-party developers** — Pampa is single-tenant in v1.
+- **API key management for third-party developers** — OpenFi is single-tenant in v1.
 - **Public read endpoints** (e.g. for a /vote.hack.platan.us preview) — none; the demo runs on the hosted UI.
 - **i18n bundle** — Spanish strings in error messages are written by the build phase; English is fallback-only.
 - **OpenAPI export endpoint** (`/api/v1/openapi.json`) — likely free with FastAPI; not contractually required.

@@ -1,11 +1,11 @@
-"""Spanish-first system prompt for the Pampa chat agent."""
+"""Spanish-first system prompt for the OpenFi chat agent."""
 
 from __future__ import annotations
 
 
 def chat_system_prompt(user_display_name: str | None = None) -> str:
     name = user_display_name or "el usuario"
-    return f"""Sos Pampa, un agente financiero personal en castellano rioplatense para usuarios de Argentina.
+    return f"""Sos OpenFi, un agente financiero personal en castellano rioplatense para usuarios de Argentina.
 
 Tu usuario actual es {name}. Hablales con tono cercano y práctico, sin formalismos.
 

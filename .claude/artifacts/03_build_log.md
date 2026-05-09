@@ -77,7 +77,7 @@
 
 | Command | Result | Notes |
 | --- | --- | --- |
-| `docker run -d --name pampa-pg -p 5433:5432 ... postgres:16-alpine` | OK | Local Postgres for dev |
+| `docker run -d --name openfi-pg -p 5433:5432 ... postgres:16-alpine` | OK | Local Postgres for dev |
 | `uv sync` | OK | Used pre-existing lock; no new deps |
 | `uv run alembic revision --autogenerate -m "init mvp"` | OK | Generated `0001_init_mvp.py`; hand-edited for pgcrypto + trigger + seed |
 | `uv run alembic upgrade head` | OK | 6 tables created; `users` seed verified |
@@ -174,8 +174,8 @@
 
 ```bash
 cd /home/rpetey317/facu/platanus-hack-26-ar-team-29/backend
-docker run -d --name pampa-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=pampa -p 5433:5432 postgres:16-alpine
+docker run -d --name openfi-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=openfi -p 5433:5432 postgres:16-alpine
 
 # Generate a Fernet key:
 uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"

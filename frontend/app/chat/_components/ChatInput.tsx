@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Send } from "lucide-react";
 
 export function ChatInput({
   onSend,
@@ -18,9 +19,9 @@ export function ChatInput({
         onSend(trimmed);
         setText("");
       }}
-      className="shrink-0 border-t border-zinc-200 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95 sm:px-6 sm:py-4 lg:px-8"
+      className="shrink-0 border-t border-[#1A1A1A] bg-[#050505] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-8"
     >
-      <div className="flex items-end gap-2 sm:gap-3">
+      <div className="flex items-end gap-3 max-w-4xl mx-auto w-full">
         <label className="sr-only" htmlFor="chat-message">
           Mensaje
         </label>
@@ -30,17 +31,15 @@ export function ChatInput({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribí un mensaje..."
-          className="min-h-12 flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base leading-6 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 sm:min-h-11 sm:rounded-full sm:px-5 sm:text-base lg:min-h-12"
+          className="h-12 flex-1 rounded-full border border-[#2A3F57] bg-[#050505] px-5 text-sm text-[#F4F8FB] placeholder:text-[#6B7788] outline-none transition-all duration-200 focus:border-[#38D9C6] focus:ring-4 focus:ring-[#38D9C6]/10"
         />
         <button
           type="submit"
-          disabled={disabled}
-          className="min-h-12 shrink-0 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:rounded-full sm:px-6 sm:text-base lg:min-h-12"
+          disabled={disabled || false}
+          suppressHydrationWarning
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#38D9C6] text-[#050505] shadow-[0_0_28px_rgba(56,217,198,0.45)] transition-all duration-200 hover:bg-[#54E3D3] hover:shadow-[0_0_36px_rgba(56,217,198,0.65)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <span className="hidden min-[360px]:inline">Enviar</span>
-          <span className="min-[360px]:hidden" aria-hidden="true">
-            ↑
-          </span>
+          <Send className="h-5 w-5 ml-[-2px]" />
         </button>
       </div>
     </form>

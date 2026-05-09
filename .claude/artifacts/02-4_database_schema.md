@@ -2,7 +2,7 @@
 
 **Status:** Database schema drafted 2026-05-09. RLS policies, exact migration ordering, partition strategy at scale, full-text-search tuning, and detailed seed data are deliberately out of scope for this revision and remain TBD.
 
-**Purpose of this document:** define every table, column, constraint, index, and lifecycle rule for the Postgres database (hosted on Supabase) that backs the Pampa app. This artifact closes the design phase: every entity in `02-1_backend_architechture.md` §8, every read response shape in `02-3_api_surface.md` §5, and every persisted feature called out in `02-2_frontend_design.md` §5 has a concrete table or column here. The build phase consumes this contract verbatim.
+**Purpose of this document:** define every table, column, constraint, index, and lifecycle rule for the Postgres database (hosted on Supabase) that backs the OpenFi app. This artifact closes the design phase: every entity in `02-1_backend_architechture.md` §8, every read response shape in `02-3_api_surface.md` §5, and every persisted feature called out in `02-2_frontend_design.md` §5 has a concrete table or column here. The build phase consumes this contract verbatim.
 
 **Companion docs:**
 - [01_research_brief.md](./01_research_brief.md) — track / sponsor / product / persona context.
