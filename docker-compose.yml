@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    container_name: pampa-pg
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pampa
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pampa"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: pampa-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Override the DB URL to point to the internal Docker network
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/pampa
+    env_file:
+      # Pull remaining configs (like ANTHROPIC_API_KEY, FERNET_KEY, etc.)
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      bash -c "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  pgdata:

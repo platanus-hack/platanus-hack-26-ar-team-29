@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  /* LIGHT MODE (Clean Fintech) */
+  --theme-bg: #F6F8FB;
+  --theme-surface: #F0F3F8;
+  --theme-card: #FFFFFF;
+  
+  --theme-text-primary: #101828;
+  --theme-text-secondary: #667085;
+  
+  --theme-accent: #14B8A6;
+  --theme-accent-sec: #2563EB;
+  
+  --theme-success: #16A34A;
+  --theme-warning: #F59E0B;
+  --theme-error: #DC2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* DARK MODE (True Black Cyber-Fintech) */
+    --theme-bg: #050505;
+    --theme-surface: #050505;
+    --theme-card: #080C0D;
+    
+    --theme-text-primary: #F4F8FB;
+    --theme-text-secondary: #A8B3C2;
+    
+    --theme-accent: #38D9C6;
+    --theme-accent-sec: #3B82F6;
+    
+    --theme-success: #3EE98A;
+    --theme-warning: #F5B84B;
+    --theme-error: #FF647C;
+  }
+}
+
+@theme inline {
+  --color-background: var(--theme-bg);
+  --color-surface: var(--theme-surface);
+  --color-card: var(--theme-card);
+  --color-text-primary: var(--theme-text-primary);
+  --color-text-secondary: var(--theme-text-secondary);
+  --color-accent: var(--theme-accent);
+  --color-accent-secondary: var(--theme-accent-sec);
+  --color-success: var(--theme-success);
+  --color-warning: var(--theme-warning);
+  --color-error: var(--theme-error);
+  
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--theme-bg);
+  color: var(--theme-text-primary);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@layer base {
+  h1 {
+    @apply text-xl font-semibold sm:text-2xl text-text-primary;
+  }
+  h2 {
+    @apply text-lg font-semibold sm:text-xl text-text-primary;
+  }
+  h3 {
+    @apply text-base font-semibold sm:text-lg text-text-primary;
+  }
+  p {
+    @apply text-sm text-text-secondary sm:text-base;
+  }
+}

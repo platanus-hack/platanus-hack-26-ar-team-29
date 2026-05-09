@@ -28,6 +28,12 @@ RATE_LIMITED = "RATE_LIMITED"
 PROVIDER_UNAVAILABLE = "PROVIDER_UNAVAILABLE"
 INTERNAL_ERROR = "INTERNAL_ERROR"
 
+# Custodial Ethereum (02-3 §5.13).
+NETWORK_NOT_ALLOWED = "NETWORK_NOT_ALLOWED"
+NOT_EXPORTABLE = "NOT_EXPORTABLE"
+INVALID_ADDRESS = "INVALID_ADDRESS"
+ASSET_NOT_SUPPORTED = "ASSET_NOT_SUPPORTED"
+
 
 class APIError(Exception):
     def __init__(
@@ -89,9 +95,7 @@ def register_error_handlers(app: FastAPI) -> None:
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
         trace_id = uuid.uuid4().hex
-        details = {
-            ".".join(str(p) for p in err["loc"]): err["msg"] for err in exc.errors()
-        }
+        details = {".".join(str(p) for p in err["loc"]): err["msg"] for err in exc.errors()}
         return JSONResponse(
             status_code=422,
             content=_envelope(
