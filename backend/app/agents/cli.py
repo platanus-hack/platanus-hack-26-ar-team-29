@@ -7,7 +7,6 @@ from typing import Any
 from app.agents.chat_agent import ChatAgentSession
 from app.agents.events import AgentEvent
 
-
 CONFIRM_INPUTS = {"confirm", "c", "y", "yes"}
 REJECT_INPUTS = {"reject", "r", "n", "no"}
 CONNECT_TIMEOUT_SECONDS = 30

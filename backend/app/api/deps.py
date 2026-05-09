@@ -48,7 +48,6 @@ def get_plan_service(
     return PlanService(
         session=session,
         manager=request.app.state.connection_manager,
-        executor=request.app.state.plan_executor,
         agent=request.app.state.chat_agent,
     )
 

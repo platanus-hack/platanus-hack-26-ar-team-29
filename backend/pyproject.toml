@@ -17,6 +17,7 @@ dependencies = [
     "cryptography>=43",
     "python-multipart>=0.0.17",
     "structlog>=24.4",
+    "claude-agent-sdk>=0.1.80",
 ]
 
 [dependency-groups]

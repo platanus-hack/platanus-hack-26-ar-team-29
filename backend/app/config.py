@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-haiku-4-5"
     wallbit_api_key: str = ""
     wallbit_base_url: str = "https://api.wallbit.io"
+    wallbit_mcp_url: str = "https://api.dev.wallbit.io"
 
     # Per-network Ethereum JSON-RPC URLs. Each maps an env var to a network slug
     # used by /connections/ethereum-custodial/* and /onchain/*.

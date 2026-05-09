@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as _dt
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from app.agents.approval import ApprovalBridge
 from app.agents.events import AgentEvent, error_event, summarize_value
 from app.config import get_settings
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from app.api.ws.manager import ConnectionManager
+
 
 try:  # pragma: no cover - exercised only when the SDK is installed.
     from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, HookMatcher
@@ -276,3 +284,105 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
             ]
 
     return []
+
+
+class ChatAgent:
+    def __init__(self, manager: ConnectionManager, agent_tasks: set[asyncio.Task]) -> None:
+        self.manager = manager
+        self.agent_tasks = agent_tasks
+        self._sessions: dict[UUID, ChatAgentSession] = {}
+        self._plan_to_approval: dict[UUID, tuple[UUID, str]] = {}
+
+    def get_session(self, session_id: UUID) -> ChatAgentSession:
+        if session_id not in self._sessions:
+            self._sessions[session_id] = ChatAgentSession()
+        return self._sessions[session_id]
+
+    def resolve_plan_approval(self, plan_id: UUID, decision: str) -> bool:
+        if plan_id not in self._plan_to_approval:
+            return False
+        session_id, approval_id = self._plan_to_approval[plan_id]
+        agent_session = self.get_session(session_id)
+        return agent_session.resolve_approval(approval_id, decision)
+
+    async def run_turn(
+        self,
+        session_id: UUID,
+        user_id: UUID,
+        turn_id: UUID,
+        user_content: str,
+        sessionmaker: async_sessionmaker[AsyncSession],
+    ) -> None:
+        agent_session = self.get_session(session_id)
+        full_text = []
+
+        async for event in agent_session.send_user_message(user_content):
+            if event.type == "agent_token":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {"type": "token", "text": event.payload["text"]}
+                )
+            elif event.type == "agent_message":
+                text = event.payload.get("text", "")
+                full_text.append(text)
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {"type": "agent_message", "text": text}
+                )
+            elif event.type == "approval_requested":
+                async with sessionmaker() as db:
+                    from app.persistence.repositories.plans import PlanRepository
+                    repo = PlanRepository(db)
+                    plan = await repo.create_plan(
+                        user_id=user_id,
+                        origin_session_id=session_id,
+                        origin_message_id=turn_id,
+                        steps_data=[{
+                            "tool_name": event.payload["tool_name"],
+                            "args": event.payload["input"],
+                            "human_description_es": "Aprobar " + event.payload["tool_name"],
+                        }],
+                        expires_at=_dt.datetime.now(_dt.UTC) + _dt.timedelta(minutes=15)
+                    )
+
+                    self._plan_to_approval[plan.id] = (session_id, event.payload["approval_id"])
+
+                    from app.persistence.repositories.chat import ChatRepository
+                    chat_repo = ChatRepository(db)
+                    await chat_repo.create_message(
+                        session_id=session_id,
+                        user_id=user_id,
+                        author="agent",
+                        kind="plan_proposal",
+                        content_blocks=[],
+                        turn_id=turn_id,
+                        plan_id=plan.id
+                    )
+                    await db.commit()
+
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {"type": "plan_proposed", "plan_id": str(plan.id)}
+                )
+            elif event.type == "error":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {"type": "error", "message_en": event.payload.get("message"), "code": "AGENT_ERROR"}
+                )
+
+        final_text = "".join(full_text)
+        if final_text:
+            async with sessionmaker() as db:
+                from app.persistence.repositories.chat import ChatRepository
+                chat_repo = ChatRepository(db)
+                await chat_repo.create_message(
+                    session_id=session_id,
+                    user_id=user_id,
+                    author="agent",
+                    kind="text",
+                    content_blocks=[{"type": "text", "text": final_text}],
+                    turn_id=turn_id,
+                )
+                await db.commit()
+
+        await self.manager.broadcast_to_session(session_id, {"type": "turn_complete"})

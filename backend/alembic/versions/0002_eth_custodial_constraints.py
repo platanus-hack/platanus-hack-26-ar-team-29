@@ -11,7 +11,7 @@ Both columns are guarded by CHECK constraints introduced in
 list. No data migration needed — there are no existing rows that would
 violate the new lists.
 
-Revision ID: 0002_ethereum_custodial_constraints
+Revision ID: 0002_eth_custodial_constraints
 Revises: 0001_init_mvp
 Create Date: 2026-05-09
 """
@@ -20,7 +20,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0002_ethereum_custodial_constraints"
+revision: str = "0002_eth_custodial_constraints"
 down_revision: str | None = "0001_init_mvp"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

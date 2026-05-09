@@ -39,7 +39,8 @@ WRITE_WALLBIT_TOOLS = {
     "mcp__wallbit__create_trade",
 }
 
-ApprovalResult = PermissionResultAllow | PermissionResultDeny
+from typing import Union
+ApprovalResult = Union[PermissionResultAllow, PermissionResultDeny]
 EventSink = Callable[[AgentEvent], Awaitable[None]]
 
 

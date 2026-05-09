@@ -15,7 +15,6 @@ from app.persistence.session import session_factory
 
 if TYPE_CHECKING:
     from app.agents.chat_agent import ChatAgent
-    from app.agents.plan_executor import PlanExecutor
     from app.api.ws.manager import ConnectionManager
 
 log = structlog.get_logger(__name__)
@@ -30,13 +29,11 @@ class PlanService:
         self,
         session: AsyncSession,
         manager: ConnectionManager,
-        executor: PlanExecutor,
         agent: ChatAgent,
         sessionmaker: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:
         self.session = session
         self.manager = manager
-        self.executor = executor
         self.agent = agent
         self.sessionmaker = sessionmaker or session_factory
         self.repo = PlanRepository(session)
@@ -85,14 +82,8 @@ class PlanService:
         await self.repo.set_plan_state(plan_id, "approved", approved_at=_utcnow())
         await self.session.commit()
 
-        # Schedule executor outside the request handler.
-        self.executor.schedule(
-            plan_id=plan.id,
-            user_id=user_id,
-            sessionmaker=self.sessionmaker,
-            agent=self.agent,
-            session_id=plan.origin_session_id,
-        )
+        # Resolve approval in the agent
+        self.agent.resolve_plan_approval(plan_id, "confirm")
 
         return {"ok": True, "plan_state": "approved", "plan_id": str(plan_id)}
 
@@ -124,6 +115,8 @@ class PlanService:
             rejected_reason=reason,
         )
         await self.session.commit()
+
+        self.agent.resolve_plan_approval(plan_id, "reject")
 
         if plan.origin_session_id is not None:
             await self.manager.broadcast_to_session(
