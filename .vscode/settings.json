@@ -1,0 +1,19 @@
+{
+  "tailwindCSS.experimental.configFile": {
+    "frontend/app/globals.css": "frontend/**/*.{js,jsx,ts,tsx,mdx}"
+  },
+  "tailwindCSS.hovers": true,
+  "tailwindCSS.suggestions": true,
+  "tailwindCSS.classAttributes": [
+    "class",
+    "className",
+    "ngClass",
+    "class:list"
+  ],
+  "tailwindCSS.includeLanguages": {
+    "javascript": "javascript",
+    "javascriptreact": "javascriptreact",
+    "typescript": "typescript",
+    "typescriptreact": "typescriptreact"
+  }
+}

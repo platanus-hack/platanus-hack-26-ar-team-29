@@ -10,7 +10,7 @@ interface ChatContextType {
   setCurrentSessionId: (id: string | null) => void;
   createNewSession: () => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
-  refreshSessions: () => Promise<void>;
+  refreshSessions: () => Promise<ChatSession[]>;
   updateSessionTitle: (id: string, title: string) => void;
   isLoadingSessions: boolean;
 }
