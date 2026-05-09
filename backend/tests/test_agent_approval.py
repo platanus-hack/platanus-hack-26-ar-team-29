@@ -80,6 +80,95 @@ async def test_unknown_wallbit_tool_requires_approval() -> None:
     await task
 
 
+@pytest.mark.asyncio
+async def test_ask_user_question_emits_input_requested_and_allows_with_answer() -> None:
+    events: list[AgentEvent] = []
+    bridge = ApprovalBridge()
+    bridge.set_event_sink(_collecting_sink(events))
+
+    task = asyncio.create_task(
+        bridge.can_use_tool(
+            "AskUserQuestion",
+            {
+                "questions": [
+                    {
+                        "id": "currency",
+                        "header": "Moneda",
+                        "question": "¿En qué moneda?",
+                        "options": [
+                            {"label": "ARS", "description": "Pesos"},
+                            {"label": "USD", "description": "Dólares"},
+                        ],
+                    }
+                ]
+            },
+        )
+    )
+    await _wait_for_events(events, 1)
+
+    input_request = events[0]
+    assert input_request.type == "input_requested"
+    assert input_request.payload["title"] == "Moneda"
+    assert input_request.payload["question"] == "¿En qué moneda?"
+    assert input_request.payload["options"] == [
+        {"id": "ARS", "label": "ARS", "description": "Pesos"},
+        {"id": "USD", "label": "USD", "description": "Dólares"},
+    ]
+
+    assert bridge.resolve_input(input_request.payload["input_id"], ["USD"])
+    result = await task
+
+    assert isinstance(result, PermissionResultAllow)
+    assert result.updated_input is not None
+    assert result.updated_input["answers"] == {"¿En qué moneda?": "USD"}
+    assert events[-1].type == "input_resolved"
+    assert events[-1].payload["selected_options"] == ["USD"]
+
+
+@pytest.mark.asyncio
+async def test_ask_user_question_handles_multiple_questions() -> None:
+    events: list[AgentEvent] = []
+    bridge = ApprovalBridge()
+    bridge.set_event_sink(_collecting_sink(events))
+
+    task = asyncio.create_task(
+        bridge.can_use_tool(
+            "AskUserQuestion",
+            {
+                "questions": [
+                    {
+                        "header": "Cantidad",
+                        "question": "¿Qué cantidad?",
+                        "options": [{"label": "USD 1000"}, {"label": "1000 acciones"}],
+                    },
+                    {
+                        "header": "Orden",
+                        "question": "¿Qué tipo de orden?",
+                        "options": [{"label": "Mercado"}, {"label": "Límite"}],
+                    },
+                ]
+            },
+        )
+    )
+
+    await _wait_for_events(events, 1)
+    assert events[0].type == "input_requested"
+    assert bridge.resolve_input(events[0].payload["input_id"], ["USD 1000"])
+
+    await _wait_for_events(events, 3)
+    assert events[2].type == "input_requested"
+    assert bridge.resolve_input(events[2].payload["input_id"], ["Mercado"])
+
+    result = await task
+
+    assert isinstance(result, PermissionResultAllow)
+    assert result.updated_input is not None
+    assert result.updated_input["answers"] == {
+        "¿Qué cantidad?": "USD 1000",
+        "¿Qué tipo de orden?": "Mercado",
+    }
+
+
 def _collecting_sink(events: list[AgentEvent]):
     async def sink(event: AgentEvent) -> None:
         events.append(event)
@@ -93,4 +182,3 @@ async def _wait_for_events(events: list[Any], count: int) -> None:
             return
         await asyncio.sleep(0.01)
     raise AssertionError(f"expected {count} events, got {len(events)}")
-

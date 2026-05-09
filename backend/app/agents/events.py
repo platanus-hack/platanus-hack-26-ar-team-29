@@ -46,12 +46,46 @@ def approval_requested_event(
             "approval_id": approval_id,
             "tool_name": tool_name,
             "title": "Confirmar operacion",
-            "message": "Pampa quiere ejecutar esta operacion en Wallbit.",
+            "message": "OpenFi quiere ejecutar esta operacion en Wallbit.",
             "input": input_data,
             "actions": [
                 ChatAction("confirm", "Confirm").to_dict(),
                 ChatAction("reject", "Reject").to_dict(),
             ],
+        },
+    )
+
+
+def input_requested_event(
+    *,
+    input_id: str,
+    title: str,
+    question: str,
+    options: list[dict[str, str]],
+    multi_select: bool,
+) -> AgentEvent:
+    return AgentEvent(
+        "input_requested",
+        {
+            "input_id": input_id,
+            "title": title,
+            "question": question,
+            "options": options,
+            "multi_select": multi_select,
+        },
+    )
+
+
+def input_resolved_event(
+    *,
+    input_id: str,
+    selected_options: list[str],
+) -> AgentEvent:
+    return AgentEvent(
+        "input_resolved",
+        {
+            "input_id": input_id,
+            "selected_options": selected_options,
         },
     )
 
