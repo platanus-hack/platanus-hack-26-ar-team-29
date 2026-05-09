@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 
 export function ChatInput({
   onSend,
@@ -9,17 +9,15 @@ export function ChatInput({
 }) {
   const [text, setText] = useState("");
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed || disabled) return;
-    onSend(trimmed);
-    setText("");
-  }
-
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const trimmed = text.trim();
+        if (!trimmed || disabled) return;
+        onSend(trimmed);
+        setText("");
+      }}
       className="flex gap-2 border-t border-zinc-200 p-4 dark:border-zinc-800"
     >
       <input
@@ -31,7 +29,7 @@ export function ChatInput({
       />
       <button
         type="submit"
-        disabled={disabled || !text.trim()}
+        disabled={disabled}
         className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Send

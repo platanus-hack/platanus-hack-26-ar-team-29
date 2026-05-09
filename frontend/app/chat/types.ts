@@ -6,3 +6,11 @@ export interface Message {
   content: string;
   createdAt: number;
 }
+
+export interface SendMessageRequest {
+  messages: Message[];
+}
+
+export interface SendMessageResponse {
+  reply: Message;
+}
