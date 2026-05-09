@@ -132,6 +132,38 @@ All paths below come from [developer.wallbit.io/docs/llms.txt](https://developer
 3. Pre-fund the demo account with USD + one stock position + one stablecoin balance so the demo has texture.
 4. Record a backup demo video early Sunday morning, in case of API hiccups during pitches.
 
+### 3.8 API-key capability summary (Q&A)
+
+**Both answers verified against live Wallbit docs on 2026-05-09. Every claim below cites the URL it came from. Confidence labels: CONFIRMED = explicitly in the cited doc; PARTIAL = listed but verb/path needs on-site verification; ABSENCE CONFIRMED = the docs we fetched do not document the capability; UNCONFIRMED = inferred or asked-but-not-verified.**
+
+#### Q1: Can you read balances using only an API key? **YES (CONFIRMED).**
+
+- `GET /api/public/v1/balance/checking` - scope `read` - USD/ARS checking balances ([llms.txt](https://developer.wallbit.io/docs/llms.txt)). CONFIRMED.
+- `GET /api/public/v1/balance/stocks` - scope `read` - stocks/ETFs with share counts and USD value ([llms.txt](https://developer.wallbit.io/docs/llms.txt)). CONFIRMED.
+- `GET /api/public/v1/wallets` - scope `read` - crypto deposit addresses (USDT/USDC/BTC/ETH) ([llms.txt](https://developer.wallbit.io/docs/llms.txt)). CONFIRMED.
+- `GET /api/public/v1/roboadvisor/balance` - scope `read` - robo-advisor portfolio + positions ([llms.txt](https://developer.wallbit.io/docs/llms.txt)). CONFIRMED.
+- Auth header: `X-API-Key: <key>`. No OAuth, no per-request session ([quickstart](https://developer.wallbit.io/docs/quickstart)). CONFIRMED.
+- **Account scoping (CONFIRMED):** the key is created by the Wallbit user themselves in Dashboard -> Agents -> Create agent. Reads only that user's own account. **No documented OAuth or third-party / multi-user onboarding flow.** Each user must paste their own key; an external app cannot onboard *other* Wallbit users via API. (Confirmed by absence in [quickstart](https://developer.wallbit.io/docs/quickstart) and [developer.wallbit.io](https://developer.wallbit.io/); no OAuth/partner endpoints in [llms.txt](https://developer.wallbit.io/docs/llms.txt).) ABSENCE CONFIRMED for OAuth/partner flow.
+
+#### Q2: Can you execute transactions using only an API key? **YES, partial scope (CONFIRMED).**
+
+All write endpoints require scope `trade` and only the `X-API-Key` header. **No 2FA, OTP, email confirmation, or idempotency-key requirement is mentioned in the public docs we fetched.** (ABSENCE CONFIRMED in public docs; double-check with Wallbit reps on-site.)
+
+- `POST /api/public/v1/trades` - BUY/SELL stocks/ETFs (MARKET/LIMIT/STOP/STOP_LIMIT) - requires complete investment KYC (returns 412 if not) ([trades/create](https://developer.wallbit.io/docs/api-reference/trades/create)). CONFIRMED.
+- `POST /api/public/v1/operations/internal` - DEFAULT <-> INVESTMENT internal transfers - requires complete investment KYC (412 if not) ([operations/internal](https://developer.wallbit.io/docs/api-reference/operations/internal)). CONFIRMED.
+- `POST /api/public/v1/roboadvisor/deposit` - min 10 USD, async ([roboadvisor/deposit](https://developer.wallbit.io/docs/api-reference/roboadvisor/deposit)). CONFIRMED.
+- `POST /api/public/v1/roboadvisor/withdraw` - one pending withdrawal per user ([roboadvisor/withdraw](https://developer.wallbit.io/docs/api-reference/roboadvisor/withdraw)). CONFIRMED.
+- Card status toggle (ACTIVE/SUSPENDED): listed in [llms.txt](https://developer.wallbit.io/docs/llms.txt) as "Update Card Status"; **exact verb/path is partial - verify on-site.** PARTIAL.
+- **Crypto SEND / wallet withdraw is NOT in public docs.** `/wallets` exposes deposit addresses only; no documented endpoint to push BTC/USDT/USDC/ETH out of Wallbit. (Confirmed by absence in [llms.txt](https://developer.wallbit.io/docs/llms.txt).) ABSENCE CONFIRMED.
+
+#### Demo blockers (must address before demo)
+
+- **KYC gate on `/trades` and `/operations/internal`:** complete investment KYC on the demo account in hour 1 or these tools fail with 412 mid-pitch ([trades/create](https://developer.wallbit.io/docs/api-reference/trades/create), [operations/internal](https://developer.wallbit.io/docs/api-reference/operations/internal)). CONFIRMED.
+- **No public sandbox documented:** demo runs on real money. Use a small pre-funded account. (Absence unconfirmed - verify with Wallbit on-site; not documented in [quickstart](https://developer.wallbit.io/docs/quickstart) or [llms.txt](https://developer.wallbit.io/docs/llms.txt).) UNCONFIRMED.
+- **Single-user key model:** judges/audience cannot try the agent on their *own* balances live. The demo is bound to the team's account ([quickstart](https://developer.wallbit.io/docs/quickstart)). CONFIRMED.
+- **No documented 2FA / email-confirm on writes:** the agent *can* fire transactions inside a 30-second demo window. (Absence confirmed in public docs at [trades/create](https://developer.wallbit.io/docs/api-reference/trades/create), [operations/internal](https://developer.wallbit.io/docs/api-reference/operations/internal), [roboadvisor/deposit](https://developer.wallbit.io/docs/api-reference/roboadvisor/deposit), [roboadvisor/withdraw](https://developer.wallbit.io/docs/api-reference/roboadvisor/withdraw); double-check with Wallbit on-site to be safe.) ABSENCE CONFIRMED.
+- **No crypto-send capability:** if the "money shot" depends on pushing BTC/USDT out of Wallbit, redesign around fiat + stocks + robo-advisor ([llms.txt](https://developer.wallbit.io/docs/llms.txt)). CONFIRMED via absence.
+
 ---
 
 ## 4. Reference Deep-Dive: wallsync.cc
