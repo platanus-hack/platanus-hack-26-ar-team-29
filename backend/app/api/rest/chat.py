@@ -40,6 +40,16 @@ async def list_sessions(
     return await svc.list_sessions(user_id=user_id)
 
 
+@router.delete("/sessions/{session_id}")
+async def delete_session(
+    session_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    svc: ChatService = Depends(get_chat_service),
+) -> JSONResponse:
+    await svc.delete_session(user_id=user_id, session_id=session_id)
+    return JSONResponse(status_code=204, content=None)
+
+
 @router.get("/sessions/{session_id}/messages")
 async def list_messages(
     session_id: UUID,

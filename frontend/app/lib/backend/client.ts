@@ -103,6 +103,12 @@ export const backendApi = {
     });
   },
 
+  deleteChatSession(sessionId: string) {
+    return requestJson<void>(`/chat/sessions/${sessionId}`, {
+      method: "DELETE",
+    });
+  },
+
   listChatMessages(sessionId: string) {
     return requestJson<ChatMessageDto[]>(`/chat/sessions/${sessionId}/messages`);
   },

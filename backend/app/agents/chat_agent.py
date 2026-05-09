@@ -313,8 +313,15 @@ class ChatAgent:
         turn_id: UUID,
         user_content: str,
         sessionmaker: async_sessionmaker[AsyncSession],
+        generate_title: bool = False,
     ) -> None:
         agent_session = self.get_session(session_id)
+
+        if generate_title:
+            task = asyncio.create_task(self._generate_title(session_id, user_content, sessionmaker))
+            self.agent_tasks.add(task)
+            task.add_done_callback(self.agent_tasks.discard)
+
         full_text = []
 
         async for event in agent_session.send_user_message(user_content):
@@ -440,3 +447,48 @@ class ChatAgent:
             session_id,
             {"type": "turn_complete", "session_id": str(session_id), "turn_id": str(turn_id)},
         )
+
+    async def _generate_title(
+        self,
+        session_id: UUID,
+        user_content: str,
+        sessionmaker: async_sessionmaker[AsyncSession],
+    ) -> None:
+        try:
+            from anthropic import AsyncAnthropic
+            from app.config import get_settings
+
+            settings = get_settings()
+            client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+
+            prompt = f"Genera un titulo muy corto de maximo 4 palabras para esta conversacion de un usuario con un agente financiero. Solo responde con el titulo, sin comillas ni puntos finales. El mensaje del usuario es: '{user_content}'"
+
+            response = await client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=20,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            if response.content and hasattr(response.content[0], "text"):
+                title = response.content[0].text.strip()
+
+                async with sessionmaker() as db:
+                    from app.persistence.repositories.chat import ChatRepository
+
+                    chat_repo = ChatRepository(db)
+                    await chat_repo.update_session_title(session_id, title)
+                    await db.commit()
+
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "chat_title_updated",
+                        "session_id": str(session_id),
+                        "title": title,
+                    },
+                )
+        except Exception as exc:
+            import structlog
+
+            log = structlog.get_logger(__name__)
+            log.warning("title_generation_failed", error=str(exc))

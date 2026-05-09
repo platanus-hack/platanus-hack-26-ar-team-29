@@ -15,6 +15,7 @@ import {
     openSessionWebSocket,
     type BackendWsSubscription,
 } from './lib/backend/ws';
+import { useChat } from './contexts/ChatContext';
 
 function makeId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -44,7 +45,7 @@ function sortMessages(messages: Message[]) {
 
 export default function ChatPage() {
     const wsRef = useRef<BackendWsSubscription | null>(null);
-    const [sessionId, setSessionId] = useState<string | null>(null);
+    const { currentSessionId, updateSessionTitle } = useChat();
     const [messages, setMessages] = useState<Message[]>([]);
     const [isBooting, setIsBooting] = useState(true);
     const [isTyping, setIsTyping] = useState(false);
@@ -88,6 +89,10 @@ export default function ChatPage() {
         (frame: BackendWsFrame) => {
             if (frame.type === 'subscribed') {
                 return;
+            }
+
+            if (frame.type === 'chat_title_updated') {
+                updateSessionTitle(frame.session_id, frame.title);
                 return;
             }
 
@@ -256,26 +261,24 @@ export default function ChatPage() {
                 );
             }
         },
-        [appendSystemMessage, updatePlan, upsertMessage],
+        [appendSystemMessage, updatePlan, upsertMessage, updateSessionTitle],
     );
 
     useEffect(() => {
         let cancelled = false;
 
         async function boot() {
+            if (!currentSessionId) {
+                setMessages([]);
+                setIsBooting(false);
+                return;
+            }
+
             setIsBooting(true);
             setError(null);
+            
             try {
-                const sessions = await backendApi.listChatSessions();
-                const session =
-                    sessions[0] ??
-                    (await backendApi.createChatSession({ title: 'Demo' }));
-                if (cancelled) return;
-
-                setSessionId(session.id);
-                const rawMessages = await backendApi.listChatMessages(
-                    session.id,
-                );
+                const rawMessages = await backendApi.listChatMessages(currentSessionId);
                 const hydrated = await Promise.all(
                     rawMessages.map(async (message) => {
                         if (
@@ -306,14 +309,14 @@ export default function ChatPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [currentSessionId]);
 
     useEffect(() => {
-        if (!sessionId) return;
+        if (!currentSessionId) return;
 
         wsRef.current?.close();
         wsRef.current = openSessionWebSocket({
-            sessionId,
+            sessionId: currentSessionId,
             onFrame: handleWsFrame,
             onClose: () => undefined,
             onError: () =>
@@ -324,10 +327,10 @@ export default function ChatPage() {
             wsRef.current?.close();
             wsRef.current = null;
         };
-    }, [handleWsFrame, sessionId]);
+    }, [handleWsFrame, currentSessionId]);
 
     async function handleSend(text: string) {
-        if (!sessionId) return;
+        if (!currentSessionId) return;
         const userMsg: Message = {
             id: makeId(),
             role: 'user',
@@ -339,7 +342,7 @@ export default function ChatPage() {
         setError(null);
 
         try {
-            await backendApi.sendChatMessage(sessionId, text);
+            await backendApi.sendChatMessage(currentSessionId, text);
         } catch (err) {
             appendSystemMessage(errorText(err));
             setIsTyping(false);
@@ -417,7 +420,7 @@ export default function ChatPage() {
                 />
                 <ChatInput
                     onSend={handleSend}
-                    disabled={isTyping || isBooting || !sessionId}
+                    disabled={isTyping || isBooting || !currentSessionId}
                 />
             </div>
         </AppShell>

@@ -131,5 +131,6 @@ export type BackendWsFrame =
     }
   | { type: "turn_complete"; session_id: string; turn_id: string }
   | { type: "error"; code: string; message_es: string; message_en?: string | null }
+  | { type: "chat_title_updated"; session_id: string; title: string }
   | { type: "ping" }
   | { type: "pong" };

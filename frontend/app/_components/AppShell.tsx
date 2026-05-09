@@ -2,7 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useChat } from '../contexts/ChatContext';
+import { useState } from 'react';
 
 const NAV_ITEMS = [
     { label: 'Chat', href: '/' },
@@ -18,7 +21,39 @@ function currentLabel(pathname: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
     const active = currentLabel(pathname);
+    const { sessions, currentSessionId, setCurrentSessionId, createNewSession, deleteSession } = useChat();
+    const [showAllChats, setShowAllChats] = useState(false);
+
+    const isChatPage = pathname === '/';
+    
+    // Sort sessions to make the current one appear in the list properly
+    // and show only up to 5 by default
+    const displaySessions = showAllChats ? sessions : sessions.slice(0, 5);
+
+    const handleCreateChat = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await createNewSession();
+        if (!isChatPage) {
+            router.push('/');
+        }
+    };
+
+    const handleDeleteChat = async (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await deleteSession(id);
+    };
+
+    const handleSelectChat = (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        setCurrentSessionId(id);
+        if (!isChatPage) {
+            router.push('/');
+        }
+    };
 
     return (
         <main className='min-h-[100dvh] bg-background text-text-primary'>
@@ -36,25 +71,80 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             Open<span className='text-[#38D9C6]'>Fi</span>
                         </span>
                     </div>
-                    <nav className='mt-8 space-y-2 text-sm'>
+                    <nav className='mt-8 space-y-2 text-sm flex-1 overflow-y-auto pr-2 custom-scrollbar'>
                         {NAV_ITEMS.map((item) => {
-                            const isActive = item.href === pathname;
+                            const isActive = item.href === pathname && (item.label !== 'Chat' || isChatPage);
+                            const isChat = item.label === 'Chat';
+                            
                             return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={
-                                        isActive
-                                            ? 'flex items-center gap-2 rounded-xl bg-[#38D9C6]/10 border border-[#38D9C6]/45 px-3 py-2.5 text-[#F4F8FB] font-medium shadow-[0_0_20px_rgba(56,217,198,0.14)] transition-all duration-200'
-                                            : 'flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-[#A8B3C2] font-medium transition-all duration-200 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] hover:border-[#38D9C6]/25'
-                                    }
-                                >
-                                    {item.label}
-                                </Link>
+                                <div key={item.href} className="flex flex-col">
+                                    <div className="flex items-center group relative">
+                                        <Link
+                                            href={item.href}
+                                            className={
+                                                isActive
+                                                    ? 'flex-1 flex items-center gap-2 rounded-xl bg-[#38D9C6]/10 border border-[#38D9C6]/45 px-3 py-2.5 text-[#F4F8FB] font-medium shadow-[0_0_20px_rgba(56,217,198,0.14)] transition-all duration-200'
+                                                    : 'flex-1 flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-[#A8B3C2] font-medium transition-all duration-200 hover:bg-[#38D9C6]/10 hover:text-[#F4F8FB] hover:border-[#38D9C6]/25'
+                                            }
+                                        >
+                                            {item.label}
+                                        </Link>
+                                        
+                                        {isChat && (
+                                            <button 
+                                                onClick={handleCreateChat}
+                                                className="absolute right-2 p-1.5 text-[#A8B3C2] hover:text-[#38D9C6] hover:bg-[#38D9C6]/20 rounded-md transition-colors"
+                                                title="Nuevo chat"
+                                            >
+                                                <Plus size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    {isChat && sessions.length > 0 && (
+                                        <div className="mt-1 ml-4 flex flex-col gap-1 border-l border-[#1A1A1A] pl-2 py-1">
+                                            {displaySessions.map((session) => (
+                                                <div 
+                                                    key={session.id}
+                                                    onClick={(e) => handleSelectChat(e, session.id)}
+                                                    className={`group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition-colors text-xs
+                                                        ${currentSessionId === session.id && isChatPage
+                                                            ? 'bg-[#1A1A1A] text-[#F4F8FB] font-medium' 
+                                                            : 'text-[#A8B3C2] hover:bg-[#1A1A1A]/50 hover:text-[#F4F8FB]'
+                                                        }`}
+                                                >
+                                                    <span className="truncate pr-2">
+                                                        {session.title || 'Nuevo chat'}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => handleDeleteChat(e, session.id)}
+                                                        className="opacity-0 group-hover:opacity-100 p-1 text-[#A8B3C2] hover:text-red-400 transition-all rounded"
+                                                        title="Eliminar chat"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            
+                                            {sessions.length > 5 && (
+                                                <button
+                                                    onClick={() => setShowAllChats(!showAllChats)}
+                                                    className="flex items-center gap-1 px-2 py-1.5 text-xs text-[#6B7788] hover:text-[#A8B3C2] transition-colors mt-1"
+                                                >
+                                                    {showAllChats ? (
+                                                        <><ChevronUp size={12} /> Mostrar menos</>
+                                                    ) : (
+                                                        <><ChevronDown size={12} /> Mostrar {sessions.length - 5} más</>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             );
                         })}
                     </nav>
-                    <div className='mt-auto space-y-3 pt-6'>
+                    <div className='mt-auto space-y-3 pt-6 shrink-0'>
                         <div className='rounded-2xl border border-[#38D9C6]/20 bg-[#080C0D] p-3 shadow-[0_0_24px_rgba(56,217,198,0.08)]'>
                             <div className='flex items-center gap-3'>
                                 <div className='flex h-10 w-10 items-center justify-center rounded-full bg-[#050505] text-sm font-semibold text-[#F4F8FB] border border-[#38D9C6]/40'>

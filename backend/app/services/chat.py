@@ -112,6 +112,18 @@ class ChatService:
             if m.author in ("user", "agent", "system") and m.kind in ("text", "plan_proposal")
         ]
 
+    async def delete_session(self, user_id: UUID, session_id: UUID) -> None:
+        cs = await self.repo.get_session(session_id, user_id)
+        if cs is None:
+            raise APIError(
+                NOT_FOUND,
+                http_status=404,
+                message_es="Esta conversación no existe.",
+                message_en="Chat session not found.",
+            )
+        await self.repo.archive_session(session_id)
+        await self.session.commit()
+
     async def send_user_message(
         self,
         user_id: UUID,
@@ -127,6 +139,9 @@ class ChatService:
                 message_es="Esta conversación no existe.",
                 message_en="Chat session not found.",
             )
+
+        is_first_message = not cs.title
+
         turn_id = uuid4()
         msg = await self.repo.create_message(
             session_id=session_id,
@@ -147,6 +162,7 @@ class ChatService:
                 turn_id=turn_id,
                 user_content=content,
                 sessionmaker=self.sessionmaker,
+                generate_title=is_first_message,
             )
         )
         if agent_tasks is not None:

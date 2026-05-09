@@ -96,6 +96,24 @@ class ChatRepository:
         await self.session.refresh(msg)
         return msg
 
+    async def archive_session(self, session_id: UUID) -> None:
+        from datetime import UTC, datetime
+
+        from sqlalchemy import update
+
+        await self.session.execute(
+            update(ChatSession)
+            .where(ChatSession.id == session_id)
+            .values(archived_at=datetime.now(UTC))
+        )
+
+    async def update_session_title(self, session_id: UUID, title: str) -> None:
+        from sqlalchemy import update
+
+        await self.session.execute(
+            update(ChatSession).where(ChatSession.id == session_id).values(title=title)
+        )
+
     async def touch_session(self, session_id: UUID) -> None:
         from datetime import UTC, datetime
 
