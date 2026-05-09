@@ -114,7 +114,9 @@ export interface TransactionRow {
 export type BackendWsFrame =
   | { type: "subscribed"; session_id: string }
   | { type: "chat_token"; session_id: string; turn_id: string; delta: string }
-  | { type: "chat_message"; session_id: string; message: ChatMessageDto }
+  | { type: "tool_call_started"; session_id: string; turn_id: string; tool_use_id: string; tool_name: string; input_summary: string }
+  | { type: "tool_call_finished"; session_id: string; turn_id: string; tool_use_id: string; is_error: boolean; result_summary: string }
+  | { type: "chat_message"; session_id: string; turn_id: string; message: ChatMessageDto }
   | { type: "plan_proposed"; session_id: string; plan_id: string; plan: TradePlan }
   | {
       type: "plan_update";

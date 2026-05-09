@@ -84,7 +84,8 @@ class ChatAgentSession:
 
         if ClaudeSDKClient is None or ClaudeAgentOptions is None:
             raise RuntimeError(
-                "claude-agent-sdk is not installed. Install backend dependencies " "before starting the live chat."
+                "claude-agent-sdk is not installed. Install backend dependencies "
+                "before starting the live chat."
             )
 
         pre_tool_use_hook = (
@@ -320,34 +321,66 @@ class ChatAgent:
             if event.type == "agent_token":
                 await self.manager.broadcast_to_session(
                     session_id,
-                    {"type": "token", "text": event.payload["text"]}
+                    {
+                        "type": "chat_token",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "delta": event.payload["text"],
+                    },
+                )
+            elif event.type == "tool_call_started":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "tool_call_started",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "tool_use_id": event.payload.get("tool_use_id"),
+                        "tool_name": event.payload.get("tool_name"),
+                        "input_summary": event.payload.get("input_summary"),
+                    },
+                )
+            elif event.type == "tool_call_finished":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "tool_call_finished",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "tool_use_id": event.payload.get("tool_use_id"),
+                        "is_error": event.payload.get("is_error"),
+                        "result_summary": event.payload.get("result_summary"),
+                    },
                 )
             elif event.type == "agent_message":
                 text = event.payload.get("text", "")
                 full_text.append(text)
                 await self.manager.broadcast_to_session(
-                    session_id,
-                    {"type": "agent_message", "text": text}
+                    session_id, {"type": "agent_message", "text": text}
                 )
             elif event.type == "approval_requested":
                 async with sessionmaker() as db:
                     from app.persistence.repositories.plans import PlanRepository
+
                     repo = PlanRepository(db)
                     plan = await repo.create_plan(
                         user_id=user_id,
                         origin_session_id=session_id,
                         origin_message_id=turn_id,
-                        steps_data=[{
-                            "tool_name": event.payload["tool_name"],
-                            "args": event.payload["input"],
-                            "human_description_es": "Aprobar " + event.payload["tool_name"],
-                        }],
-                        expires_at=_dt.datetime.now(_dt.UTC) + _dt.timedelta(minutes=15)
+                        steps_data=[
+                            {
+                                "tool_name": event.payload["tool_name"],
+                                "args": event.payload["input"],
+                                "human_description_es": "Aprobar " + event.payload["tool_name"],
+                            }
+                        ],
+                        expires_at=_dt.datetime.now(_dt.UTC) + _dt.timedelta(minutes=15),
                     )
 
                     self._plan_to_approval[plan.id] = (session_id, event.payload["approval_id"])
 
                     from app.persistence.repositories.chat import ChatRepository
+
                     chat_repo = ChatRepository(db)
                     await chat_repo.create_message(
                         session_id=session_id,
@@ -356,26 +389,30 @@ class ChatAgent:
                         kind="plan_proposal",
                         content_blocks=[],
                         turn_id=turn_id,
-                        plan_id=plan.id
+                        plan_id=plan.id,
                     )
                     await db.commit()
 
                 await self.manager.broadcast_to_session(
-                    session_id,
-                    {"type": "plan_proposed", "plan_id": str(plan.id)}
+                    session_id, {"type": "plan_proposed", "plan_id": str(plan.id)}
                 )
             elif event.type == "error":
                 await self.manager.broadcast_to_session(
                     session_id,
-                    {"type": "error", "message_en": event.payload.get("message"), "code": "AGENT_ERROR"}
+                    {
+                        "type": "error",
+                        "message_en": event.payload.get("message"),
+                        "code": "AGENT_ERROR",
+                    },
                 )
 
         final_text = "".join(full_text)
         if final_text:
             async with sessionmaker() as db:
                 from app.persistence.repositories.chat import ChatRepository
+
                 chat_repo = ChatRepository(db)
-                await chat_repo.create_message(
+                msg = await chat_repo.create_message(
                     session_id=session_id,
                     user_id=user_id,
                     author="agent",
@@ -385,4 +422,21 @@ class ChatAgent:
                 )
                 await db.commit()
 
-        await self.manager.broadcast_to_session(session_id, {"type": "turn_complete"})
+                from app.services.chat import _message_to_api
+
+                api_msg = _message_to_api(msg)
+
+            await self.manager.broadcast_to_session(
+                session_id,
+                {
+                    "type": "chat_message",
+                    "session_id": str(session_id),
+                    "turn_id": str(turn_id),
+                    "message": api_msg,
+                },
+            )
+
+        await self.manager.broadcast_to_session(
+            session_id,
+            {"type": "turn_complete", "session_id": str(session_id), "turn_id": str(turn_id)},
+        )

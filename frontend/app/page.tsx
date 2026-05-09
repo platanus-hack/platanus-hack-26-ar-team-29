@@ -121,16 +121,79 @@ export default function ChatPage() {
                 return;
             }
 
+            if (frame.type === 'tool_call_started') {
+                setIsTyping(true);
+                setMessages((prev) => {
+                    const streamId = `stream-${frame.turn_id}`;
+                    const existing = prev.find((m) => m.id === streamId);
+                    const newTool = {
+                        id: frame.tool_use_id,
+                        name: frame.tool_name,
+                        inputSummary: frame.input_summary,
+                        status: 'started' as const,
+                    };
+                    const nextMessage: Message = existing
+                        ? {
+                              ...existing,
+                              tools: [...(existing.tools || []), newTool],
+                          }
+                        : {
+                              id: streamId,
+                              role: 'assistant',
+                              content: '',
+                              createdAt: Date.now(),
+                              kind: 'stream',
+                              tools: [newTool],
+                          };
+                    return sortMessages([
+                        ...prev.filter((m) => m.id !== streamId),
+                        nextMessage,
+                    ]);
+                });
+                return;
+            }
+
+            if (frame.type === 'tool_call_finished') {
+                setMessages((prev) => {
+                    const streamId = `stream-${frame.turn_id}`;
+                    const existing = prev.find((m) => m.id === streamId);
+                    if (!existing || !existing.tools) return prev;
+
+                    const nextMessage: Message = {
+                        ...existing,
+                        tools: existing.tools.map(t => 
+                            t.id === frame.tool_use_id 
+                                ? { ...t, status: frame.is_error ? 'error' : 'ok', resultSummary: frame.result_summary }
+                                : t
+                        ),
+                    };
+                    return sortMessages([
+                        ...prev.filter((m) => m.id !== streamId),
+                        nextMessage,
+                    ]);
+                });
+                return;
+            }
+
             if (frame.type === 'chat_message') {
                 setMessages((prev) => {
+                    const streamId = `stream-${frame.turn_id}`;
+                    const streamMessage = prev.find((m) => m.id === streamId);
+                    
                     const withoutStreams = prev.filter(
                         (m) => !m.id.startsWith('stream-'),
                     );
+                    
+                    const finalMessage = dtoToMessage(frame.message);
+                    if (streamMessage?.tools) {
+                        finalMessage.tools = streamMessage.tools;
+                    }
+                    
                     return sortMessages([
                         ...withoutStreams.filter(
                             (m) => m.id !== frame.message.id,
                         ),
-                        dtoToMessage(frame.message),
+                        finalMessage,
                     ]);
                 });
                 return;
@@ -174,7 +237,14 @@ export default function ChatPage() {
             if (frame.type === 'turn_complete') {
                 setIsTyping(false);
                 setMessages((prev) =>
-                    prev.filter((m) => !m.id.startsWith('stream-')),
+                    prev.map((m) => {
+                        if (m.id.startsWith('stream-')) {
+                            // If the stream message is still here, no final text replaced it.
+                            // We keep it (by changing its ID) so the tools remain visible.
+                            return { ...m, id: `tools-${m.id}`, kind: 'text' };
+                        }
+                        return m;
+                    })
                 );
                 return;
             }
