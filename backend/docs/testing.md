@@ -99,7 +99,8 @@ Expected: `200 OK`, `Cache-Control: no-store, private`, `data.private_key` is th
 
 | Input | Expected status / code |
 |---|---|
-| `network: "mainnet"` on `/import` or `/create` | `400 NETWORK_NOT_ALLOWED` |
+| `network: "mainnet"` (or `polygon`, `arbitrum`, `optimism`) on `/import` or `/create` | `400 NETWORK_NOT_ALLOWED` |
+| `network: "base"` | `200 OK` — Base mainnet allowed per deviation §9 |
 | `private_key: "not a key"` on `/import` | `400 VALIDATION_FAILED` |
 | `private_key: "abandon abandon ... abandon"` (12x same word, bad checksum) | `400 VALIDATION_FAILED` |
 | `to: "0xnot-an-address"` on `/simulate` or `/transfer` | `400 INVALID_ADDRESS` |

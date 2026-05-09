@@ -91,7 +91,8 @@ def test_import_with_mnemonic_matches_address(sync_client) -> None:  # type: ign
 
 
 def test_import_mainnet_rejected(sync_client) -> None:  # type: ignore[no-untyped-def]
-    for net in ("mainnet", "polygon", "arbitrum", "optimism", "base"):
+    # "base" is intentionally allowed (deviation §9); other mainnets remain rejected.
+    for net in ("mainnet", "polygon", "arbitrum", "optimism"):
         r = sync_client.post(
             "/api/v1/connections/ethereum-custodial/import",
             json={"network": net, "private_key": KNOWN_HEX},

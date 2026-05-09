@@ -17,16 +17,18 @@ Phase 2 (deferred): `/defi/markets`, `/connections/{id}/defi/positions`, `/conne
 
 ## Networks
 
-Locked allowlist (testnets only — `02-3` §14 row 28):
-`sepolia`, `holesky`, `polygon-amoy`, `arbitrum-sepolia`, `base-sepolia`. Mainnet slugs return `400 NETWORK_NOT_ALLOWED`.
+Allowlist:
+`sepolia`, `holesky`, `polygon-amoy`, `arbitrum-sepolia`, `base-sepolia`, `base`. All other mainnet slugs return `400 NETWORK_NOT_ALLOWED`.
+
+`base` (mainnet) is enabled to support a live USDC demo. This is a documented deviation from `02-3` §14 row 28; see [`deviations.md`](./deviations.md) §9.
 
 Per-network metadata (`chain_id`, explorer template, known ERC-20 contract addresses) lives in [`app/providers/ethereum/networks.py`](../app/providers/ethereum/networks.py).
 
-USDC is shipped on every supported network *except* Holesky (Circle has no Holesky deployment at the time of writing). USDT testnet support is intentionally not shipped; requesting USDT returns `400 ASSET_NOT_SUPPORTED`.
+USDC is shipped on every supported network *except* Holesky (Circle has no Holesky deployment at the time of writing). On Base mainnet the contract is Circle native USDC (`0x8335…2913`). USDT testnet support is intentionally not shipped; requesting USDT returns `400 ASSET_NOT_SUPPORTED`.
 
 ## Per-network RPC config
 
-Replace the previous single `ETHEREUM_RPC_URL` env var with five per-network ones:
+One env var per supported network:
 
 ```text
 ETHEREUM_RPC_URL_SEPOLIA
@@ -34,6 +36,7 @@ ETHEREUM_RPC_URL_HOLESKY
 ETHEREUM_RPC_URL_POLYGON_AMOY
 ETHEREUM_RPC_URL_ARBITRUM_SEPOLIA
 ETHEREUM_RPC_URL_BASE_SEPOLIA
+ETHEREUM_RPC_URL_BASE
 ```
 
 Defaults are public publicnode endpoints; override for prod-grade reliability.
