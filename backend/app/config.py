@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     wallbit_base_url: str = "https://api.wallbit.io"
     wallbit_mcp_url: str = "https://api.dev.wallbit.io"
 
+    poll_interval_seconds: int = 300
+
     # Per-network Ethereum JSON-RPC URLs. Each maps an env var to a network slug
     # used by /connections/ethereum-custodial/* and /onchain/*.
     ethereum_rpc_url_sepolia: str = _DEFAULT_RPC_URLS["sepolia"]

@@ -1,167 +1,65 @@
-# 03 Build Log
-
-Status: maintained by Coder.
-
-## Summary
-
-- Current state: frontend chat now integrates with the real FastAPI backend MVP for chat sessions, messages, plan proposal/approval/rejection, and session WebSocket frames.
-- Demo URL: not deployed.
-- Local run command: backend `uv run uvicorn app.main:app --port 8000`; frontend `bun dev` from `frontend/`.
-- Main branch/commit reference: not recorded in this session.
+# 03_build_log.md
 
 ## Completed Work
-
-- Inspected backend implementation and docs: FastAPI routes, services, WebSocket manager, backend README, deviations, and architecture notes.
-- Added typed frontend REST client for available backend endpoints under `/api/v1`.
-- Added frontend WebSocket client for backend MVP protocol at `/api/v1/ws?session_id=<uuid>`.
-- Replaced mocked `/chat` flow with real session boot, message history hydration, WS streaming, plan proposal rendering, and approve/reject actions.
-- Moved chat experience to `/` so `localhost:3000` opens the chat directly; removed `/chat` route page.
-- Made chat layout mobile-first and responsive: full-height mobile shell, safe-area aware header/input, wider desktop container, adaptive message widths, empty state, touch-sized controls, and stacked plan actions on narrow screens.
-- Tuned layout to a ChatGPT/Claude-style desktop width with centered column, full-height thread, and breakpoints across sm/md/lg/xl for spacing and bubble widths.
-- Added a left sidebar (desktop) with app name and navigation tabs (Chat, Inversiones, Balances, Actividad, Conexiones) to match ChatGPT-style layout.
-- Added a left sidebar account card (avatar, name, account type, manage button) to mirror ChatGPT-style profile section.
-- Removed debug UI strings (backend URL, WS status badge, and footer version text) from the visible layout.
-- Expanded main chat column to use full remaining width (no centered max-width) and increased font sizes for a more desktop-oriented chat experience.
-- Refined chat UX: larger bubbles, improved spacing, larger input, and richer empty-state text.
-- Added static tabs (Inversiones, Balances, Actividad, Conexiones) with mock data and layouts; sidebar now navigates to real routes.
-- Expanded main chat area to full remaining width and increased typography sizes for a more desktop-native chat experience.
-- Replaced mock trade card with real plan summary/confirmation components.
-- Updated frontend context documentation with backend integration details and env vars.
+- Designed and implemented the unified transaction database (`canonical_transactions`, `canonical_accounts`, `canonical_assets`, `user_profiles`, etc.) in SQLAlchemy and deployed via Alembic.
+- Implemented a Wallbit Ingestion Pipeline (`services/ingestion.py`) that polls `/api/public/v1/transactions`, normalizes the payload, and performs deduplicated upserts into the canonical ledger.
+- Implemented the `ClassifierAgent` using Anthropic Claude to analyze batched unclassified transactions, returning structured output with taxonomy categories (`income`, `risky_investment`, `necessary_expense`, etc.) and cleaned-up merchants.
+- Added a `ContextService` that recalculates `user_profiles.summaries` (income, expenses, savings rate) based on the classified transaction data.
+- Refactored `PortfolioService.read_transactions` to fetch from the canonical database instead of directly querying the Wallbit API.
+- Integrated the Next.js frontend `ActivityPage` (`app/activity/page.tsx`) to pull and render the categorized transactions, removing the static mock data.
 
 ## Files Changed
-
-| File | Purpose |
-| --- | --- |
-| `frontend/app/lib/backend/types.ts` | TypeScript DTOs for backend REST responses and WS frames. |
-| `frontend/app/lib/backend/client.ts` | REST client, env-based base URL, Spanish headers, backend error parsing. |
-| `frontend/app/lib/backend/ws.ts` | WebSocket helper for session subscription frames. |
-| `frontend/app/page.tsx` | Root route now contains the integrated chat UI. |
-| `frontend/app/chat/page.tsx` | Removed; `/chat` route no longer exists. |
-| `frontend/app/chat/types.ts` | Updated UI message model to support assistant/system roles and real plans. |
-| `frontend/app/chat/_components/ChatInput.tsx` | Spanish copy. |
-| `frontend/app/chat/_components/ChatMessage.tsx` | Render real plan confirmation cards and system messages; desktop-sized bubble widths. |
-| `frontend/app/chat/_components/ChatThread.tsx` | Responsive scroll area and inner content width for desktop layout. |
-| `frontend/app/chat/_components/PlanConfirmation.tsx` | Approval/rejection component for backend `TradePlan`; stacked mobile actions. |
-| `frontend/app/chat/_components/PlanSummary.tsx` | Plan/step summary component; responsive labels and step rows. |
-| `frontend/app/page.tsx` | ChatGPT-style centered column with breakpoints for desktop view. |
-| `frontend/app/page.tsx` | Added desktop sidebar with primary navigation tabs. |
-| `frontend/app/page.tsx` | Added sidebar account/profile card (avatar + manage button). |
-| `frontend/app/page.tsx` | Full-width main chat area beside sidebar; larger header typography. |
-| `frontend/app/chat/_components/ChatMessage.tsx` | Increased bubble sizes and desktop widths. |
-| `frontend/app/chat/_components/ChatThread.tsx` | Larger spacing and empty-state copy. |
-| `frontend/app/chat/_components/ChatInput.tsx` | Larger input and send button for desktop UX. |
-| `frontend/app/chat/_components/PlanConfirmation.tsx` | Increased typography for plan confirmation. |
-| `frontend/app/chat/_components/PlanSummary.tsx` | Larger total amount typography. |
-| `frontend/app/_components/AppShell.tsx` | Shared layout with sidebar navigation and account card. |
-| `frontend/app/_components/PageHeader.tsx` | Shared header for tabs. |
-| `frontend/app/investments/page.tsx` | Mock Investments dashboard and positions list. |
-| `frontend/app/balances/page.tsx` | Mock Balances cards. |
-| `frontend/app/activity/page.tsx` | Mock Activity feed. |
-| `frontend/app/connections/page.tsx` | Mock Connections cards. |
-| `frontend/app/page.tsx` | Chat now fills remaining width beside sidebar; larger header text. |
-| `frontend/app/chat/_components/ChatThread.tsx` | Larger spacing and empty-state typography. |
-| `frontend/app/chat/_components/ChatMessage.tsx` | Larger bubble typography and max-widths. |
-| `frontend/app/chat/_components/PlanConfirmation.tsx` | Header uses normalized h3 styles. |
-| `frontend/app/chat/api.ts` | Removed obsolete mock chat API. |
-| `frontend/app/chat/_components/TradeConfirmation.tsx` | Removed obsolete mock trade card. |
-| `frontend/app/chat/_components/TradeSummary.tsx` | Removed obsolete mock trade summary. |
-| `frontend/FRONTEND_CONTEXT.md` | Updated with integration context and env vars. |
-| `.opencode/artifacts/03_build_log.md` | Updated build log. |
+- `backend/app/persistence/models/ledger.py` (New)
+- `backend/app/persistence/models/users.py` (Added `UserProfile`)
+- `backend/alembic/versions/774f440cf2aa_add_ledger_models_and_userprofile.py` (New)
+- `backend/app/services/ingestion.py` (New)
+- `backend/app/workers/ingest_wallbit.py` (New)
+- `backend/app/agents/classifier_agent.py` (New)
+- `backend/app/workers/classifier_worker.py` (New)
+- `backend/app/services/context.py` (New)
+- `backend/app/workers/context_worker.py` (New)
+- `backend/app/services/portfolio.py` (Modified `read_transactions`)
+- `frontend/app/activity/page.tsx` (Modified to use real API endpoint)
 
 ## Commands Run
+- Generated migrations: `uv run alembic revision --autogenerate -m "Add ledger models and UserProfile"`
+- Applied migrations: `uv run alembic upgrade head`
+- Tested Wallbit fetch: `uv run python test_wallbit.py`
+- Seeded dev user: `uv run python seed_wallbit_dev.py`
+- Ingestion worker: `PYTHONPATH=. uv run python app/workers/ingest_wallbit.py`
+- Classifier worker: `PYTHONPATH=. uv run python app/workers/classifier_worker.py`
+- Context worker: `PYTHONPATH=. uv run python app/workers/context_worker.py`
+- Verification script: `uv run python check_txs.py`
+- Backend API server test: `uv run uvicorn app.main:app --port 8001`
 
-| Command | Result | Notes |
-| --- | --- | --- |
-| Read/glob repository files | OK | Inspected frontend and backend files/documentation. |
-| `bun run lint` | Failed | `bun` is not installed in this environment. |
-| `bun run build` | Failed | `bun` is not installed in this environment. |
-| `npm run lint` | Failed | Dependencies are not installed; `eslint: not found`. |
-| `npm run build` | Failed | Dependencies are not installed; `next: not found`. |
-| Grep old mock imports/usages | OK | No stale mock `TradeConfirmation`, `TradeSummary`, `./api`, or `bot` role usages found beyond new backend client method. |
-| `npm install` | OK | Installed local frontend dependencies for testing; removed generated `package-lock.json` afterward to keep existing `bun.lock` workflow. |
-| `npm run lint` | Failed then fixed | First run found `react-hooks/set-state-in-effect` in `app/chat/page.tsx`; removed synchronous state set from effect. |
-| `npm run lint` | OK | ESLint passed after fix. |
-| `npm run build` | OK | Next production build and TypeScript passed; routes `/` and `/chat` generated. |
-| `npm run dev -- --port 3000` + HTTP fetch `/chat` | OK | Returned 200 and rendered `OpenFi Chat`. |
-| Fetch `http://localhost:8000/api/v1/health` | Failed | Backend not running in this environment. |
-| `python3 -m venv .venv && .venv/bin/pip install -e .` | Failed | Backend package lacks explicit package discovery for flat layout (`app`, `alembic`). |
-| `.venv/bin/pip install ...` | OK | Installed backend runtime dependencies manually from `pyproject.toml`. |
-| `docker run -d --name openfi-pg ... postgres:16` | OK | Started local Postgres on `localhost:5432`, DB `openfi`. |
-| `PYTHONPATH=. .venv/bin/alembic upgrade head` | OK | Applied migration `0001_init_mvp`. |
-| `PYTHONPATH=. .venv/bin/uvicorn app.main:app --port 8000` | OK | Backend running in background; health returns 200. |
-| `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev -- --port 3000` | OK | Frontend running in background; `/chat` returns 200. |
-| Node REST+WS smoke | OK | Created session, connected WS, sent `comprá 7 usd de apple`, received `plan_proposed`, rejected plan, received `plan_update rejected`. |
-| Final HTTP status check | OK | Backend `/api/v1/health` 200; frontend `/chat` 200. |
-| `npm run lint` after root-route move | OK | ESLint passed. |
-| `npm run build` after root-route move | OK | Build passed; route list now only `/` and `/_not-found`. |
-| HTTP smoke `/` and `/chat` | OK | `/` returns 200 and contains `OpenFi Chat`; `/chat` returns 404. |
-| `npm run lint` after responsive changes | OK | ESLint passed. |
-| `npm run build` after responsive changes | OK | Build passed. |
-| HTTP smoke `/` after responsive changes | OK | `/` returns 200 and contains `OpenFi Chat`. |
-| `npm run lint` after desktop layout changes | OK | ESLint passed. |
-| `npm run build` after desktop layout changes | OK | Build passed; routes `/` and `/_not-found` only. |
-| HTTP smoke `/` after desktop layout changes | OK | `/` returns 200 and contains `OpenFi Chat`. |
-| `npm run lint` after sidebar layout | OK | ESLint passed. |
-| `npm run build` after sidebar layout | OK | Build passed. |
-| HTTP smoke `/` after sidebar layout | OK | `/` returns 200; markup contains sidebar tabs (e.g., "Inversiones"). |
-| `npm run lint` after sidebar account card | OK | ESLint passed. |
-| `npm run build` after sidebar account card | OK | Build passed. |
-| HTTP smoke `/` after sidebar account card | OK | `/` returns 200; markup contains "Gestionar cuenta" and user name. |
-| `npm run lint` after removing debug strings | OK | ESLint passed. |
-| `npm run build` after removing debug strings | OK | Build passed; routes unchanged. |
-| `npm run lint` after UX sizing changes | OK | ESLint passed. |
-| `npm run build` after UX sizing changes | OK | Build passed. |
-| `npm run lint` after adding tabs | OK | ESLint passed. |
-| `npm run build` after adding tabs | OK | Build passed; routes added. |
-| HTTP smoke tabs | OK | `/investments`, `/balances`, `/activity`, `/connections` return 200. |
-| `npm run lint` after full-width chat | OK | ESLint passed. |
-| `npm run build` after full-width chat | OK | Build passed; routes unchanged. |
+## Tests and Results
+- Tested the Wallbit API client successfully grabbing `TSLA`, `AMZN`, `AAPL` trades and internal transfers.
+- The normalizer correctly mapped `INVESTMENT_DEPOSIT` to `transfer_internal` and `TRADE` to `trade`.
+- The Classifier Agent effectively correctly categorized `TSLA` and `AMZN` as `risky_investment` and cleaned up the `merchant` strings to plain "Tesla" and "Amazon". It categorized internal transfers accurately as `transfer`.
+- Profile aggregates recalculated cleanly via `ContextService`.
+- Re-running the poller showed 0 dupes due to the `on_conflict_do_update` using `(connection_id, external_id)`.
 
-## Tests And Checks
-
-| Check | Command/steps | Result |
-| --- | --- | --- |
-| Unit | Not run yet | No frontend unit test harness exists. |
-| Smoke | Passed | `npm run lint`, `npm run build`, and `/chat` HTTP smoke passed after installing frontend dependencies. |
-| Functional | Passed | REST+WS smoke passed against local FastAPI + Postgres. Approval execution with Wallbit not tested because no Wallbit key/connection is configured. |
-| Stress | Not run | Out of scope for this slice. |
-| Security | Manual | No secrets added; frontend uses public API/WS URL env vars only. |
-
-## Environment Variables
-
-Do not paste secret values here. Document names only.
-
-| Variable | Purpose | Required for demo |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_BASE_URL` | Frontend REST backend base URL, default `http://localhost:8000`. | No if backend local on 8000; yes otherwise. |
-| `NEXT_PUBLIC_WS_BASE_URL` | Frontend WebSocket backend base URL; derived from API base if omitted. | No. |
+## Env Vars Needed
+- `WALLBIT_API_KEY` (existing, tested)
+- `WALLBIT_MCP_URL` (existing, fallback defaults implemented)
+- `ANTHROPIC_API_KEY` (existing, tested for classification)
+- `FERNET_KEY` (existing, credential encryption works)
 
 ## API / Deploy Setup Notes
+- The Next.js frontend fetches the `/api/v1/transactions` endpoint securely. The frontend defaults to `http://localhost:8000` via `NEXT_PUBLIC_API_URL` which easily maps to the backend server.
+- Added a `DEV_USER_ID` override script (`seed_wallbit_dev.py`) to align the DB seeding with the auth mock in `deps.py`.
 
-- Backend MVP exposes direct arrays/objects, not the ideal `{data: ...}` envelopes from the canonical API artifact.
-- Backend MVP WebSocket uses simple `type` frames and one session per socket; no `kind/topic/seq`, no replay, no multiplexing.
-- Frontend intentionally targets the implemented backend documented in `backend/README.md` and `backend/docs/deviations.md`.
-- Current local processes: Postgres Docker container `openfi-pg`, backend on `http://localhost:8000`, frontend on `http://localhost:3000`.
-
-## Decisions And Shortcuts
-
-- Kept integration dependency-free: native `fetch` and `WebSocket` only.
-- Chat history hydration fetches each referenced plan individually when a `plan_proposal` message has `plan_id`.
-- Optimistically updates user messages and plan states, then reconciles via WS or fallback `GET /plans/{id}` on failure.
-- Added portfolio/connections client functions even though no UI surfaces consume them yet, because backend endpoints exist.
+## Decisions and Shortcuts
+- The poller, classifier, and context recalculator are currently implemented as explicit script modules inside `workers/`. In a future iteration or production system, these should be bound to a task scheduler like Celery/ARQ, or scheduled cronjobs.
+- The `ContextService` recalculates the summary metrics blindly for all time right now instead of bucketing strictly by current month. Perfect for the MVP horizon.
 
 ## Known Issues
+- Currently, Wallbit's API has a bug/feature where `/transactions` API does not explicitly paginate with limits cleanly in all cases (422 Invalid Limit error when limit=5 was used). Omitting the limit parameter fetches the entire sequence fine.
 
-- This environment has `python3` but not `uv`; backend quick-start cannot be executed as documented without installing `uv`.
-- Backend editable install with pip currently fails because setuptools detects multiple top-level packages in flat layout.
-- Real plan execution after approval still requires a configured Wallbit connection/API key; local smoke used reject path to avoid external mutation.
-- If a WS disconnect happens mid-turn, backend has no replay; frontend currently keeps REST history only on initial boot.
-- `chat_message` frames do not include `turn_id`, so frontend removes temporary stream messages broadly when final messages arrive.
-- No auth headers are sent because backend MVP ignores auth and uses dev user.
-- Balances, transactions, connections, and health clients exist but no frontend screens consume them yet.
+## Demo URL
+- Available via `http://localhost:3000/activity` when frontend and backend spin up simultaneously.
 
-## Reviewer Handoff
-
-- Main flow to test: start backend on port 8000, start frontend, open `/chat`, send `comprá 10 usd de apple`, watch streamed preface + plan card, approve/reject.
-- Risk areas: WS timing (subscribe before send), backend availability, no replay on reconnect, Wallbit key required for real plan execution after approval.
-- Suggested review focus: TypeScript build, chat happy path, plan state transitions, user-visible Spanish errors.
+## Next Steps for Reviewer
+- You can spin up both the backend `uvicorn` and frontend Next.js dev server.
+- Review the `Activity` tab to see the unified ledger populated directly from Wallbit and magically categorized by Claude.
+- We can now link this up to the Chat Agent, which can query these aggregates directly from the `UserProfile` to provide context-aware insights.

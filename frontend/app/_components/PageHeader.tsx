@@ -1,16 +1,19 @@
-export function PageHeader({
-  title,
-  description,
-}: {
+import { ReactNode } from "react";
+
+interface PageHeaderProps {
   title: string;
-  description?: string;
-}) {
+  description: string;
+  children?: ReactNode;
+}
+
+export function PageHeader({ title, description, children }: PageHeaderProps) {
   return (
-    <header className="flex min-h-[74px] shrink-0 flex-col justify-center border-b border-line bg-background px-4 py-3 sm:px-6 lg:px-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {description && <p className="text-muted text-sm">{description}</p>}
+    <div className="flex-none pt-8 sm:pt-10 flex justify-between items-end">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+        <p className="mt-2 text-sm text-subdued">{description}</p>
       </div>
-    </header>
+      {children && <div>{children}</div>}
+    </div>
   );
 }

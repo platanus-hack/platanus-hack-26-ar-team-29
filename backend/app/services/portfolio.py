@@ -65,16 +65,35 @@ class PortfolioService:
         return [*checking_rows, *stocks_rows]
 
     async def read_transactions(self, user_id: UUID, limit: int = 50) -> list[dict[str, Any]]:
-        creds = await self._get_credentials(user_id)
-        async with WallbitClient(api_key=creds.api_key, base_url=self.wallbit_base_url) as wc:
-            try:
-                raw = await wc.list_transactions(limit=limit)
-            except WallbitAPIError as exc:
-                raise APIError(
-                    PROVIDER_UNAVAILABLE,
-                    http_status=502,
-                    message_es="Wallbit no respondió correctamente.",
-                    message_en="Wallbit upstream error.",
-                    details={"status": exc.status, "body": exc.body},
-                ) from exc
-        return transactions_to_rows(raw)
+        from sqlalchemy import select
+        from app.persistence.models.ledger import CanonicalTransaction
+
+        stmt = (
+            select(CanonicalTransaction)
+            .where(CanonicalTransaction.user_id == user_id)
+            .order_by(CanonicalTransaction.occurred_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        txs = result.scalars().all()
+
+        return [
+            {
+                "id": str(tx.id),
+                "external_id": tx.external_id,
+                "type": tx.type,
+                "direction": tx.direction,
+                "source_amount": float(tx.source_amount) if tx.source_amount else None,
+                "source_currency": tx.source_currency,
+                "dest_amount": float(tx.dest_amount) if tx.dest_amount else None,
+                "dest_unit": tx.dest_unit,
+                "fee_amount": float(tx.fee_amount),
+                "fee_currency": tx.fee_currency,
+                "status": tx.status,
+                "occurred_at": tx.occurred_at.isoformat(),
+                "classifier": tx.classifier,
+                "merchant": tx.merchant,
+                "source_kind": tx.source_kind,
+            }
+            for tx in txs
+        ]
