@@ -1,6 +1,7 @@
 {
   "mcpServers": {
     "wallbit": {
+      "type": "http",
       "url": "https://mcp.wallbit.io/mcp"
     }
   }
