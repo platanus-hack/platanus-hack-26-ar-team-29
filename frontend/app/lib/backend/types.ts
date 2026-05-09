@@ -65,6 +65,7 @@ export interface TradePlan {
   id: string;
   state: PlanState;
   total_estimated_usd?: number | null;
+  estimated_unit_price_usd?: number | null;
   expires_at?: string;
   created_at?: string;
   steps: TradePlanStep[];

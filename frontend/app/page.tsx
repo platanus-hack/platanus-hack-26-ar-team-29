@@ -62,13 +62,22 @@ export default function ChatPage() {
 
     const updatePlan = useCallback(
         (planId: string, updater: (plan: TradePlan) => TradePlan) => {
-            setMessages((prev) =>
-                prev.map((message) =>
-                    message.plan?.id === planId
-                        ? { ...message, plan: updater(message.plan) }
-                        : message,
-                ),
-            );
+            setMessages((prev) => {
+                const next = prev.map((message) => {
+                    if (message.plan?.id !== planId) return message;
+                    const newPlan = updater(message.plan);
+                    const wasPending = message.plan.state === 'pending_approval';
+                    const isPending = newPlan.state === 'pending_approval';
+                    // Pending plans pin to the bottom (Date.now() + 1e9).
+                    // Once resolved, drop the pin so subsequent responses sort after.
+                    // Re-pin if the plan flips back to pending (e.g., error rollback).
+                    let createdAt = message.createdAt;
+                    if (isPending && !wasPending) createdAt = Date.now() + 1e9;
+                    else if (!isPending && wasPending) createdAt = Date.now();
+                    return { ...message, plan: newPlan, createdAt };
+                });
+                return sortMessages(next);
+            });
         },
         [],
     );
@@ -195,11 +204,13 @@ export default function ChatPage() {
             }
 
             if (frame.type === 'plan_proposed') {
+                // Plan cards are the actionable item — pin them after any
+                // current or future end-of-turn agent message in this session.
                 upsertMessage({
                     id: `plan-${frame.plan_id}`,
                     role: 'assistant',
                     content: '',
-                    createdAt: Date.now(),
+                    createdAt: Date.now() + 1e9,
                     kind: 'plan_proposal',
                     planId: frame.plan_id,
                     plan: frame.plan,
