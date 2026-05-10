@@ -11,8 +11,8 @@ function formatAmount(amount: number, currency: string) {
   // Crypto-like assets need more decimals; fiat sticks to 2.
   const isCrypto = currency !== "USD" && currency !== "ARS";
   return amount.toLocaleString("es-AR", {
-    minimumFractionDigits: isCrypto ? 0 : 2,
-    maximumFractionDigits: isCrypto ? 6 : 2,
+    minimumFractionDigits: isCrypto ? 3 : 2,
+    maximumFractionDigits: isCrypto ? 3 : 2,
   });
 }
 

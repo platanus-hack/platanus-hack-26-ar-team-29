@@ -103,3 +103,18 @@ class ConnectionRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_active_ethereum_custodial_by_address(
+        self, user_id: UUID, network: str, address: str
+    ) -> ProviderConnection | None:
+        stmt = (
+            select(ProviderConnection)
+            .where(ProviderConnection.user_id == user_id)
+            .where(ProviderConnection.connection_type == "ethereum_custodial")
+            .where(ProviderConnection.disconnected_at.is_(None))
+            # connection_metadata is a jsonb column, we can query its keys
+            .where(ProviderConnection.connection_metadata["network"].astext == network)
+            .where(ProviderConnection.connection_metadata["address"].astext == address)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()

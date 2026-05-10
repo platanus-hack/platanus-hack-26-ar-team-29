@@ -283,6 +283,17 @@ class ConnectionService:
         if primary_asset_hint:
             metadata["primary_asset_hint"] = primary_asset_hint
 
+        existing = await self.repo.get_active_ethereum_custodial_by_address(user_id, network, address)
+        if existing is not None:
+            return {
+                "id": str(existing.id),
+                "connection_type": existing.connection_type,
+                "label": existing.label,
+                "status": existing.status,
+                "capabilities": list(existing.capabilities),
+                "created_at": existing.created_at.isoformat().replace("+00:00", "Z"),
+            }
+
         conn = await self.repo.create_ethereum_custodial(
             user_id=user_id,
             label=label,
