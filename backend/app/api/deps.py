@@ -66,9 +66,11 @@ def get_portfolio_service(
     request: Request = None,  # type: ignore[assignment]
 ) -> PortfolioService:
 
+    eth_provider = request.app.state.ethereum_provider
     return PortfolioService(
         session=session,
         wallbit_base_url=request.app.state.wallbit_base_url,
+        eth_client=eth_provider.client,
     )
 
 
@@ -78,12 +80,14 @@ def get_profiler_service(
 ) -> ProfilerService:
 
     settings = get_settings()
+    eth_provider = request.app.state.ethereum_provider
 
     return ProfilerService(
         session=session,
         portfolio_service=PortfolioService(
             session=session,
             wallbit_base_url=request.app.state.wallbit_base_url,
+            eth_client=eth_provider.client,
         ),
         anthropic_client=AnthropicClient(
             api_key=settings.anthropic_api_key, model=settings.anthropic_model

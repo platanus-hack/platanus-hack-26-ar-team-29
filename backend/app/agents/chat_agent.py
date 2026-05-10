@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import datetime as _dt
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
@@ -30,6 +31,9 @@ SYSTEM_PROMPT = """
 Sos OpenFi, un agente financiero conversacional para usuarios de Argentina.
 Hablas en castellano rioplatense natural, con tono claro y directo.
 
+Reglas de presentación (CRÍTICO):
+- Cuando vayas a mostrar una tabla (usando show_table), SIEMPRE debes escribir el texto explicativo o de introducción ANTES de invocar a la tool. Esto asegura que visualmente el texto quede arriba de la tabla. NUNCA llames a show_table primero y luego escribas el texto.
+
 Reglas de seguridad:
 - Podes usar herramientas de lectura libremente para entender balances, activos
   e historial.
@@ -37,6 +41,22 @@ Reglas de seguridad:
   usa AskUserQuestion con 2 a 4 opciones cortas en vez de preguntar con texto
   largo. Despues de recibir la respuesta, continua el flujo sin repetir la
   pregunta y sin terminar el turno.
+
+- Cuando el usuario pida ver un gráfico, historial de precios, o visualizar datos de forma gráfica, debes responder con los datos en formato CSV dentro de un bloque de código markdown.
+  El lenguaje del bloque debe especificar el tipo de gráfico a mostrar, usando una de estas tres opciones:
+  1. `csv-bar` : Gráfico de barras (Ideal para comparaciones de valores discretos o meses).
+  2. `csv-line` : Gráfico de líneas (Ideal para tendencias, historial de precios a lo largo del tiempo).
+  3. `csv-pie` : Gráfico de torta/circular (Ideal para distribuciones de portafolio o porcentajes).
+  
+  La primera fila debe ser el encabezado `label,value`.
+  Ejemplo de gráfico de torta:
+  ```csv-pie
+  label,value
+  AAPL,500
+  TSLA,300
+  AMZN,200
+  ```
+  El frontend interceptará este bloque y dibujará el gráfico correspondiente automáticamente.
 
 Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 - Cuando tengas todos los datos necesarios para una compra/venta, **llama
@@ -113,6 +133,7 @@ WALLBIT_READ_TOOLS = [
     "mcp__wallbit__get_stocks_balance",
     "mcp__wallbit__list_transactions",
     "mcp__wallbit__get_asset",
+    "mcp__wallbit__show_table",
 ]
 WALLBIT_WRITE_TOOLS = [
     "create_trade",
@@ -341,7 +362,7 @@ def normalize_sdk_message(message: Any) -> list[AgentEvent]:
                             "tool_use_id": getattr(block, "id", None),
                             "tool_name": tool_name,
                             "tool_label": format_tool_name(tool_name),
-                            "input_summary": summarize_value(getattr(block, "input", None)),
+                            "input_summary": json.dumps(getattr(block, "input", None)) if getattr(block, "input", None) is not None else None,
                         },
                     )
                 )
@@ -352,7 +373,7 @@ def normalize_sdk_message(message: Any) -> list[AgentEvent]:
                         {
                             "tool_use_id": getattr(block, "tool_use_id", None),
                             "is_error": bool(getattr(block, "is_error", False)),
-                            "result_summary": summarize_value(getattr(block, "content", None)),
+                            "result_summary": json.dumps(getattr(block, "content", None)) if getattr(block, "content", None) is not None else None,
                         },
                     )
                 )
@@ -395,7 +416,7 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
                         "tool_use_id": getattr(content_block, "id", None),
                         "tool_name": tool_name,
                         "tool_label": format_tool_name(tool_name),
-                        "input_summary": summarize_value(getattr(content_block, "input", None)),
+                        "input_summary": json.dumps(getattr(content_block, "input", None)) if getattr(content_block, "input", None) is not None else None,
                     },
                 )
             ]
