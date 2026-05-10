@@ -6,111 +6,120 @@
 
 <img src="./project-logo.png" alt="Project Logo" width="150" align="center" />
 
-**Atajo** es un agente de IA conversacional diseñado para unificar tus finanzas. Lee saldos e historial en todas tus cuentas conectadas (ej. Wallbit, Ethereum) y es capaz de proponer y ejecutar planes de movimiento de dinero complejos de múltiples pasos, siempre esperando una única aprobación explícita de tu parte.
+**Atajo** is a conversational AI agent designed to unify your finances. It reads balances and history across all your connected accounts (e.g., Wallbit, Ethereum) and is capable of proposing and executing complex, multi-step money-moving plans, always waiting for a single explicit approval from you.
 
 ---
 
-## 01.- Descripción del proyecto
+## 01.- Project Description
+
+Managing multiple financial platforms can be tedious and full of friction. Atajo solves this by allowing you to **manage your trades easily and without friction**. Our main selling point is simple: **you can buy and sell assets with just one message.**
+
+- **Trade in natural language:** Simply tell Atajo what you want to do (e.g., "Buy 10 USD of Apple"), and it will draft the exact execution steps for you.
+- **Consolidates financial platforms:** It unifies different financial platforms into a single interface. Today it integrates with Wallbit for live balances and transactions, with a hexagonal architecture ready to expand to Ethereum and others.
+- **Secure by design:** Atajo proposes multi-step plans but never executes a trade without your explicit, one-click approval.
+- **Real-time feedback:** Everything from the agent's LLM generation to the step-by-step execution of a plan is streamed live to the frontend via WebSockets.
+
+For a deeper dive into the product vision, check out the [project-description.md](./project-description.md) file.
 
 ---
 
-## 02.- Stack Tecnológico 🛠️
+## 02.- Tech Stack 🛠️
 
-El proyecto está dividido en dos partes principales:
+The project is divided into two main parts:
 
-*   **Frontend:** [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, Tailwind CSS v4. Conexión en tiempo real con el backend mediante WebSockets.
-*   **Backend:** Python 3.11+, [FastAPI](https://fastapi.tiangolo.com/), asyncpg, SQLAlchemy. Integra el SDK oficial de Anthropic Claude para la orquestación de agentes.
-*   **Base de Datos:** PostgreSQL.
+*   **Frontend:** [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript, Tailwind CSS v4. Real-time connection with the backend via WebSockets.
+*   **Backend:** Python 3.11+, [FastAPI](https://fastapi.tiangolo.com/), asyncpg, SQLAlchemy. Integrates the official Anthropic Claude SDK for agent orchestration.
+*   **Database:** PostgreSQL.
 
 ---
 
-## 💻 Desarrollo Local
+## 💻 Local Development
 
-Para correr el proyecto en tu computadora, necesitarás tener instalados: [Docker](https://docs.docker.com/engine/install/), [Bun](https://bun.sh/) (para el frontend), y [uv](https://docs.astral.sh/uv/) (para el backend en Python).
+To run the project locally, you will need: [Docker](https://docs.docker.com/engine/install/), [Bun](https://bun.sh/) (for the frontend), and [uv](https://docs.astral.sh/uv/) (for the Python backend).
 
-### 1. Levantar la base de datos
-Desde la raíz del proyecto, levanta el contenedor de PostgreSQL:
+### 1. Start the Database
+From the project root, start the PostgreSQL container:
 ```bash
 docker compose up -d
 ```
 
 ### 2. Backend (FastAPI)
-Abre una terminal y navega al directorio `backend/`:
+Open a terminal and navigate to the `backend/` directory:
 ```bash
 cd backend
-# Instala las dependencias
+# Install dependencies
 uv sync
-# Corre las migraciones de la base de datos
+# Run database migrations
 uv run alembic upgrade head
-# Levanta el servidor
-uv run uvicorn app.main:app --reload --port 8000
+# Start the server (DO NOT use --reload as it breaks WebSocket state)
+uv run uvicorn app.main:app --port 8000
 ```
-> **Nota:** Necesitarás configurar tus variables de entorno en `backend/.env`. Copia el archivo `backend/.env.example` y rellena las claves (especialmente `ANTHROPIC_API_KEY`).
+> **Note:** You will need to configure your environment variables in `backend/.env`. Copy the `backend/.env.example` file and fill in the keys (especially `ANTHROPIC_API_KEY` and `FERNET_KEY`).
 
 ### 3. Frontend (Next.js)
-Abre otra terminal y navega al directorio `frontend/`:
+Open another terminal and navigate to the `frontend/` directory:
 ```bash
 cd frontend
-# Instala las dependencias
+# Install dependencies
 bun install
-# Inicia el entorno de desarrollo
+# Start the development server
 bun dev
 ```
-El frontend estará disponible en [http://localhost:3000](http://localhost:3000). El backend servirá la API en `http://localhost:8000`.
+The frontend will be available at [http://localhost:3000](http://localhost:3000). The backend will serve the API at `http://localhost:8000`.
 
 ---
 
-## 🚀 Despliegue (Deployment)
+## 🚀 Deployment
 
-### Base de Datos (Supabase)
-El proyecto está pensado para utilizar una base de datos de PostgreSQL hosteada en [Supabase](https://supabase.com/).
-1. Crea un proyecto en Supabase.
-2. Obtén la URI de conexión de PostgreSQL.
-3. Esta URI será utilizada en el backend (`DATABASE_URL`).
+### Database (Supabase)
+The project is designed to use a PostgreSQL database hosted on [Supabase](https://supabase.com/).
+1. Create a project in Supabase.
+2. Obtain the PostgreSQL connection URI.
+3. This URI will be used in the backend (`DATABASE_URL`).
 
-### Backend (Heroku vía Contenedores)
-El backend de Atajo se despliega utilizando el registro de contenedores de Heroku para tener control absoluto sobre el entorno Docker.
+### Backend (Heroku via Containers)
+The Atajo backend is deployed using the Heroku Container Registry to have absolute control over the Docker environment.
 
-Asegúrate de tener el [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) instalado y haber hecho login (`heroku login` y `heroku container:login`).
+Ensure you have the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) installed and have logged in (`heroku login` and `heroku container:login`).
 
 ```bash
 cd backend
 
-# Crea una aplicación en heroku (si no la tienes)
+# Create a Heroku app (if you don't have one)
 heroku create atajo-backend
 
-# Configura las variables de entorno necesarias en Heroku
-heroku config:set DATABASE_URL="tu_url_de_supabase"
-heroku config:set ANTHROPIC_API_KEY="tu_api_key"
-heroku config:set FERNET_KEY="tu_fernet_key"
+# Configure the necessary environment variables in Heroku
+heroku config:set DATABASE_URL="your_supabase_url"
+heroku config:set ANTHROPIC_API_KEY="your_api_key"
+heroku config:set FERNET_KEY="your_fernet_key"
 
-# Construye la imagen y envíala al registry de Heroku
+# Build the image and push it to the Heroku registry
 heroku container:push web -a atajo-backend
 
-# Libera (release) la imagen para desplegarla
+# Release the image to deploy it
 heroku container:release web -a atajo-backend
 ```
 
-*(No olvides correr las migraciones en el entorno de producción usando un comando interactivo o conectándote remotamente).*
+*(Do not forget to run migrations in the production environment using an interactive command or by connecting remotely).*
 
 ### Frontend (Vercel CLI)
-El frontend de Next.js se despliega de forma nativa e ideal en [Vercel](https://vercel.com/).
+The Next.js frontend is ideally deployed natively on [Vercel](https://vercel.com/).
 
-Asegúrate de tener instalado el [Vercel CLI](https://vercel.com/docs/cli) (`npm i -g vercel`).
+Ensure you have the [Vercel CLI](https://vercel.com/docs/cli) installed (`npm i -g vercel`).
 
 ```bash
 cd frontend
 
-# Despliega la aplicación
+# Deploy the application
 vercel deploy --prod
 ```
-> Durante la configuración de Vercel, asegúrate de proporcionar las siguientes variables de entorno:
+> During the Vercel configuration, make sure to provide the following environment variables:
 > `NEXT_PUBLIC_API_BASE_URL="https://atajo-backend.herokuapp.com"`
 > `NEXT_PUBLIC_WS_BASE_URL="wss://atajo-backend.herokuapp.com"`
 
 ---
 
-## 👥 Equipo (team-29)
+## 👥 Team (team-29)
 - Rubén Bohórquez ([@Rpetey317](https://github.com/Rpetey317))
 - Juan Ignacio Medone ([@juanimedone](https://github.com/juanimedone))
 - Vladimir Kozow ([@vladimirkozow](https://github.com/vladimirkozow))
