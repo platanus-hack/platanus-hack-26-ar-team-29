@@ -5,8 +5,12 @@ from typing import Any
 
 import pytest
 
-from app.agents.interactions import UserInteractionBridge, PermissionResultAllow, PermissionResultDeny
 from app.agents.events import AgentEvent
+from app.agents.interactions import (
+    PermissionResultAllow,
+    PermissionResultDeny,
+    UserInteractionBridge,
+)
 
 
 @pytest.mark.asyncio

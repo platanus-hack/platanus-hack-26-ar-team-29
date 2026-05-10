@@ -8,7 +8,6 @@ responsible for spinning up a DB and running migrations before invoking pytest.
 
 from __future__ import annotations
 
-import asyncio
 import socket
 from urllib.parse import urlparse
 
@@ -163,6 +162,7 @@ def test_export_private_key_for_custodial(sync_client) -> None:  # type: ignore[
 def test_export_private_key_rejects_non_custodial(sync_client) -> None:  # type: ignore[no-untyped-def]
     from unittest.mock import AsyncMock, patch
     from uuid import uuid4
+
     from app.persistence.models.connections import ProviderConnection
 
     conn_id = str(uuid4())

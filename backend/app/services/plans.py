@@ -9,6 +9,7 @@ from uuid import UUID
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.agents.events import format_tool_name
 from app.common.errors import NOT_FOUND, PLAN_STALE, APIError
 from app.persistence.repositories.plans import PlanRepository
 from app.persistence.session import session_factory
@@ -133,8 +134,6 @@ class PlanService:
             )
         return {"ok": True, "plan_state": "rejected", "plan_id": str(plan_id)}
 
-
-from app.agents.events import format_tool_name
 
 def _plan_to_dict(plan: Any) -> dict[str, Any]:
     return {

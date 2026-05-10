@@ -1,5 +1,8 @@
 import uuid
+import structlog
 from datetime import UTC, datetime
+
+log = structlog.get_logger(__name__)
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,4 +59,4 @@ async def recalculate_user_profile(session: AsyncSession, user_id: uuid.UUID):
     profile.last_recomputed_at = datetime.now(UTC)
 
     await session.commit()
-    print(f"Recalculated profile for user {user_id}")
+    log.info(f"Recalculated profile for user {user_id}")

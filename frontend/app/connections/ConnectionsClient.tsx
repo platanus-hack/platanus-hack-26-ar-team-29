@@ -26,7 +26,7 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
   const [copiedModalAddress, setCopiedModalAddress] = useState(false);
   const [copiedModalMnemonic, setCopiedModalMnemonic] = useState(false);
 
-  const copyToClipboard = (text: string, setter: (val: any) => void, val: any, clearVal: any) => {
+  const copyToClipboard = <T,>(text: string, setter: (val: T) => void, val: T, clearVal: T) => {
     navigator.clipboard.writeText(text);
     setter(val);
     setTimeout(() => setter(clearVal), 2000);

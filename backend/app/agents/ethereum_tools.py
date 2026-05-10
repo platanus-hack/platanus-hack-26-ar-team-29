@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
-import json
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
@@ -26,8 +26,15 @@ def ethereum_mcp_server():
         "properties": {
             "network": {
                 "type": "string",
-                "enum": ["sepolia", "holesky", "polygon-amoy", "arbitrum-sepolia", "base-sepolia", "base"],
-                "description": "La red en la que crear la billetera."
+                "enum": [
+                    "sepolia",
+                    "holesky",
+                    "polygon-amoy",
+                    "arbitrum-sepolia",
+                    "base-sepolia",
+                    "base",
+                ],
+                "description": "La red en la que crear la billetera.",
             }
         },
         "required": ["network"],
@@ -72,13 +79,20 @@ async def create_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
         "properties": {
             "network": {
                 "type": "string",
-                "enum": ["sepolia", "holesky", "polygon-amoy", "arbitrum-sepolia", "base-sepolia", "base"],
-                "description": "La red en la que importar la billetera."
+                "enum": [
+                    "sepolia",
+                    "holesky",
+                    "polygon-amoy",
+                    "arbitrum-sepolia",
+                    "base-sepolia",
+                    "base",
+                ],
+                "description": "La red en la que importar la billetera.",
             },
             "private_key": {
                 "type": "string",
-                "description": "La clave privada (hex) o frase semilla (mnemonic) de la billetera a importar."
-            }
+                "description": "La clave privada (hex) o frase semilla (mnemonic) de la billetera a importar.",
+            },
         },
         "required": ["network", "private_key"],
         "additionalProperties": False,
@@ -87,7 +101,7 @@ async def create_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
 async def import_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
     network = args.get("network", "sepolia")
     private_key = args.get("private_key")
-    
+
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             "POST",
@@ -96,7 +110,7 @@ async def import_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
                 "network": network,
                 "private_key": private_key,
                 "label": "Wallet Ethereum",
-                "primary_asset_hint": "ETH"
+                "primary_asset_hint": "ETH",
             },
         )
     try:

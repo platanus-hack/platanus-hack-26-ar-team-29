@@ -25,6 +25,7 @@ class AttachmentRequest(BaseModel):
     url: str | None = None
     data: str | None = None
 
+
 class SendMessageRequest(BaseModel):
     content: str = Field(min_length=0, max_length=8000)
     attachments: list[AttachmentRequest] | None = None

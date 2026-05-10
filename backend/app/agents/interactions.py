@@ -113,9 +113,7 @@ class UserInteractionBridge:
         return await self._handle_security_approval(tool_name, input_data)
 
     async def _handle_security_approval(
-        self,
-        tool_name: str,
-        input_data: dict[str, Any]
+        self, tool_name: str, input_data: dict[str, Any]
     ) -> ApprovalResult:
         if self._event_sink is None:
             return PermissionResultDeny(message="No approval channel is available for this action.")
@@ -162,10 +160,7 @@ class UserInteractionBridge:
         return True
 
     def resolve_input(self, input_id: str, selected_options: list[str] | str) -> bool:
-        if isinstance(selected_options, str):
-            normalized = [selected_options]
-        else:
-            normalized = selected_options
+        normalized = [selected_options] if isinstance(selected_options, str) else selected_options
 
         future = self._pending_inputs.get(input_id)
         if future is None or future.done():
@@ -193,6 +188,7 @@ class UserInteractionBridge:
 
         if self._event_sink is None:
             import structlog
+
             structlog.get_logger(__name__).error("request_credential_failed_no_sink_WTF")
             return PermissionResultDeny(
                 message="No credential channel is available.",

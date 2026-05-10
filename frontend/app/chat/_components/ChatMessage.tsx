@@ -1,4 +1,4 @@
-import { FileText, Image as ImageIcon, Copy, Check } from "lucide-react";
+import { FileText, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { AgentTable } from '../../_components/AgentTable';
@@ -197,7 +197,7 @@ function AgentMessageContent({ content }: { content: string }) {
       
       if (data.length > 0) {
         const langParts = block.language.toLowerCase().split('-');
-        let chartType: any = 'bar';
+        let chartType: 'bar' | 'line' | 'pie' = 'bar';
         if (langParts.includes('line')) chartType = 'line';
         if (langParts.includes('pie')) chartType = 'pie';
         
@@ -284,7 +284,7 @@ function RichMessageContent({ content }: { content: string }) {
             }
             if (data.length > 0) {
               const langParts = block.language.toLowerCase().split('-');
-              let chartType: any = 'bar';
+              let chartType: 'bar' | 'line' | 'pie' = 'bar';
               if (langParts.includes('line')) chartType = 'line';
               if (langParts.includes('pie')) chartType = 'pie';
               
@@ -467,6 +467,7 @@ export function ChatMessage({
               >
                 {isImage && file.url ? (
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-line">
+                    { /* eslint-disable-next-line @next/next/no-img-element */ }
                     <img src={file.url} alt={file.name} className="h-full w-full object-cover" />
                   </div>
                 ) : (
@@ -515,14 +516,14 @@ export function ChatMessage({
                   if (res && res[0] && res[0].text) {
                     try {
                       tableProps = JSON.parse(res[0].text);
-                    } catch (err) {
+                    } catch {
                       tableProps = res[0].args;
                     }
                   } else if (res && res[0] && res[0].args) {
                     tableProps = res[0].args;
                   }
                 }
-              } catch (e) {
+              } catch {
                 // ignore
               }
               if (tableProps && tableProps.csv_data) {

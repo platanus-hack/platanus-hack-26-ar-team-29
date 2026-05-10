@@ -4,6 +4,22 @@ import { SyncButton } from "./SyncButton";
 
 export const dynamic = "force-dynamic";
 
+interface ActivityItem {
+  id: string;
+  type?: string;
+  merchant?: string;
+  classifier?: { category?: string; merchant?: string };
+  title?: string;
+  detail?: string;
+  source_amount?: number;
+  source_currency?: string;
+  dest_amount?: number;
+  dest_unit?: string;
+  occurred_at?: string;
+  status?: string;
+  time?: string;
+}
+
 export default async function ActivityPage() {
   const url = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   let activity = [];
@@ -17,7 +33,7 @@ export default async function ActivityPage() {
   }
 
   // Format activity
-  const formattedActivity = activity.map((item: any) => {
+  const formattedActivity = activity.map((item: ActivityItem) => {
     let title = item.type === "trade" ? `Trade ${item.merchant || "Asset"}` : item.type === "transfer_internal" ? "Transferencia" : "Transacción";
     if (item.classifier?.category) {
       title = `${item.classifier.merchant || item.merchant || "Movimiento"} (${item.classifier.category})`;
@@ -32,7 +48,7 @@ export default async function ActivityPage() {
       detail += `${item.dest_amount} ${item.dest_unit}`;
     }
 
-    const date = new Date(item.occurred_at);
+    const date = new Date(item.occurred_at || "");
     const timeStr = isNaN(date.getTime()) ? item.occurred_at : date.toLocaleDateString('es-AR', {
       day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
     });
@@ -64,7 +80,7 @@ export default async function ActivityPage() {
             {formattedActivity.length === 0 && (
                <div className="p-8 text-center text-muted">No hay actividad reciente.</div>
             )}
-            {formattedActivity.map((item: any) => (
+            {formattedActivity.map((item: ActivityItem) => (
               <div
                 key={item.id}
                 className="flex flex-col gap-2 border-b border-line px-5 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:bg-accent/5"

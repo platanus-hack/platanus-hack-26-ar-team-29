@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import datetime as _dt
+import json
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from app.agents.defi_tools import defi_mcp_server
 from app.agents.ethereum_tools import ethereum_mcp_server
-from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
+from app.agents.events import AgentEvent, error_event, format_tool_name
 from app.agents.interactions import UserInteractionBridge
 from app.agents.ui_tools import ui_mcp_server
 from app.agents.wallbit_tools import wallbit_mcp_server
@@ -48,7 +48,7 @@ Reglas de seguridad:
   1. `csv-bar` : Gráfico de barras (Ideal para comparaciones de valores discretos o meses).
   2. `csv-line` : Gráfico de líneas (Ideal para tendencias, historial de precios a lo largo del tiempo).
   3. `csv-pie` : Gráfico de torta/circular (Ideal para distribuciones de portafolio o porcentajes).
-  
+
   La primera fila debe ser el encabezado `label,value`.
   Ejemplo de gráfico de torta:
   ```csv-pie
@@ -422,22 +422,25 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
         if isinstance(text, str) and text:
             return [AgentEvent("agent_token", {"text": text})]
 
-    if event_type == "content_block_start" and content_block is not None:
-        if content_block.__class__.__name__ == "ToolUseBlock":
-            tool_name = getattr(content_block, "name", None)
-            return [
-                AgentEvent(
-                    "tool_call_started",
-                    {
-                        "tool_use_id": getattr(content_block, "id", None),
-                        "tool_name": tool_name,
-                        "tool_label": format_tool_name(tool_name),
-                        "input_summary": json.dumps(getattr(content_block, "input", None))
-                        if getattr(content_block, "input", None) is not None
-                        else None,
-                    },
-                )
-            ]
+    if (
+        event_type == "content_block_start"
+        and content_block is not None
+        and content_block.__class__.__name__ == "ToolUseBlock"
+    ):
+        tool_name = getattr(content_block, "name", None)
+        return [
+            AgentEvent(
+                "tool_call_started",
+                {
+                    "tool_use_id": getattr(content_block, "id", None),
+                    "tool_name": tool_name,
+                    "tool_label": format_tool_name(tool_name),
+                    "input_summary": json.dumps(getattr(content_block, "input", None))
+                    if getattr(content_block, "input", None) is not None
+                    else None,
+                },
+            )
+        ]
 
     return []
 

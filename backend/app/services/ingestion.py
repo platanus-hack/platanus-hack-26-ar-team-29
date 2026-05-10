@@ -18,6 +18,11 @@ from app.providers.wallbit.client import WallbitClient
 from app.services.context import recalculate_user_profile
 
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
+
 async def _upsert_wallbit_txs(
     session: AsyncSession, conn: ProviderConnection, raw_txs: list[dict[str, Any]]
 ) -> int:
@@ -118,7 +123,7 @@ async def sync_wallbit_transactions(session: AsyncSession, connection_id: uuid.U
             data = await client._request("GET", "/transactions")
             raw_txs = data.get("data", {}).get("data", [])
         except Exception as e:
-            print(f"Failed to fetch Wallbit txs: {e}")
+            log.error(f"Failed to fetch Wallbit txs: {e}")
             return 0
 
         inserted_or_updated += await _upsert_wallbit_txs(session, conn, raw_txs)
@@ -162,7 +167,7 @@ async def sync_all_wallbit_transactions(session: AsyncSession, connection_id: uu
                     total_pages = page_data.get("pages", 1)
 
             except Exception as e:
-                print(f"Failed to fetch Wallbit txs on page {current_page}: {e}")
+                log.error(f"Failed to fetch Wallbit txs on page {current_page}: {e}")
                 break
 
             if not raw_txs:

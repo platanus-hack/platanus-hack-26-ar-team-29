@@ -27,9 +27,7 @@ def ui_mcp_server():
         "properties": {
             "title": {
                 "type": "string",
-                "description": (
-                    "Titulo corto del campo, e.g. 'Frase semilla' o 'Clave privada'."
-                ),
+                "description": ("Titulo corto del campo, e.g. 'Frase semilla' o 'Clave privada'."),
             },
             "kind": {
                 "type": "string",
@@ -67,9 +65,7 @@ async def request_credential(args: dict[str, Any]) -> dict[str, Any]:
     kind = args.get("kind", "secret")
     if not isinstance(value, str) or not value:
         return {
-            "content": [
-                {"type": "text", "text": "El usuario no proporciono el dato."}
-            ],
+            "content": [{"type": "text", "text": "El usuario no proporciono el dato."}],
             "is_error": True,
         }
     # Surface the value as the tool result. Marked sensitive in the text

@@ -54,7 +54,7 @@ export default function ChatPage() {
     const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
     const [busyInputId, setBusyInputId] = useState<string | null>(null);
     const [busyCredentialId, setBusyCredentialId] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
 
     const upsertMessage = useCallback((message: Message) => {
         setMessages((prev) => {
@@ -569,7 +569,7 @@ export default function ChatPage() {
                     </div>
                 </header>
                 <ChatThread
-                    messages={messages}
+                    messages={visibleMessages}
                     isTyping={isTyping || isBooting}
                     onApprovePlan={approvePlan}
                     onRejectPlan={rejectPlan}

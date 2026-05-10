@@ -6,7 +6,6 @@ from typing import Any
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
-
 BACKEND_BASE = "http://127.0.0.1:8000"
 
 
@@ -44,9 +43,7 @@ async def _request(
         payload = {"raw": resp.text}
     if resp.is_error:
         return {
-            "content": [
-                {"type": "text", "text": f"DeFi API error {resp.status_code}: {payload}"}
-            ],
+            "content": [{"type": "text", "text": f"DeFi API error {resp.status_code}: {payload}"}],
             "is_error": True,
         }
     return {"content": [{"type": "text", "text": json.dumps(payload)}], "data": payload}
@@ -196,9 +193,7 @@ async def supply(args: dict[str, Any]) -> dict[str, Any]:
         "asset": str(args["asset"]),
         "amount": str(args["amount"]),
     }
-    return await _request(
-        "POST", f"/api/v1/connections/{cid}/defi/supply", json_body=body
-    )
+    return await _request("POST", f"/api/v1/connections/{cid}/defi/supply", json_body=body)
 
 
 @tool(
@@ -238,6 +233,4 @@ async def withdraw(args: dict[str, Any]) -> dict[str, Any]:
         "asset": str(args["asset"]),
         "amount": str(args["amount"]),
     }
-    return await _request(
-        "POST", f"/api/v1/connections/{cid}/defi/withdraw", json_body=body
-    )
+    return await _request("POST", f"/api/v1/connections/{cid}/defi/withdraw", json_body=body)

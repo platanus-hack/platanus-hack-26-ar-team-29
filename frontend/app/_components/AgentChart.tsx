@@ -101,7 +101,7 @@ export function AgentChart({
               </Pie>
               <Tooltip 
                 contentStyle={{ backgroundColor: tooltipBg, borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: any) => [value, valueLabel]}
+                formatter={(value) => [value as React.ReactNode, valueLabel]}
                 itemStyle={{ color: tooltipText, fontWeight: 600 }}
               />
               <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ color: axisColor }} />
@@ -125,7 +125,7 @@ export function AgentChart({
               <Tooltip 
                 cursor={{ stroke: gridColor, strokeWidth: 2 }}
                 contentStyle={{ backgroundColor: tooltipBg, borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: any) => [value, valueLabel]}
+                formatter={(value) => [value as React.ReactNode, valueLabel]}
                 labelStyle={{ color: tooltipText, fontWeight: 600, marginBottom: '4px' }}
                 itemStyle={{ color: chartColor, fontWeight: 600 }}
               />
@@ -157,7 +157,7 @@ export function AgentChart({
               <Tooltip 
                 cursor={{ fill: 'var(--color-surface)' }}
                 contentStyle={{ backgroundColor: tooltipBg, borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                formatter={(value: any) => [value, valueLabel]}
+                formatter={(value) => [value as React.ReactNode, valueLabel]}
                 labelStyle={{ color: tooltipText, fontWeight: 600, marginBottom: '4px' }}
                 itemStyle={{ color: chartColor, fontWeight: 600 }}
               />
