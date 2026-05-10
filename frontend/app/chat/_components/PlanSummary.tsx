@@ -48,10 +48,10 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
             <div className="flex flex-col gap-2 min-[430px]:flex-row min-[430px]:items-start min-[430px]:justify-between min-[430px]:gap-3">
               <div className="min-w-0">
                 <div className="font-medium text-foreground">
-                  {step.human_description_es || step.human_description_en || step.tool_name}
+                  {step.human_description_es || step.human_description_en || step.tool_label || step.tool_name}
                 </div>
                 <div className="mt-1 text-xs text-subdued">
-                  Step {step.ordinal} · <span className="font-mono text-muted">{step.tool_name}</span>
+                  Step {step.ordinal} · <span className="font-mono text-muted">{step.tool_label || step.tool_name}</span>
                   {step.estimated_usd != null ? ` · ${formatUSD(step.estimated_usd)}` : ""}
                 </div>
                 {step.result_summary && (

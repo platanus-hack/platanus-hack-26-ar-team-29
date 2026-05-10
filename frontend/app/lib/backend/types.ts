@@ -52,6 +52,7 @@ export interface TradePlanStep {
   id: string;
   ordinal: number;
   tool_name: string;
+  tool_label?: string;
   args: Record<string, unknown>;
   human_description_es?: string | null;
   human_description_en?: string | null;
