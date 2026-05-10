@@ -16,9 +16,9 @@ function formatAmount(amount: number, currency: string) {
   });
 }
 
-function CopyableAccount({ account, raw }: { account: string; raw: any }) {
+function CopyableAccount({ account, raw }: { account: string; raw: Record<string, unknown> | undefined }) {
   const [copied, setCopied] = useState(false);
-  const address = raw?.address;
+  const address = typeof raw?.address === 'string' ? raw.address : undefined;
 
   if (!address) {
     return <div className="text-xs text-muted font-mono truncate">{account}</div>;

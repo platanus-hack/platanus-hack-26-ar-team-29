@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 type ProviderKey =
     | 'wallbit'
     | 'ethereum'
@@ -78,9 +80,12 @@ export function ProviderLogo({ provider, size = 'md', className = '' }: Provider
                 className={`${base} bg-white`}
                 title='Wallbit'
             >
-                <img
+                <Image
                     src='https://wallbit.io/favicon.ico'
                     alt='Wallbit'
+                    width={24}
+                    height={24}
+                    unoptimized
                     className='h-[65%] w-[65%] rounded-full'
                 />
             </span>
