@@ -105,3 +105,23 @@
 - Added a fallback price source for the Investments tab: when Wallbit `/assets/{symbol}` does not return price data, `/api/v1/positions` now uses the latest `trade_info.share_price` observed in Wallbit transactions.
 - Adjusted the Investments UI so missing valuation displays as `n/d` instead of misleading `0.0%` allocation or `$0` totals.
 - Inspected live Wallbit `/transactions`: trade rows include `source_amount`, `dest_amount`, `trade_info.symbol`, and `trade_info.share_price`; failed trades are present too, so the adapter now ignores failed/cancelled/rejected trades when calculating cost basis and fallback prices.
+
+## Chat Approval UX Fix
+### Completed Work
+- Removed approval-mechanism wording from the trade system prompt so the agent does not mention panels, modals, or approve/reject controls in natural-language responses.
+- Added backend filtering for redundant approval messages after a plan approval card has already been shown in the same turn.
+- Added `turn_id` to `plan_proposed` WebSocket frames and frontend filtering for redundant streamed/final approval text in that same turn.
+
+### Files Changed
+- `backend/app/agents/chat_agent.py`
+- `frontend/app/page.tsx`
+- `frontend/app/lib/backend/types.ts`
+
+### Tests and Results
+- `uv run python -m py_compile app/agents/chat_agent.py` passed.
+- `npx eslint app/page.tsx app/lib/backend/types.ts` passed with one pre-existing warning in `app/page.tsx` (`error` state assigned but not used).
+- `npx tsc --noEmit` is still blocked by a pre-existing `ConnectionsClient.tsx` optional address narrowing error unrelated to this change.
+
+### Follow-up Fix
+- Expanded redundant approval-message filtering to catch Spanish variants like `para que confirmes`, `para que apruebes`, and `ventana de confirmación`.
+- The chat UI now filters already persisted assistant approval-instruction messages too, so stale messages below an approved plan card are hidden on reload.

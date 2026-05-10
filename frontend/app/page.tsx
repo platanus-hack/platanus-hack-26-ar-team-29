@@ -46,6 +46,7 @@ function sortMessages(messages: Message[]) {
 
 export default function ChatPage() {
     const wsRef = useRef<BackendWsSubscription | null>(null);
+    const planTurnIdsRef = useRef<Set<string>>(new Set());
     const { currentSessionId, updateSessionTitle } = useChat();
     const [messages, setMessages] = useState<Message[]>([]);
     const [isBooting, setIsBooting] = useState(true);
@@ -95,6 +96,31 @@ export default function ChatPage() {
         },
         [upsertMessage],
     );
+
+    const isRedundantApprovalMessage = useCallback((content: string) => {
+        const normalized = content.toLowerCase();
+        return [
+            'para que confirmes',
+            'para que apruebes',
+            'ventana de confirmación',
+            'ventana de confirmacion',
+            'orden está lista',
+            'orden esta lista',
+            'esperando tu aprobación',
+            'esperando aprobación',
+            'esperando tu aprobacion',
+            'esperando aprobacion',
+            'panel',
+            'aprobar o rechazar',
+            'aprobar/rechazar',
+            'confirmación para que',
+            'confirmacion para que',
+            'botón',
+            'botones',
+            'revisar transacción',
+            'revisar transaccion',
+        ].some((phrase) => normalized.includes(phrase));
+    }, []);
 
     const handleWsFrame = useCallback(
         (frame: BackendWsFrame) => {
@@ -194,6 +220,12 @@ export default function ChatPage() {
             }
 
             if (frame.type === 'chat_message') {
+                if (
+                    planTurnIdsRef.current.has(frame.turn_id) &&
+                    isRedundantApprovalMessage(frame.message.content || '')
+                ) {
+                    return;
+                }
                 setMessages((prev) => {
                     const streamId = `stream-${frame.turn_id}`;
                     const withoutStream = prev.filter((m) => m.id !== streamId);
@@ -207,6 +239,7 @@ export default function ChatPage() {
             }
 
             if (frame.type === 'plan_proposed') {
+                planTurnIdsRef.current.add(frame.turn_id);
                 // Plan cards are the actionable item — pin them after any
                 // current or future end-of-turn agent message in this session.
                 upsertMessage({
@@ -283,8 +316,15 @@ export default function ChatPage() {
             if (frame.type === 'turn_complete') {
                 setIsTyping(false);
                 setMessages((prev) =>
-                    prev.map((m) => {
+                    prev.flatMap((m) => {
                         if (m.id.startsWith('stream-')) {
+                            if (
+                                m.id === `stream-${frame.turn_id}` &&
+                                planTurnIdsRef.current.has(frame.turn_id) &&
+                                isRedundantApprovalMessage(m.content)
+                            ) {
+                                return [];
+                            }
                             return { ...m, id: `streamed-${m.id}`, kind: 'text' };
                         }
                         return m;
@@ -300,7 +340,7 @@ export default function ChatPage() {
                 );
             }
         },
-        [appendSystemMessage, updatePlan, upsertMessage, updateSessionTitle],
+        [appendSystemMessage, isRedundantApprovalMessage, updatePlan, upsertMessage, updateSessionTitle],
     );
 
     useEffect(() => {
@@ -455,6 +495,13 @@ export default function ChatPage() {
         }
     }
 
+    const visibleMessages = messages.filter(
+        (message) =>
+            message.kind === 'plan_proposal' ||
+            message.role !== 'assistant' ||
+            !isRedundantApprovalMessage(message.content),
+    );
+
     return (
         <Sidebar>
             <div className='flex h-full w-full flex-col bg-background'>
@@ -469,7 +516,7 @@ export default function ChatPage() {
                     </div>
                 </header>
                 <ChatThread
-                    messages={messages}
+                    messages={visibleMessages}
                     isTyping={isTyping || isBooting}
                     onApprovePlan={approvePlan}
                     onRejectPlan={rejectPlan}

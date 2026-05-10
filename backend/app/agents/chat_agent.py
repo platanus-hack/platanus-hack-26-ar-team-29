@@ -74,14 +74,14 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 - Si el usuario rechaza la operacion, respetalo y ofrece ajustar el plan.
 - Nunca digas que una operacion fue ejecutada hasta que el resultado del tool
   lo confirme.
-- El backend intercepta la llamada al tool y le muestra al usuario un modal con
-  botones **Aprobar / Rechazar**. Esa es la confirmacion oficial. Si en lugar
-  de llamar al tool preguntas "¿confirmás?" en texto, el modal NUNCA aparece y
-  el usuario queda colgado: eso es un bug grave.
+- El backend intercepta la llamada al tool y pausa la herramienta hasta que la
+  UI resuelva la decisión. No describas ese mecanismo en texto. Si en lugar de
+  llamar al tool preguntas "¿confirmás?" en texto, el usuario queda colgado:
+  eso es un bug grave.
 - ANTES de llamar al tool, NO des por hecho que la operacion se va a ejecutar. Usa frases como "Acá te preparé la orden para que la revises:" o "Te dejo los detalles de la operación para que confirmes:". NUNCA digas "Voy a comprar..." ni "Ejecutando compra...", presentalo siempre como una propuesta.
 - El turno tiene que terminar con la **invocacion del tool**, no con una pregunta al usuario.
 - NUNCA digas que una operacion fue ejecutada hasta que el resultado del tool lo confirme.
-- Si el tool devuelve que el usuario rechazó la operación en el modal, respondé de forma natural (ej. "Entendido, operación cancelada.") y ofrece ajustar los parámetros.
+- Si el tool devuelve que el usuario rechazó la operación, respondé de forma natural (ej. "Entendido, operación cancelada.") y ofrece ajustar los parámetros.
 
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
@@ -424,6 +424,34 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
     return []
 
 
+def _is_redundant_approval_message(text: str) -> bool:
+    normalized = text.lower()
+    return any(
+        phrase in normalized
+        for phrase in (
+            "para que confirmes",
+            "para que apruebes",
+            "ventana de confirmación",
+            "ventana de confirmacion",
+            "orden está lista",
+            "orden esta lista",
+            "esperando tu aprobación",
+            "esperando aprobación",
+            "esperando tu aprobacion",
+            "esperando aprobacion",
+            "panel",
+            "aprobar o rechazar",
+            "aprobar/rechazar",
+            "confirmación para que",
+            "confirmacion para que",
+            "botón",
+            "botones",
+            "revisar transacción",
+            "revisar transaccion",
+        )
+    )
+
+
 class ChatAgent:
     def __init__(self, manager: ConnectionManager, agent_tasks: set[asyncio.Task]) -> None:
         self.manager = manager
@@ -458,6 +486,8 @@ class ChatAgent:
             task = asyncio.create_task(self._generate_title(session_id, user_content, sessionmaker))
             self.agent_tasks.add(task)
             task.add_done_callback(self.agent_tasks.discard)
+
+        turn_has_approval_card = False
 
         async for event in agent_session.send_user_message(user_content):
             if event.type == "agent_token":
@@ -498,6 +528,8 @@ class ChatAgent:
             elif event.type == "agent_message":
                 text = event.payload.get("text", "")
                 if not text:
+                    continue
+                if turn_has_approval_card and _is_redundant_approval_message(text):
                     continue
                 async with sessionmaker() as db:
                     from app.persistence.repositories.chat import ChatRepository
@@ -552,6 +584,7 @@ class ChatAgent:
                     },
                 )
             elif event.type == "approval_requested":
+                turn_has_approval_card = True
                 tool_name = event.payload["tool_name"]
                 args = event.payload.get("input") or {}
 
@@ -640,6 +673,7 @@ class ChatAgent:
                     {
                         "type": "plan_proposed",
                         "session_id": str(session_id),
+                        "turn_id": str(turn_id),
                         "plan_id": str(plan.id),
                         "plan": plan_dict,
                     },
