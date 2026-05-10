@@ -16,6 +16,36 @@ function formatAmount(amount: number, currency: string) {
   });
 }
 
+function CopyableAccount({ account, raw }: { account: string; raw: any }) {
+  const [copied, setCopied] = useState(false);
+  const address = raw?.address;
+
+  if (!address) {
+    return <div className="text-xs text-muted font-mono truncate">{account}</div>;
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="text-xs text-muted font-mono truncate">{account}</div>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(address);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className="text-accent hover:text-accent/80 transition-colors"
+        title="Copiar dirección"
+      >
+        {copied ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 export default function BalancesPage() {
   const [balances, setBalances] = useState<BalanceRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,9 +81,7 @@ export default function BalancesPage() {
                       <div className="text-sm font-medium text-foreground truncate">
                         {item.provider}
                       </div>
-                      <div className="text-xs text-muted font-mono truncate">
-                        {item.account}
-                      </div>
+                      <CopyableAccount account={item.account} raw={item.raw} />
                     </div>
                   </div>
                   <div className="mt-4 text-2xl font-semibold tabular-nums text-foreground">
