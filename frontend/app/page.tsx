@@ -562,7 +562,7 @@ export default function ChatPage() {
                     <div className='flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between'>
                         <div className='min-w-0'>
                             <h1 className='text-2xl font-semibold tracking-tight text-foreground'>
-                                Open<span className='text-accent'>Fi</span>{' '}
+                                Ata<span className='text-accent'>jo</span>{' '}
                                 <span className='text-muted'>Agent</span>
                             </h1>
                         </div>
