@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+import json
 
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
@@ -18,6 +19,7 @@ def wallbit_mcp_server():
             list_transactions,
             get_asset,
             create_trade,
+            show_table,
         ],
     )
 
@@ -129,3 +131,32 @@ async def create_trade(args: dict[str, Any]) -> dict[str, Any]:
     payload["order_type"] = str(payload["order_type"]).upper()
     payload["currency"] = str(payload.get("currency", "USD")).upper()
     return await _request("POST", "/api/public/v1/trades", json=payload)
+
+
+
+
+@tool(
+    "show_table",
+    "Muestra una tabla de datos al usuario en el chat. IMPORTANTE: Siempre debes escribir tu respuesta en texto (explicando la tabla o resumiendo) ANTES de invocar esta tool, para que el texto aparezca arriba de la tabla visualmente.",
+    {
+        "type": "object",
+        "properties": {
+            "title": {
+                "type": "string",
+                "description": "Título de la tabla (ej. 'Últimas Transacciones')"
+            },
+            "description": {
+                "type": "string",
+                "description": "Subtítulo o explicación breve"
+            },
+            "csv_data": {
+                "type": "string",
+                "description": "Los datos de la tabla en formato CSV puro. Las columnas separadas por comas, las filas por saltos de línea. La primera fila DEBE ser el encabezado."
+            }
+        },
+        "required": ["csv_data"],
+        "additionalProperties": False,
+    },
+)
+async def show_table(args: dict[str, Any]) -> dict[str, Any]:
+    return {"content": [{"type": "text", "text": json.dumps(args)}]}

@@ -140,7 +140,8 @@ export default function ChatPage() {
             if (frame.type === 'tool_call_started') {
                 setIsTyping(true);
                 setMessages((prev) => {
-                    const toolsId = `tools-${frame.turn_id}`;
+                    const isVisual = frame.tool_name === 'mcp__wallbit__show_table' || frame.tool_name === 'show_table';
+                    const toolsId = isVisual ? `visual-${frame.turn_id}-${frame.tool_use_id}` : `tools-${frame.turn_id}`;
                     const existing = prev.find((m) => m.id === toolsId);
                     const newTool = {
                         id: frame.tool_use_id,
@@ -172,9 +173,9 @@ export default function ChatPage() {
 
             if (frame.type === 'tool_call_finished') {
                 setMessages((prev) => {
-                    const toolsId = `tools-${frame.turn_id}`;
-                    const existing = prev.find((m) => m.id === toolsId);
+                    const existing = prev.find((m) => m.tools?.some(t => t.id === frame.tool_use_id));
                     if (!existing || !existing.tools) return prev;
+                    const toolsId = existing.id;
 
                     const nextMessage: Message = {
                         ...existing,

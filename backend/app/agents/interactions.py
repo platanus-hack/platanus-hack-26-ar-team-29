@@ -41,6 +41,7 @@ READ_WALLBIT_TOOLS = {
     "mcp__wallbit__get_stocks_balance",
     "mcp__wallbit__list_transactions",
     "mcp__wallbit__get_asset",
+    "mcp__wallbit__show_table",
 }
 
 WRITE_WALLBIT_TOOLS = {

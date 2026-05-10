@@ -1,6 +1,8 @@
 import { FileText, Image as ImageIcon, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { AgentTable } from '../../_components/AgentTable';
+import { AgentChart } from '../../_components/AgentChart';
 import type { Message } from "../types";
 import { InputQuestion } from "./InputQuestion";
 import { PlanConfirmation } from "./PlanConfirmation";
@@ -25,7 +27,8 @@ function CopyableCode({ text }: { text: string }) {
 type MarkdownBlock =
   | { type: "paragraph"; text: string }
   | { type: "unordered_list"; items: string[] }
-  | { type: "ordered_list"; items: string[] };
+  | { type: "ordered_list"; items: string[] }
+  | { type: "code_block"; language: string; code: string };
 
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
@@ -62,6 +65,10 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   let paragraph: string[] = [];
   let unorderedItems: string[] = [];
   let orderedItems: string[] = [];
+  
+  let inCodeBlock = false;
+  let codeLanguage = '';
+  let codeContent: string[] = [];
 
   function flushParagraph() {
     if (!paragraph.length) return;
@@ -83,6 +90,31 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
 
   for (const rawLine of content.trim().split(/\r?\n/)) {
     const line = rawLine.trim();
+    
+    // Code block handling
+    if (line.startsWith('```')) {
+      if (inCodeBlock) {
+        // end of code block
+        blocks.push({ type: 'code_block', language: codeLanguage, code: codeContent.join('\n') });
+        inCodeBlock = false;
+        codeContent = [];
+        codeLanguage = '';
+      } else {
+        // start of code block
+        flushParagraph();
+        flushUnorderedList();
+        flushOrderedList();
+        inCodeBlock = true;
+        codeLanguage = line.slice(3).trim();
+      }
+      continue;
+    }
+    
+    if (inCodeBlock) {
+      codeContent.push(rawLine); // preserve original indentation for code
+      continue;
+    }
+
     if (!line) {
       // Blank line ends a paragraph but not a list — LLMs frequently emit
       // blank lines between list items (and reset numbering to "1." each
@@ -116,8 +148,117 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   flushParagraph();
   flushUnorderedList();
   flushOrderedList();
+  
+  if (inCodeBlock) {
+    blocks.push({ type: 'code_block', language: codeLanguage, code: codeContent.join('\n') });
+  }
 
   return blocks;
+}
+
+
+function AgentMessageContent({ content }: { content: string }) {
+  const blocks = parseMarkdownBlocks(content);
+  
+  // Group contiguous non-CSV blocks into a single bubble, and render CSV blocks as full-width components.
+  const elements = [];
+  let currentTextBlocks: MarkdownBlock[] = [];
+  
+  const flushTextBlocks = () => {
+    if (currentTextBlocks.length > 0) {
+      elements.push(
+        <div key={`text-${elements.length}`} className="max-w-[96%] rounded-2xl px-5 py-3.5 text-sm break-words shadow-sm sm:max-w-[86%] md:max-w-[74%] lg:max-w-[68%] xl:max-w-[62%] bg-card text-foreground border border-line rounded-bl-sm">
+          <div className="space-y-3 leading-6">
+            {currentTextBlocks.map((block, index) => renderBlock(block, index))}
+          </div>
+        </div>
+      );
+      currentTextBlocks = [];
+    }
+  };
+
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+    if (block.type === 'code_block' && block.language.toLowerCase().startsWith('csv')) {
+      flushTextBlocks();
+      
+      const lines = block.code.trim().split('\n');
+      const data = [];
+      for (let j = 1; j < lines.length; j++) {
+        const parts = lines[j].split(',');
+        if (parts.length >= 2) {
+          const value = parseFloat(parts[1].trim());
+          if (!isNaN(value)) {
+            data.push({ label: parts[0].trim(), value });
+          }
+        }
+      }
+      
+      if (data.length > 0) {
+        const langParts = block.language.toLowerCase().split('-');
+        let chartType: any = 'bar';
+        if (langParts.includes('line')) chartType = 'line';
+        if (langParts.includes('pie')) chartType = 'pie';
+        
+        elements.push(
+          <div key={`chart-${i}`} className="w-full mt-2 mb-2">
+            <AgentChart data={data} type={chartType} valueLabel="Valor" />
+          </div>
+        );
+      }
+    } else {
+      currentTextBlocks.push(block);
+    }
+  }
+  
+  flushTextBlocks();
+  
+  return <>{elements}</>;
+}
+
+function renderBlock(block: MarkdownBlock, index: number) {
+  if (block.type === "unordered_list") {
+    return (
+      <ul key={index} className="m-0 list-disc space-y-1.5 pl-5 marker:text-accent">
+        {block.items.map((item, itemIndex) => (
+          <li key={itemIndex} className="pl-1">
+            {renderInlineMarkdown(item)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (block.type === "ordered_list") {
+    return (
+      <ol key={index} className="m-0 list-decimal space-y-1.5 pl-5 marker:text-accent">
+        {block.items.map((item, itemIndex) => (
+          <li key={itemIndex} className="pl-1">
+            {renderInlineMarkdown(item)}
+          </li>
+        ))}
+      </ol>
+    );
+  }
+  if (block.type === "code_block") {
+    return (
+      <div key={index} className="relative my-4 rounded-xl bg-[#1e1e1e] overflow-hidden border border-line shadow-sm">
+        {block.language && (
+          <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] border-b border-[#404040]">
+            <span className="text-xs font-mono text-gray-400">{block.language}</span>
+            <CopyableCode text={block.code} />
+          </div>
+        )}
+        <pre className="p-4 overflow-x-auto text-sm text-gray-300 font-mono">
+          <code>{block.code}</code>
+        </pre>
+      </div>
+    );
+  }
+  return (
+    <p key={index} className="m-0 whitespace-pre-wrap">
+      {renderInlineMarkdown(block.text)}
+    </p>
+  );
 }
 
 function RichMessageContent({ content }: { content: string }) {
@@ -126,6 +267,49 @@ function RichMessageContent({ content }: { content: string }) {
   return (
     <div className="space-y-3 leading-6">
       {blocks.map((block, index) => {
+        if (block.type === "code_block") {
+          if (block.language.toLowerCase().startsWith('csv')) {
+            // Parse CSV for AgentChart
+            const lines = block.code.trim().split('\n');
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+              const parts = lines[i].split(',');
+              if (parts.length >= 2) {
+                const value = parseFloat(parts[1].trim());
+                if (!isNaN(value)) {
+                  data.push({ label: parts[0].trim(), value });
+                }
+              }
+            }
+            if (data.length > 0) {
+              const langParts = block.language.toLowerCase().split('-');
+              let chartType: any = 'bar';
+              if (langParts.includes('line')) chartType = 'line';
+              if (langParts.includes('pie')) chartType = 'pie';
+              
+              return (
+                <div key={index} className="w-full my-4">
+                  <AgentChart data={data} type={chartType} valueLabel="Valor" />
+                </div>
+              );
+            }
+          }
+          // Default code block rendering
+          return (
+            <div key={index} className="relative my-4 rounded-xl bg-[#1e1e1e] overflow-hidden border border-line shadow-sm">
+              {block.language && (
+                <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] border-b border-[#404040]">
+                  <span className="text-xs font-mono text-gray-400">{block.language}</span>
+                  <CopyableCode text={block.code} />
+                </div>
+              )}
+              <pre className="p-4 overflow-x-auto text-sm text-gray-300 font-mono">
+                <code>{block.code}</code>
+              </pre>
+            </div>
+          );
+        }
+
         if (block.type === "unordered_list") {
           return (
             <ul key={index} className="m-0 list-disc space-y-1.5 pl-5 marker:text-accent">
@@ -217,10 +401,15 @@ export function ChatMessage({
 
   return (
     <div className={`flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
-      {hasTools && !isUser && (
-        <div className="flex flex-col gap-1.5 w-full sm:max-w-[86%] md:max-w-[74%] lg:max-w-[68%] xl:max-w-[62%]">
-          {message.tools!.map(tool => (
-            <div key={tool.id} className="flex items-center gap-2 rounded-xl bg-card border border-line px-3 py-2 text-xs text-muted">
+                  {hasTools && !isUser && (
+        <div className="flex flex-col gap-1.5 w-full">
+          {message.tools!.map(tool => {
+            if ((tool.name === 'mcp__wallbit__show_table' || tool.name === 'show_table') && tool.status === 'ok') {
+              return null; // visual tools are rendered below the content once finished
+            }
+
+            return (
+              <div key={tool.id} className="flex items-center gap-2 rounded-xl bg-card border border-line px-3 py-2 text-xs text-muted">
               {tool.status === 'started' ? (
                 <span className="flex h-4 w-4 items-center justify-center">
                   <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />
@@ -240,7 +429,7 @@ export function ChatMessage({
               )}
               <span className="font-mono">{tool.label || tool.name}</span>
             </div>
-          ))}
+          )})}
         </div>
       )}
       
@@ -280,17 +469,53 @@ export function ChatMessage({
         </div>
       )}
 
-      {hasContent && (
+      {hasContent && (isUser || isSystem) && (
         <div
           className={`max-w-[96%] rounded-2xl px-5 py-3.5 text-sm break-words shadow-sm sm:max-w-[86%] md:max-w-[74%] lg:max-w-[68%] xl:max-w-[62%] ${
             isUser
               ? "whitespace-pre-wrap bg-accent/10 text-foreground border border-accent/30 rounded-br-sm shadow-glow-xs"
-              : isSystem
-                ? "bg-warning/10 text-warning border border-warning/20 rounded-bl-sm"
-                : "bg-card text-foreground border border-line rounded-bl-sm"
+              : "bg-warning/10 text-warning border border-warning/20 rounded-bl-sm"
           }`}
         >
-          {isUser ? message.content : <RichMessageContent content={message.content} />}
+          {message.content}
+        </div>
+      )}
+      
+      {hasContent && !isUser && !isSystem && (
+        <AgentMessageContent content={message.content} />
+      )}
+
+                  {hasTools && !isUser && (
+        <div className="flex flex-col gap-1.5 w-full">
+          {message.tools!.map(tool => {
+            if ((tool.name === 'mcp__wallbit__show_table' || tool.name === 'show_table') && tool.status === 'ok') {
+              let tableProps = null;
+              try {
+                if (tool.resultSummary) {
+                  const res = JSON.parse(tool.resultSummary);
+                  if (res && res[0] && res[0].text) {
+                    try {
+                      tableProps = JSON.parse(res[0].text);
+                    } catch (err) {
+                      tableProps = res[0].args;
+                    }
+                  } else if (res && res[0] && res[0].args) {
+                    tableProps = res[0].args;
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
+              if (tableProps && tableProps.csv_data) {
+                return (
+                  <div key={tool.id} className="w-full mt-2">
+                    <AgentTable csvData={tableProps.csv_data} title={tableProps.title} description={tableProps.description} />
+                  </div>
+                );
+              }
+            }
+            return null;
+          })}
         </div>
       )}
     </div>
