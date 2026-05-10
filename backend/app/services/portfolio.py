@@ -76,7 +76,7 @@ class PortfolioService:
                         http_status=502,
                         message_es="Wallbit no respondió correctamente al buscar balances.",
                         message_en="Wallbit upstream error.",
-                        details={"status": exc.status, "body": exc.body},
+                        details={"status": exc.status},
                     ) from exc
             for row in checking_balance_to_rows(checking_raw):
                 balances.append(
@@ -155,7 +155,7 @@ class PortfolioService:
                     http_status=502,
                     message_es="Wallbit no respondió correctamente al buscar posiciones.",
                     message_en="Wallbit upstream error.",
-                    details={"status": exc.status, "body": exc.body},
+                    details={"status": exc.status},
                 ) from exc
 
             stocks_rows = stocks_balance_to_rows(stocks_raw)
@@ -167,7 +167,6 @@ class PortfolioService:
                 log.warning(
                     "wallbit_transactions_cost_basis_read_failed",
                     status=exc.status,
-                    body=exc.body,
                 )
             else:
                 cost_basis_by_symbol = transaction_cost_basis_by_symbol(transactions_raw)

@@ -102,8 +102,10 @@ async def resolve_input(
     input_id: str,
     body: ResolveInputRequest,
     request: Request,
-    user_id: UUID = Depends(get_current_user_id),  # noqa: ARG001 - dev auth gate
+    user_id: UUID = Depends(get_current_user_id),
+    svc: ChatService = Depends(get_chat_service),
 ) -> dict:
+    await svc.require_session(user_id=user_id, session_id=session_id)
     chat_agent = request.app.state.chat_agent
     agent_session = chat_agent.get_session(session_id)
     resolved = agent_session.resolve_input(input_id, body.selected_options)
@@ -123,8 +125,10 @@ async def resolve_credential(
     request_id: str,
     body: ResolveCredentialRequest,
     request: Request,
-    user_id: UUID = Depends(get_current_user_id),  # noqa: ARG001
+    user_id: UUID = Depends(get_current_user_id),
+    svc: ChatService = Depends(get_chat_service),
 ) -> dict:
+    await svc.require_session(user_id=user_id, session_id=session_id)
     chat_agent = request.app.state.chat_agent
     agent_session = chat_agent.get_session(session_id)
     resolved = agent_session.resolve_credential(request_id, body.value)

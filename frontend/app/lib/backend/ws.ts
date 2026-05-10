@@ -1,4 +1,4 @@
-import { getWsBaseUrl } from "./client";
+import { getDevUserToken, getWsBaseUrl } from "./client";
 import type { BackendWsFrame } from "./types";
 
 export interface BackendWsSubscription {
@@ -19,8 +19,11 @@ export function openSessionWebSocket({
   onClose?: () => void;
   onError?: (event: Event) => void;
 }): BackendWsSubscription {
-  const url = `${getWsBaseUrl()}/api/v1/ws?session_id=${encodeURIComponent(sessionId)}`;
-  const ws = new WebSocket(url);
+  const params = new URLSearchParams({
+    session_id: sessionId,
+  });
+  const url = `${getWsBaseUrl()}/api/v1/ws?${params.toString()}`;
+  const ws = new WebSocket(url, getDevUserToken());
 
   ws.addEventListener("open", () => {
     onOpen?.();

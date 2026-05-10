@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { ProviderLogo } from "../_components/ProviderLogo";
+import { getAuthHeaders } from "../lib/backend/client";
 
 export interface Connection {
   id: string;
@@ -46,13 +47,17 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
         const res = await fetch(`${url}/api/v1/connections/${connectionId}`, {
           method: "DELETE",
           headers: {
+            ...getAuthHeaders(),
             "Content-Type": "application/json",
           },
         });
 
         if (res.ok) {
           // Refresh connections
-          const refreshRes = await fetch(`${url}/api/v1/connections`, { cache: 'no-store' });
+          const refreshRes = await fetch(`${url}/api/v1/connections`, {
+            cache: 'no-store',
+            headers: getAuthHeaders(),
+          });
           if (refreshRes.ok) {
             setConnections(await refreshRes.json());
           } else {
@@ -116,6 +121,7 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
       const res = await fetch(`${url}/api/v1/connections/ethereum-custodial/create`, {
         method: "POST",
         headers: {
+          ...getAuthHeaders(),
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -132,7 +138,10 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
         });
         
         // Refresh connections
-        const refreshRes = await fetch(`${url}/api/v1/connections`, { cache: 'no-store' });
+        const refreshRes = await fetch(`${url}/api/v1/connections`, {
+          cache: 'no-store',
+          headers: getAuthHeaders(),
+        });
         if (refreshRes.ok) {
           setConnections(await refreshRes.json());
         }

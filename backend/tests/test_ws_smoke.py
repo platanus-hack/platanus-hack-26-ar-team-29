@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import DEV_WS_TOKEN
+
 
 def test_ws_subscribe_and_ping_pong(sync_client: TestClient) -> None:
     sid = sync_client.post("/api/v1/chat/sessions", json={}).json()["id"]
-    with sync_client.websocket_connect(f"/api/v1/ws?session_id={sid}") as ws:
+    with sync_client.websocket_connect(f"/api/v1/ws?session_id={sid}&token={DEV_WS_TOKEN}") as ws:
         first = ws.receive_json()
         assert first["type"] == "subscribed"
         assert first["session_id"] == sid
@@ -19,7 +21,7 @@ def test_ws_subscribe_and_ping_pong(sync_client: TestClient) -> None:
 
 def test_ws_streams_plan_for_buy_intent(sync_client: TestClient) -> None:
     sid = sync_client.post("/api/v1/chat/sessions", json={}).json()["id"]
-    with sync_client.websocket_connect(f"/api/v1/ws?session_id={sid}") as ws:
+    with sync_client.websocket_connect(f"/api/v1/ws?session_id={sid}&token={DEV_WS_TOKEN}") as ws:
         first = ws.receive_json()
         assert first["type"] == "subscribed"
 

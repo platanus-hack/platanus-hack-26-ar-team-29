@@ -1,5 +1,6 @@
 import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
+import { getAuthHeaders } from "../lib/backend/client";
 import { SyncButton } from "./SyncButton";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,10 @@ export default async function ActivityPage() {
   const url = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   let activity = [];
   try {
-    const res = await fetch(`${url}/api/v1/transactions`, { cache: 'no-store' });
+    const res = await fetch(`${url}/api/v1/transactions`, {
+      cache: 'no-store',
+      headers: getAuthHeaders(),
+    });
     if (res.ok) {
       activity = await res.json();
     }
