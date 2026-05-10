@@ -91,14 +91,22 @@ async def list_transactions(args: dict[str, Any]) -> dict[str, Any]:
 
 @tool(
     "get_asset",
-    "Obtiene informacion de un asset por su simbolo.",
-    {
-        "type": "object",
-        "properties": {"symbol": {"type": "string"}},
-        "required": ["symbol"],
-        "additionalProperties": False,
-    },
-)
+    "get_all_balances",
+]
+
+def wallbit_mcp_server():
+    return create_sdk_mcp_server(
+        name="wallbit",
+        version="0.1.0",
+        tools=[
+            get_checking_balance,
+            get_stocks_balance,
+            list_transactions,
+            get_asset,
+            create_trade,
+            get_all_balances,
+        ],
+    )
 async def get_asset(args: dict[str, Any]) -> dict[str, Any]:
     symbol = str(args["symbol"]).upper()
     return await _request("GET", f"/api/public/v1/assets/{symbol}")
@@ -155,3 +163,30 @@ async def create_trade(args: dict[str, Any]) -> dict[str, Any]:
 )
 async def show_table(args: dict[str, Any]) -> dict[str, Any]:
     return {"content": [{"type": "text", "text": json.dumps(args)}]}
+
+@tool(
+    "get_all_balances",
+    "Obtiene todos los balances, saldos y tenencias del usuario en todas las plataformas y billeteras conectadas (incluyendo Wallbit, Ethereum, y otros). Usala cuando el usuario pida saber cuanta plata tiene en general o en crypto.",
+    {},
+)
+async def get_all_balances(args: dict[str, Any]) -> dict[str, Any]:
+    del args
+    # The _request helper uses the wallbit public api by default for some reason?
+    # No, it uses the NEXT_PUBLIC_API_BASE_URL but it appends to it? Let's check _request
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.request(
+            "GET",
+            "http://127.0.0.1:8000/api/v1/balances",
+        )
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {"raw": response.text}
+
+    if response.is_error:
+        return {
+            "content": [{"type": "text", "text": f"Error fetching balances: {payload}"}],
+            "is_error": True,
+        }
+
+    return {"content": [{"type": "text", "text": json.dumps(payload)}], "data": payload}

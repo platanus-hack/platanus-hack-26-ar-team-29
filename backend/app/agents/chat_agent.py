@@ -133,10 +133,12 @@ WALLBIT_READ_TOOLS = [
     "get_stocks_balance",
     "list_transactions",
     "get_asset",
+    "get_all_balances",
     "mcp__wallbit__get_checking_balance",
     "mcp__wallbit__get_stocks_balance",
     "mcp__wallbit__list_transactions",
     "mcp__wallbit__get_asset",
+    "mcp__wallbit__get_all_balances",
     "mcp__wallbit__show_table",
 ]
 WALLBIT_WRITE_TOOLS = [
