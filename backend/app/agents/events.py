@@ -133,6 +133,37 @@ def approval_resolved_event(
     )
 
 
+def credential_requested_event(
+    *,
+    request_id: str,
+    title: str,
+    instructions: str,
+    kind: str,
+    placeholder: str | None = None,
+) -> AgentEvent:
+    return AgentEvent(
+        "credential_requested",
+        {
+            "request_id": request_id,
+            "title": title,
+            "instructions": instructions,
+            "kind": kind,
+            "placeholder": placeholder,
+        },
+    )
+
+
+def credential_resolved_event(
+    *,
+    request_id: str,
+    cancelled: bool = False,
+) -> AgentEvent:
+    return AgentEvent(
+        "credential_resolved",
+        {"request_id": request_id, "cancelled": cancelled},
+    )
+
+
 def error_event(message: str, *, details: Any | None = None) -> AgentEvent:
     payload: dict[str, Any] = {"message": message}
     if details is not None:

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.canonical.models import CanonicalBalance, CanonicalPosition
 from app.common.errors import NOT_FOUND, PROVIDER_UNAVAILABLE, APIError
 from app.persistence.repositories.connections import ConnectionRepository
+from app.providers.ethereum.client import EthereumClient, EthereumClientError
 from app.providers.wallbit.adapter import (
     checking_balance_to_rows,
     stocks_balance_to_rows,
@@ -20,11 +21,19 @@ from app.providers.wallbit.client import WallbitAPIError, WallbitClient
 
 log = structlog.get_logger(__name__)
 
+WEI_PER_ETH = 10**18
+
 
 class PortfolioService:
-    def __init__(self, session: AsyncSession, wallbit_base_url: str) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        wallbit_base_url: str,
+        eth_client: EthereumClient | None = None,
+    ) -> None:
         self.session = session
         self.wallbit_base_url = wallbit_base_url
+        self.eth_client = eth_client
         self.repo = ConnectionRepository(session)
 
     async def _get_credentials(self, user_id: UUID) -> WallbitCredentials:
@@ -42,35 +51,73 @@ class PortfolioService:
         return WallbitCredentials.from_blob(bytes(conn.credentials_encrypted))
 
     async def read_balances(self, user_id: UUID) -> list[CanonicalBalance]:
-        creds = await self._get_credentials(user_id)
-        async with WallbitClient(api_key=creds.api_key, base_url=self.wallbit_base_url) as wc:
-            try:
-                checking_raw = await wc.get_checking_balance()
-            except WallbitAPIError as exc:
-                raise APIError(
-                    PROVIDER_UNAVAILABLE,
-                    http_status=502,
-                    message_es="Wallbit no respondió correctamente al buscar balances.",
-                    message_en="Wallbit upstream error.",
-                    details={"status": exc.status, "body": exc.body},
-                ) from exc
+        balances: list[CanonicalBalance] = []
 
-        checking_rows = checking_balance_to_rows(checking_raw)
-        balances = []
-        for row in checking_rows:
-            balances.append(
-                CanonicalBalance(
-                    provider="Wallbit",
-                    account=row.get("account", "checking"),
-                    symbol=row.get("symbol", "USD"),
-                    currency=row.get("currency", "USD"),
-                    amount=float(row.get("amount", 0.0)),
-                    usd_value=float(row.get("amount", 0.0))
-                    if row.get("currency") == "USD"
-                    else None,
-                    raw=row.get("raw", {}),
+        # Wallbit balances (may be absent — user could have only an ETH wallet).
+        wallbit_conn = await self.repo.get_active_wallbit(user_id)
+        if wallbit_conn is not None:
+            creds = WallbitCredentials.from_blob(bytes(wallbit_conn.credentials_encrypted))
+            async with WallbitClient(api_key=creds.api_key, base_url=self.wallbit_base_url) as wc:
+                try:
+                    checking_raw = await wc.get_checking_balance()
+                except WallbitAPIError as exc:
+                    raise APIError(
+                        PROVIDER_UNAVAILABLE,
+                        http_status=502,
+                        message_es="Wallbit no respondió correctamente al buscar balances.",
+                        message_en="Wallbit upstream error.",
+                        details={"status": exc.status, "body": exc.body},
+                    ) from exc
+            for row in checking_balance_to_rows(checking_raw):
+                balances.append(
+                    CanonicalBalance(
+                        provider="Wallbit",
+                        account=row.get("account", "checking"),
+                        symbol=row.get("symbol", "USD"),
+                        currency=row.get("currency", "USD"),
+                        amount=float(row.get("amount", 0.0)),
+                        usd_value=float(row.get("amount", 0.0))
+                        if row.get("currency") == "USD"
+                        else None,
+                        raw=row.get("raw", {}),
+                    )
                 )
-            )
+
+        # Ethereum custodial wallets — show address + native ETH balance per
+        # connection. Failures here are logged but don't abort the whole call.
+        if self.eth_client is not None:
+            for conn in await self.repo.list_for_user(user_id):
+                if conn.connection_type != "ethereum_custodial" or conn.status != "active":
+                    continue
+                md = dict(conn.connection_metadata or {})
+                address = md.get("address")
+                network = md.get("network")
+                if not isinstance(address, str) or not isinstance(network, str):
+                    continue
+                try:
+                    wei = await self.eth_client.get_eth_balance(network, address)
+                except EthereumClientError as exc:
+                    log.warning(
+                        "eth_balance_read_failed",
+                        connection_id=str(conn.id),
+                        network=network,
+                        error=str(exc),
+                    )
+                    continue
+                eth_amount = wei / WEI_PER_ETH
+                short_addr = f"{address[:6]}…{address[-4:]}"
+                balances.append(
+                    CanonicalBalance(
+                        provider="Ethereum",
+                        account=f"{short_addr} ({network})",
+                        symbol="ETH",
+                        currency="ETH",
+                        amount=eth_amount,
+                        usd_value=None,
+                        raw={"address": address, "network": network, "wei": wei},
+                    )
+                )
+
         return balances
 
     async def read_positions(self, user_id: UUID) -> list[CanonicalPosition]:

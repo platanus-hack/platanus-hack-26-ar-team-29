@@ -10,6 +10,8 @@ from app.agents.events import (
     AgentEvent,
     approval_requested_event,
     approval_resolved_event,
+    credential_requested_event,
+    credential_resolved_event,
     input_requested_event,
     input_resolved_event,
 )
@@ -56,6 +58,10 @@ WRITE_DEFI_TOOLS = {
 ApprovalResult = PermissionResultAllow | PermissionResultDeny
 EventSink = Callable[[AgentEvent], Awaitable[None]]
 ASK_USER_QUESTION_TOOL = "AskUserQuestion"
+REQUEST_CREDENTIAL_TOOL_NAMES = {
+    "request_credential",
+    "mcp__ui__request_credential",
+}
 
 
 def requires_approval(tool_name: str) -> bool:
@@ -73,9 +79,12 @@ class UserInteractionBridge:
         self._event_sink: EventSink | None = None
         self._pending: dict[str, asyncio.Future[str]] = {}
         self._pending_inputs: dict[str, asyncio.Future[list[str]]] = {}
+        self._pending_credentials: dict[str, asyncio.Future[str | None]] = {}
 
         self.handlers = {
             ASK_USER_QUESTION_TOOL: self._handle_ask_user_question,
+            "request_credential": self._handle_request_credential,
+            "mcp__ui__request_credential": self._handle_request_credential,
         }
 
     def set_event_sink(self, event_sink: EventSink) -> None:
@@ -158,6 +167,69 @@ class UserInteractionBridge:
             return False
         future.set_result(normalized)
         return True
+
+    def resolve_credential(self, request_id: str, value: str | None) -> bool:
+        """Set the result for a pending credential request.
+
+        `value` is the user-entered text on submit, or `None` if cancelled.
+        """
+        future = self._pending_credentials.get(request_id)
+        if future is None or future.done():
+            return False
+        future.set_result(value)
+        return True
+
+    async def _handle_request_credential(
+        self,
+        input_data: dict[str, Any],
+        options: dict[str, Any] | None,
+    ) -> ApprovalResult:
+        del options
+
+        if self._event_sink is None:
+            return PermissionResultDeny(
+                message="No credential channel is available.",
+            )
+
+        request_id = uuid.uuid4().hex
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[str | None] = loop.create_future()
+        self._pending_credentials[request_id] = future
+
+        title = str(input_data.get("title") or input_data.get("label") or "Dato sensible")
+        instructions = str(
+            input_data.get("instructions")
+            or input_data.get("question")
+            or "Pegá el dato y confirmá."
+        )
+        kind = str(input_data.get("kind") or "secret")
+        placeholder = input_data.get("placeholder")
+
+        await self._event_sink(
+            credential_requested_event(
+                request_id=request_id,
+                title=title,
+                instructions=instructions,
+                kind=kind,
+                placeholder=str(placeholder) if isinstance(placeholder, str) else None,
+            )
+        )
+
+        try:
+            value = await future
+        finally:
+            self._pending_credentials.pop(request_id, None)
+
+        await self._event_sink(
+            credential_resolved_event(request_id=request_id, cancelled=value is None)
+        )
+
+        if value is None:
+            return PermissionResultDeny(message="User cancelled credential entry")
+
+        return PermissionResultAllow(
+            updated_input={"value": value, "kind": kind},
+        )
 
     async def _handle_ask_user_question(
         self,

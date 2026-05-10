@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { ProviderLogo } from "../_components/ProviderLogo";
 
 export interface Connection {
   id: string;
@@ -38,9 +39,9 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
     },
     {
       id: "bank",
-      name: "Banco tradicional",
+      name: "Tu fintech de confianza",
       status: "Próximamente",
-      description: "Conectá tu banco para consolidar saldos",
+      description: "Sumá tu billetera virtual para consolidar todos tus saldos en un solo lugar",
     },
   ];
 
@@ -90,13 +91,16 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
             key={item.id}
             className="rounded-3xl border border-line bg-card p-6 shadow-card transition-all duration-200 hover:border-accent/25 hover:shadow-card-hover"
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-base font-medium text-foreground">{item.name}</div>
-                <div className="mt-1 text-xs text-muted font-mono">{item.description}</div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <ProviderLogo provider={item.id} size="md" />
+                <div className="min-w-0">
+                  <div className="text-base font-medium text-foreground">{item.name}</div>
+                  <div className="mt-1 text-xs text-muted font-mono break-all">{item.description}</div>
+                </div>
               </div>
               <span
-                className={`rounded-full px-2 py-1 text-xs font-medium border ${
+                className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium border ${
                   item.status === "Conectado"
                     ? "bg-success/10 text-success border-success/20 shadow-success-soft"
                     : item.status === "Próximamente"

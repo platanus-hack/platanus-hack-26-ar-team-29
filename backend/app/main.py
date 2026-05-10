@@ -58,6 +58,33 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
     app.state.wallbit_base_url = settings.wallbit_base_url
     app.state.agent_tasks = agent_tasks
 
+    # Seed a Wallbit connection for the dev user using the env API key so the
+    # Connections page shows it as already linked. Idempotent: skips if any
+    # active wallbit connection already exists for the user.
+    if settings.wallbit_api_key:
+        try:
+            from app.api.deps import DEV_USER_ID
+            from app.persistence.repositories.connections import ConnectionRepository
+            from app.persistence.session import session_factory
+            from app.providers.wallbit.auth import WallbitCredentials
+
+            async with session_factory() as db:
+                repo = ConnectionRepository(db)
+                existing = await repo.get_active_wallbit(DEV_USER_ID)
+                if existing is None:
+                    creds = WallbitCredentials(api_key=settings.wallbit_api_key)
+                    await repo.create_wallbit(
+                        user_id=DEV_USER_ID,
+                        label="Wallbit",
+                        credentials_encrypted=creds.to_blob(),
+                        capabilities=["read_balance", "read_transactions", "place_trade"],
+                        metadata={},
+                    )
+                    await db.commit()
+                    log.info("wallbit_dev_connection_seeded", user_id=str(DEV_USER_ID))
+        except Exception as exc:  # noqa: BLE001 — startup seed must never block boot.
+            log.warning("wallbit_dev_seed_failed", error=str(exc))
+
     log.info("app_startup", env=settings.env)
     try:
         yield

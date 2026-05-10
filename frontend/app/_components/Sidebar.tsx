@@ -11,11 +11,11 @@ import { Button } from './Button';
 
 const NAV_ITEMS = [
     { label: 'Chat', href: '/' },
-    { label: 'Inversiones', href: '/investments' },
+    { label: 'Conexiones', href: '/connections' },
     { label: 'Balances', href: '/balances' },
     { label: 'Perfil', href: '/profile' },
+    { label: 'Inversiones', href: '/investments' },
     { label: 'Actividad', href: '/activity' },
-    { label: 'Conexiones', href: '/connections' },
 ];
 
 function currentLabel(pathname: string) {
@@ -174,7 +174,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                                 Alen Davies
                             </div>
                             <div className='truncate text-xs text-accent'>
-                                Risk Optimizer
+                                Asistente de inversión
                             </div>
                         </div>
                     </div>

@@ -40,7 +40,12 @@ class Settings(BaseSettings):
         "ANTHROPIC_FALLBACK_MODEL", "claude-3-5-sonnet-20241022"
     )
     wallbit_api_key: str = os.getenv("WALLBIT_API_KEY", "")
-    wallbit_base_url: str = os.getenv("WALLBIT_BASE_URL", "https://api.wallbit.io")
+    # The test key (`wlb_test_*`) only validates against the dev API; falling
+    # back to prod silently returns 401 on every request. Default to MCP URL.
+    wallbit_base_url: str = os.getenv(
+        "WALLBIT_BASE_URL",
+        os.getenv("WALLBIT_MCP_URL", "https://api.dev.wallbit.io"),
+    )
     wallbit_mcp_url: str = os.getenv("WALLBIT_MCP_URL", "https://api.dev.wallbit.io")
 
     poll_interval_seconds: int = int(os.getenv("POLL_INTERVAL_SECONDS", "300"))

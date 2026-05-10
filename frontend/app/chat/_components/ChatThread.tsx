@@ -37,12 +37,12 @@ export function ChatThread({
                     <div className='mx-auto flex min-h-full flex-col items-center justify-center px-4 py-10 text-center'>
                         <div className='rounded-3xl border border-accent/15 bg-card px-10 py-7 text-center shadow-panel-glow max-w-[420px]'>
                             <h2 className='mb-3 text-xl font-semibold text-foreground'>
-                                Terminal lista
+                                Chat listo
                             </h2>
                             <p className='max-w-[340px] mx-auto text-sm leading-6 text-muted'>
-                                Tu billetera está conectada. Pedime un análisis
-                                de riesgo, mover liquidez a una bóveda o buscar
-                                yield pasivo.
+                                Tu billetera de Wallbit está conectada.
+                                Pedime un análisis de riesgo, mover liquidez
+                                a una bóveda o buscar yield pasivo.
                             </p>
                         </div>
                     </div>

@@ -3,8 +3,18 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
+import { ProviderLogo } from "../_components/ProviderLogo";
 import { backendApi } from "../lib/backend/client";
 import type { BalanceRow } from "../lib/backend/types";
+
+function formatAmount(amount: number, currency: string) {
+  // Crypto-like assets need more decimals; fiat sticks to 2.
+  const isCrypto = currency !== "USD" && currency !== "ARS";
+  return amount.toLocaleString("es-AR", {
+    minimumFractionDigits: isCrypto ? 0 : 2,
+    maximumFractionDigits: isCrypto ? 6 : 2,
+  });
+}
 
 export default function BalancesPage() {
   const [balances, setBalances] = useState<BalanceRow[]>([]);
@@ -35,15 +45,21 @@ export default function BalancesPage() {
                   key={idx}
                   className="rounded-3xl border border-line bg-card p-6 shadow-card transition-all duration-200 hover:border-accent/25 hover:shadow-card-hover"
                 >
-                  <div className="flex items-center justify-between text-xs text-muted font-mono">
-                    <span>
-                      {item.provider} <span className="mx-1 text-accent/50">·</span> {item.account}
-                    </span>
-                    <span>Actualizado recién</span>
+                  <div className="flex items-center gap-3">
+                    <ProviderLogo provider={item.provider} size="md" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {item.provider}
+                      </div>
+                      <div className="text-xs text-muted font-mono truncate">
+                        {item.account}
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted shrink-0">Actualizado recién</span>
                   </div>
-                  <div className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
+                  <div className="mt-4 text-2xl font-semibold tabular-nums text-foreground">
                     {item.currency === "USD" ? "$" : ""}
-                    {item.amount.toLocaleString("es-AR")}
+                    {formatAmount(item.amount, item.currency)}
                   </div>
                   <div className="text-xs text-subdued font-mono">{item.symbol}</div>
                 </div>
