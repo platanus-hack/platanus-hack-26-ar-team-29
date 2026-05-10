@@ -1,7 +1,9 @@
 import asyncio
+
 from sqlalchemy import select
-from app.persistence.session import get_session
+
 from app.persistence.models.ledger import CanonicalTransaction
+from app.persistence.session import get_session
 
 
 async def main():

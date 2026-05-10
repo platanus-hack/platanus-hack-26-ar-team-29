@@ -1,66 +1,55 @@
+'use client';
+
+import { useEffect, useState } from "react";
 import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
-
-const balances = [
-  {
-    provider: "Wallbit",
-    account: "Cuenta USD",
-    currency: "USD",
-    available: "$2.450.000",
-    updated: "hace 2 min",
-  },
-  {
-    provider: "Wallbit",
-    account: "Inversiones",
-    currency: "USD",
-    available: "$1.125.000",
-    updated: "hace 2 min",
-  },
-  {
-    provider: "Wallet",
-    account: "USDC",
-    currency: "USDC",
-    available: "$890.000",
-    updated: "hace 1 min",
-  },
-  {
-    provider: "Wallet",
-    account: "ETH",
-    currency: "ETH",
-    available: "1.9 ETH",
-    updated: "hace 1 min",
-  },
-];
+import { backendApi } from "../lib/backend/client";
+import type { BalanceRow } from "../lib/backend/types";
 
 export default function BalancesPage() {
+  const [balances, setBalances] = useState<BalanceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    backendApi.getBalances().then((data) => {
+      setBalances(data);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
   return (
     <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader title="Balances" description="Saldos por proveedor y moneda." />
         <div className="flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:px-10">
-          <div className="mx-auto max-w-5xl grid gap-4 sm:grid-cols-2">
-            {balances.map((item) => (
-              <div
-                key={`${item.provider}-${item.account}`}
-                className="rounded-3xl border border-line bg-card p-6 shadow-card transition-all duration-200 hover:border-accent/25 hover:shadow-card-hover"
-              >
-                <div className="flex items-center justify-between text-xs text-muted font-mono">
-                  <span>
-                    {item.provider} <span className="mx-1 text-accent/50">·</span> {item.account}
-                  </span>
-                  <span>{item.updated}</span>
+          {loading ? (
+            <div className="text-center text-muted py-10">Cargando balances...</div>
+          ) : (
+            <div className="mx-auto max-w-5xl grid gap-4 sm:grid-cols-2">
+              {balances.length === 0 ? (
+                <div className="col-span-2 text-center text-muted py-10 border border-dashed border-line rounded-3xl">
+                  No se encontraron balances.
                 </div>
-                <div className="mt-3 text-2xl font-semibold tabular-nums text-foreground">{item.available}</div>
-                <div className="text-xs text-subdued font-mono">{item.currency}</div>
-                <button
-                  type="button"
-                  className="mt-5 w-full rounded-xl border border-accent/25 bg-background px-3 py-2 text-xs font-medium text-muted transition-all duration-200 hover:bg-accent/10 hover:text-foreground hover:border-accent/50 active:scale-[0.98]"
+              ) : null}
+              {balances.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-3xl border border-line bg-card p-6 shadow-card transition-all duration-200 hover:border-accent/25 hover:shadow-card-hover"
                 >
-                  Pedir a OpenFi
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="flex items-center justify-between text-xs text-muted font-mono">
+                    <span>
+                      {item.provider} <span className="mx-1 text-accent/50">·</span> {item.account}
+                    </span>
+                    <span>Actualizado recién</span>
+                  </div>
+                  <div className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
+                    {item.currency === "USD" ? "$" : ""}
+                    {item.amount.toLocaleString("es-AR")}
+                  </div>
+                  <div className="text-xs text-subdued font-mono">{item.symbol}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Sidebar>

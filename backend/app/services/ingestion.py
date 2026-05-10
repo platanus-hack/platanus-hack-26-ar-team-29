@@ -1,14 +1,20 @@
+import json
 import uuid
 from datetime import datetime
 from typing import Any
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import select
 
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import get_settings
+from app.persistence.crypto import decrypt
 from app.persistence.models.connections import ProviderConnection
 from app.persistence.models.ledger import CanonicalTransaction
+from app.persistence.models.users import UserProfile
+from app.persistence.session import session_factory
 from app.providers.wallbit.client import WallbitClient
-from app.persistence.crypto import decrypt
+from app.services.context import recalculate_user_profile
 
 
 async def _upsert_wallbit_txs(
@@ -95,17 +101,14 @@ async def sync_wallbit_transactions(session: AsyncSession, connection_id: uuid.U
         return 0
 
     creds_json = decrypt(conn.credentials_encrypted).decode("utf-8")
-    import json
 
     creds = json.loads(creds_json)
     api_key = creds.get("api_key")
     if not api_key:
         return 0
 
-    from app.config import get_settings
-
     settings = get_settings()
-    url = settings.wallbit_mcp_url
+    url = settings.wallbit_base_url
 
     inserted_or_updated = 0
     async with WallbitClient(api_key=api_key, base_url=url) as client:
@@ -133,17 +136,14 @@ async def sync_all_wallbit_transactions(session: AsyncSession, connection_id: uu
         return 0
 
     creds_json = decrypt(conn.credentials_encrypted).decode("utf-8")
-    import json
 
     creds = json.loads(creds_json)
     api_key = creds.get("api_key")
     if not api_key:
         return 0
 
-    from app.config import get_settings
-
     settings = get_settings()
-    url = settings.wallbit_mcp_url
+    url = settings.wallbit_base_url
 
     inserted_or_updated = 0
     current_page = 1
@@ -177,7 +177,6 @@ async def sync_all_wallbit_transactions(session: AsyncSession, connection_id: uu
 
 async def run_full_sync_pipeline(user_id: uuid.UUID) -> None:
     """Run full sync pipeline: Wallbit -> Classifier -> Context in a background task."""
-    from app.persistence.session import session_factory
 
     async with session_factory() as session:
         # 1. Sync Wallbit
@@ -202,9 +201,6 @@ async def run_full_sync_pipeline(user_id: uuid.UUID) -> None:
         txs = result.scalars().all()
 
         if txs:
-            from app.agents.classifier_agent import classify_transactions
-            from app.persistence.models.users import UserProfile
-
             payload = []
             for tx in txs:
                 payload.append(
@@ -249,6 +245,4 @@ async def run_full_sync_pipeline(user_id: uuid.UUID) -> None:
 
     # 3. Recalculate context
     async with session_factory() as session:
-        from app.services.context import recalculate_user_profile
-
         await recalculate_user_profile(session, user_id)

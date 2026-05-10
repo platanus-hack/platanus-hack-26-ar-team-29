@@ -6,9 +6,17 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+import structlog
+from anthropic import AsyncAnthropic
+
 from app.agents.approval import ApprovalBridge
 from app.agents.events import AgentEvent, error_event, summarize_value
-from app.agents.wallbit_tools import wallbit_mcp_server
+from app.agents.wallbit_tools import _request, wallbit_mcp_server
+from app.config import get_settings
+from app.persistence.repositories.chat import ChatRepository
+from app.persistence.repositories.plans import PlanRepository
+from app.services.chat import _message_to_api
+from app.services.plans import _plan_to_dict
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -75,8 +83,6 @@ WALLBIT_WRITE_TOOLS = [
 WALLBIT_TOOLS = WALLBIT_READ_TOOLS + WALLBIT_WRITE_TOOLS
 AGENT_UI_TOOLS = ["AskUserQuestion"]
 AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS
-AGENT_MODEL = "haiku"
-AGENT_FALLBACK_MODEL = "sonnet"
 
 
 async def _allow_pre_tool_use_hook(
@@ -97,12 +103,14 @@ async def _fetch_unit_price_usd(args: dict[str, Any]) -> float | None:
     if not symbol:
         return None
     try:
-        from app.agents.wallbit_tools import _request
-
         resp = await _request("GET", f"/api/public/v1/assets/{symbol}")
         outer = resp.get("data") if isinstance(resp, dict) else None
         # Wallbit returns {"data": {"symbol": ..., "price": ...}} so we unwrap once.
-        body = outer.get("data") if isinstance(outer, dict) and isinstance(outer.get("data"), dict) else outer
+        body = (
+            outer.get("data")
+            if isinstance(outer, dict) and isinstance(outer.get("data"), dict)
+            else outer
+        )
         price = body.get("price") if isinstance(body, dict) else None
         return float(price) if isinstance(price, int | float) else None
     except Exception:  # noqa: BLE001 — price fetch is best-effort.
@@ -142,8 +150,8 @@ class ChatAgentSession:
             else {"matcher": {}, "hooks": [_allow_pre_tool_use_hook]}
         )
         options = ClaudeAgentOptions(
-            model=AGENT_MODEL,
-            fallback_model=AGENT_FALLBACK_MODEL,
+            model=get_settings().anthropic_model,
+            fallback_model=get_settings().anthropic_fallback_model,
             system_prompt=self._system_prompt,
             include_partial_messages=True,
             mcp_servers={"wallbit": wallbit_mcp_server()},
@@ -403,8 +411,6 @@ class ChatAgent:
                 if not text:
                     continue
                 async with sessionmaker() as db:
-                    from app.persistence.repositories.chat import ChatRepository
-
                     chat_repo = ChatRepository(db)
                     msg = await chat_repo.create_message(
                         session_id=session_id,
@@ -415,8 +421,6 @@ class ChatAgent:
                         turn_id=turn_id,
                     )
                     await db.commit()
-
-                    from app.services.chat import _message_to_api
 
                     api_msg = _message_to_api(msg)
 
@@ -474,8 +478,6 @@ class ChatAgent:
                             estimated_total = float(amount)
 
                 async with sessionmaker() as db:
-                    from app.persistence.repositories.plans import PlanRepository
-
                     repo = PlanRepository(db)
                     plan = await repo.create_plan(
                         user_id=user_id,
@@ -495,8 +497,6 @@ class ChatAgent:
 
                     self._plan_to_approval[plan.id] = (session_id, event.payload["approval_id"])
 
-                    from app.persistence.repositories.chat import ChatRepository
-
                     chat_repo = ChatRepository(db)
                     await chat_repo.create_message(
                         session_id=session_id,
@@ -508,8 +508,6 @@ class ChatAgent:
                         plan_id=plan.id,
                     )
                     await db.commit()
-
-                from app.services.plans import _plan_to_dict
 
                 plan_dict = _plan_to_dict(plan)
                 if estimated_unit_price is not None:
@@ -546,10 +544,6 @@ class ChatAgent:
         sessionmaker: async_sessionmaker[AsyncSession],
     ) -> None:
         try:
-            from anthropic import AsyncAnthropic
-
-            from app.config import get_settings
-
             settings = get_settings()
             client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
@@ -565,8 +559,6 @@ class ChatAgent:
                 title = response.content[0].text.strip()
 
                 async with sessionmaker() as db:
-                    from app.persistence.repositories.chat import ChatRepository
-
                     chat_repo = ChatRepository(db)
                     await chat_repo.update_session_title(session_id, title)
                     await db.commit()
@@ -580,7 +572,5 @@ class ChatAgent:
                     },
                 )
         except Exception as exc:
-            import structlog
-
             log = structlog.get_logger(__name__)
             log.warning("title_generation_failed", error=str(exc))

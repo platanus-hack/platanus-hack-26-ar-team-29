@@ -1,12 +1,13 @@
 import asyncio
-import os
 import json
+import os
+
 from dotenv import load_dotenv
 
-from app.persistence.session import get_session
-from app.persistence.models.users import User, UserProfile
-from app.persistence.models.connections import ProviderConnection
 from app.persistence.crypto import encrypt
+from app.persistence.models.connections import ProviderConnection
+from app.persistence.models.users import User, UserProfile
+from app.persistence.session import get_session
 
 load_dotenv()
 

@@ -43,13 +43,9 @@ class AssistantMessage:
 
 
 def test_stream_text_delta_becomes_agent_token() -> None:
-    events = normalize_sdk_message(
-        StreamEvent(type="content_block_delta", delta=TextDelta("hola"))
-    )
+    events = normalize_sdk_message(StreamEvent(type="content_block_delta", delta=TextDelta("hola")))
 
-    assert [event.to_dict() for event in events] == [
-        {"type": "agent_token", "text": "hola"}
-    ]
+    assert [event.to_dict() for event in events] == [{"type": "agent_token", "text": "hola"}]
 
 
 def test_stream_tool_start_becomes_tool_call_started() -> None:

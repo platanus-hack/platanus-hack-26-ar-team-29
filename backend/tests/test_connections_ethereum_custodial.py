@@ -9,7 +9,6 @@ responsible for spinning up a DB and running migrations before invoking pytest.
 from __future__ import annotations
 
 import asyncio
-import os
 import socket
 from urllib.parse import urlparse
 
@@ -17,16 +16,19 @@ import pytest
 
 
 def _parse_db_host_port() -> tuple[str, int]:
-    url = os.environ.get(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/openfi",
-    )
+    from app.config import get_settings
+
+    settings = get_settings()
+    url = settings.database_url
     parsed = urlparse(url.replace("postgresql+asyncpg", "postgresql"))
     return parsed.hostname or "localhost", parsed.port or 5432
 
 
 def _db_reachable() -> bool:
-    if not os.environ.get("FERNET_KEY"):
+    from app.config import get_settings
+
+    settings = get_settings()
+    if not settings.fernet_key:
         return False
     host, port = _parse_db_host_port()
     try:

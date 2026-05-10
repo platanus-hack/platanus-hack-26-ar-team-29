@@ -1,56 +1,29 @@
+'use client';
+
+import { useEffect, useState } from "react";
 import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
-
-const summary = [
-  { label: "Valor total", value: "$12.480.550" },
-  { label: "Rendimiento 30d", value: "+4,2%" },
-  { label: "Riesgo", value: "Moderado" },
-];
-
-const positions = [
-  {
-    name: "S&P 500",
-    symbol: "SPY",
-    provider: "Wallbit",
-    allocation: "38%",
-    value: "$4.735.000",
-    pnl: "+6,1%",
-  },
-  {
-    name: "Ethereum",
-    symbol: "ETH",
-    provider: "Wallet",
-    allocation: "22%",
-    value: "$2.745.000",
-    pnl: "+9,8%",
-  },
-  {
-    name: "Renta fija USD",
-    symbol: "T-Bills",
-    provider: "Wallbit",
-    allocation: "18%",
-    value: "$2.246.000",
-    pnl: "+1,2%",
-  },
-  {
-    name: "CEDEARs Latam",
-    symbol: "MELI + GLOB",
-    provider: "Wallbit",
-    allocation: "14%",
-    value: "$1.746.000",
-    pnl: "+3,4%",
-  },
-  {
-    name: "Stablecoins",
-    symbol: "USDC",
-    provider: "Wallet",
-    allocation: "8%",
-    value: "$1.008.550",
-    pnl: "+0,1%",
-  },
-];
+import { backendApi } from "../lib/backend/client";
+import type { PositionRow } from "../lib/backend/types";
 
 export default function InvestmentsPage() {
+  const [positions, setPositions] = useState<PositionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    backendApi.getPositions().then((data) => {
+      setPositions(data);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  const totalValue = positions.reduce((acc, pos) => acc + (pos.usd_value || 0), 0);
+
+  const summary = [
+    { label: "Valor total USD", value: `$${totalValue.toLocaleString("es-AR")}` },
+    { label: "Rendimiento 30d", value: "--" },
+    { label: "Riesgo", value: "--" },
+  ];
+
   return (
     <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
@@ -78,30 +51,41 @@ export default function InvestmentsPage() {
                 Posiciones destacadas
               </div>
               <div className="divide-y divide-line">
-                {positions.map((pos) => (
-                  <div key={pos.name} className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:bg-accent/5">
-                    <div>
-                      <div className="text-base font-medium text-foreground">{pos.name}</div>
-                      <div className="text-xs font-mono text-muted mt-1">
-                        <span className="text-accent">{pos.symbol}</span> <span className="mx-1 opacity-50">·</span> {pos.provider}
+                {loading ? (
+                  <div className="px-6 py-10 text-center text-muted">Cargando posiciones...</div>
+                ) : positions.length === 0 ? (
+                  <div className="px-6 py-10 text-center text-muted">No hay posiciones activas.</div>
+                ) : (
+                  positions.map((pos, idx) => {
+                    const alloc = totalValue > 0 && pos.usd_value ? (pos.usd_value / totalValue * 100).toFixed(1) : "0.0";
+                    return (
+                      <div key={idx} className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:bg-accent/5">
+                        <div>
+                          <div className="text-base font-medium text-foreground">{pos.symbol}</div>
+                          <div className="text-xs font-mono text-muted mt-1">
+                            <span className="text-accent">{pos.shares} shares</span> <span className="mx-1 opacity-50">·</span> {pos.provider}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-6 text-sm">
+                          <div>
+                            <div className="text-xs font-mono text-subdued mb-1">Alloc</div>
+                            <div className="font-medium text-foreground">{alloc}%</div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-mono text-subdued mb-1">Valor USD</div>
+                            <div className="font-medium tabular-nums text-foreground">
+                              ${pos.usd_value?.toLocaleString("es-AR") || "0"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-mono text-subdued mb-1">P&L</div>
+                            <div className="font-medium tabular-nums text-muted">--</div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-6 text-sm">
-                      <div>
-                        <div className="text-xs font-mono text-subdued mb-1">Alloc</div>
-                        <div className="font-medium text-foreground">{pos.allocation}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-mono text-subdued mb-1">Valor</div>
-                        <div className="font-medium tabular-nums text-foreground">{pos.value}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-mono text-subdued mb-1">P&L</div>
-                        <div className="font-medium tabular-nums text-success">{pos.pnl}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  })
+                )}
               </div>
             </section>
           </div>
