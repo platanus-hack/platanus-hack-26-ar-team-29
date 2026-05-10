@@ -27,6 +27,11 @@ export interface ChatMessageDto {
   kind?: BackendMessageKind;
   plan_id?: string | null;
   created_at: string;
+  attachments?: {
+    name: string;
+    type: string;
+    url?: string;
+  }[];
 }
 
 export interface SendMessageResponse {

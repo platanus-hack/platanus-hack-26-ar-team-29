@@ -17,9 +17,7 @@ from app.providers.wallbit.client import WallbitClient
 from app.services.context import recalculate_user_profile
 
 
-async def _upsert_wallbit_txs(
-    session: AsyncSession, conn: ProviderConnection, raw_txs: list[dict[str, Any]]
-) -> int:
+async def _upsert_wallbit_txs(session: AsyncSession, conn: ProviderConnection, raw_txs: list[dict[str, Any]]) -> int:
     inserted_or_updated = 0
     for raw in raw_txs:
         # Normalize

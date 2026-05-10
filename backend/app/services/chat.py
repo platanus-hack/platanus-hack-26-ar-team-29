@@ -42,7 +42,7 @@ def _content_to_text(blocks: list[Any]) -> str:
 
 
 def _message_to_api(msg: ChatMessage) -> dict[str, Any]:
-    return {
+    out = {
         "id": str(msg.id),
         "role": _author_to_role(msg.author),
         "content": _content_to_text(msg.content_blocks),
@@ -50,6 +50,10 @@ def _message_to_api(msg: ChatMessage) -> dict[str, Any]:
         "plan_id": str(msg.plan_id) if msg.plan_id else None,
         "created_at": msg.created_at.isoformat().replace("+00:00", "Z"),
     }
+    attachments = msg.message_metadata.get("attachments")
+    if attachments:
+        out["attachments"] = attachments
+    return out
 
 
 class ChatService:
@@ -129,6 +133,7 @@ class ChatService:
         user_id: UUID,
         session_id: UUID,
         content: str,
+        attachments: list[dict[str, Any]] | None = None,
         agent_tasks: set[asyncio.Task] | None = None,
     ) -> dict[str, Any]:
         cs = await self.repo.get_session(session_id, user_id)
@@ -150,6 +155,7 @@ class ChatService:
             kind="text",
             content_blocks=[{"type": "text", "text": content}],
             turn_id=turn_id,
+            metadata={"attachments": attachments} if attachments else {},
         )
         await self.repo.touch_session(session_id)
         await self.session.commit()

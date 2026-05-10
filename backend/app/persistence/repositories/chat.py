@@ -80,6 +80,7 @@ class ChatRepository:
         turn_id: UUID | None = None,
         plan_id: UUID | None = None,
         tool_call: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ChatMessage:
         msg = ChatMessage(
             session_id=session_id,
@@ -90,6 +91,7 @@ class ChatRepository:
             turn_id=turn_id,
             plan_id=plan_id,
             tool_call=tool_call,
+            message_metadata=metadata or {},
         )
         self.session.add(msg)
         await self.session.flush()
