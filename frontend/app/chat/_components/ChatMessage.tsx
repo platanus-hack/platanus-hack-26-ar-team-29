@@ -33,7 +33,7 @@ type MarkdownBlock =
 
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const tokenPattern = /(\*\*.+?\*\*|```.+?```|`.+?`)/g;
+  const tokenPattern = /(\*\*.+?\*\*|```.+?```|`.+?`|https?:\/\/[^\s]+)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -50,6 +50,18 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     } else if (token.startsWith('`') && token.endsWith('`')) {
       const code = token.slice(1, -1);
       nodes.push(<CopyableCode key={`${match.index}-code1`} text={code} />);
+    } else if (token.startsWith('http://') || token.startsWith('https://')) {
+      nodes.push(
+        <a 
+          key={`${match.index}-link`} 
+          href={token} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-accent hover:underline break-all"
+        >
+          {token}
+        </a>
+      );
     }
     lastIndex = tokenPattern.lastIndex;
   }
