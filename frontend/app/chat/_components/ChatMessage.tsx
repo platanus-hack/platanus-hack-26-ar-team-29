@@ -84,9 +84,11 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   for (const rawLine of content.trim().split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) {
+      // Blank line ends a paragraph but not a list — LLMs frequently emit
+      // blank lines between list items (and reset numbering to "1." each
+      // time), so we keep adjacent list items in a single block so the
+      // browser auto-numbers them sequentially.
       flushParagraph();
-      flushUnorderedList();
-      flushOrderedList();
       continue;
     }
 

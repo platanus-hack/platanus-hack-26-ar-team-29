@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.agents.defi_tools import defi_mcp_server
 from app.agents.ethereum_tools import ethereum_mcp_server
 from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
 from app.agents.interactions import UserInteractionBridge
@@ -73,6 +74,27 @@ Frase semilla: `palabra1 palabra2...`
 
 Para iniciar sesion o importar una billetera de Ethereum existente, usa la herramienta `mcp__ethereum__import_ethereum_wallet`. Pidele siempre al usuario su clave privada o frase semilla y la red en la que desea importar.
 Al finalizar la importacion, pasale al usuario la direccion importada.
+
+DeFi / Aave V3 (generar yield depositando en pools):
+- `mcp__defi__list_markets` lista los mercados de Aave disponibles con su APY
+  actual. Usalo cuando el usuario pregunte por opciones de inversion en DeFi,
+  yield pasivo, "donde puedo poner mis dolares", etc. Hoy esta soportado USDC
+  en la red `base`.
+- `mcp__defi__list_positions` muestra las posiciones DeFi del usuario (lo que
+  ya tiene depositado en Aave). Usalo para reportes de portfolio o cuando el
+  usuario pregunte cuanto tiene invertido en DeFi.
+- `mcp__defi__supply` deposita un asset en Aave. ESTA ES UNA OPERACION QUE
+  MUEVE DINERO, asi que se aplica la misma regla que con trades: llama
+  directamente a la tool, no preguntes "¿confirmás?" en texto. El backend
+  intercepta y pide confirmacion al usuario por su cuenta.
+- `mcp__defi__withdraw` retira un asset previamente depositado en Aave. Misma
+  regla: llamala directamente. Para retirar todo lo depositado pasa
+  amount="max".
+- Antes de un supply/withdraw podes (y deberias) explicar en una o dos frases
+  qué vas a hacer (asset, monto, mercado, APY estimado). Despues llamas a la
+  tool sin pedir mas confirmacion.
+- Para obtener un market_id correcto, primero llama a list_markets si no lo
+  tenes; el formato es `aave-v3-<network>-<asset>` (e.g. `aave-v3-base-USDC`).
 """.strip()
 
 ETHEREUM_WRITE_TOOLS = [
@@ -97,8 +119,25 @@ WALLBIT_WRITE_TOOLS = [
     "mcp__wallbit__create_trade",
 ]
 WALLBIT_TOOLS = WALLBIT_READ_TOOLS + WALLBIT_WRITE_TOOLS
+
+DEFI_READ_TOOLS = [
+    "list_markets",
+    "get_market",
+    "list_positions",
+    "mcp__defi__list_markets",
+    "mcp__defi__get_market",
+    "mcp__defi__list_positions",
+]
+DEFI_WRITE_TOOLS = [
+    "supply",
+    "withdraw",
+    "mcp__defi__supply",
+    "mcp__defi__withdraw",
+]
+DEFI_TOOLS = DEFI_READ_TOOLS + DEFI_WRITE_TOOLS
+
 AGENT_UI_TOOLS = ["AskUserQuestion"]
-AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS + DEFI_READ_TOOLS
 AGENT_MODEL = "haiku"
 AGENT_FALLBACK_MODEL = "sonnet"
 
@@ -174,7 +213,11 @@ class ChatAgentSession:
             fallback_model=AGENT_FALLBACK_MODEL,
             system_prompt=self._system_prompt,
             include_partial_messages=True,
-            mcp_servers={"wallbit": wallbit_mcp_server(), "ethereum": ethereum_mcp_server()},
+            mcp_servers={
+                "wallbit": wallbit_mcp_server(),
+                "ethereum": ethereum_mcp_server(),
+                "defi": defi_mcp_server(),
+            },
             strict_mcp_config=True,
             permission_mode="default",
             tools=AGENT_UI_TOOLS,
@@ -496,6 +539,7 @@ class ChatAgent:
                 # decides. Failure here must not block the approval flow.
                 estimated_unit_price: float | None = None
                 estimated_total: float | None = None
+                human_description_es = "Aprobar " + tool_name
                 if tool_name in ("create_trade", "mcp__wallbit__create_trade"):
                     estimated_unit_price = await _fetch_unit_price_usd(args)
                     if estimated_unit_price is not None:
@@ -505,6 +549,28 @@ class ChatAgent:
                             estimated_total = estimated_unit_price * float(shares)
                         elif isinstance(amount, (int, float)) and amount > 0:
                             estimated_total = float(amount)
+                elif tool_name in ("supply", "mcp__defi__supply", "withdraw", "mcp__defi__withdraw"):
+                    is_supply = tool_name in ("supply", "mcp__defi__supply")
+                    asset = str(args.get("asset") or "").upper()
+                    raw_amount = args.get("amount")
+                    # Stablecoin assumption: 1 USDC ≈ 1 USD (matches services/defi.py).
+                    if isinstance(raw_amount, (int, float)):
+                        estimated_total = float(raw_amount)
+                    elif isinstance(raw_amount, str) and raw_amount.strip().lower() != "max":
+                        try:
+                            estimated_total = float(raw_amount)
+                        except ValueError:
+                            estimated_total = None
+                    amount_label = (
+                        "todo lo depositado"
+                        if isinstance(raw_amount, str) and raw_amount.strip().lower() == "max"
+                        else f"{raw_amount} {asset}".strip()
+                    )
+                    human_description_es = (
+                        f"Depositar {amount_label} en Aave"
+                        if is_supply
+                        else f"Retirar {amount_label} de Aave"
+                    )
 
                 async with sessionmaker() as db:
                     from app.persistence.repositories.plans import PlanRepository
@@ -518,7 +584,7 @@ class ChatAgent:
                             {
                                 "tool_name": tool_name,
                                 "args": args,
-                                "human_description_es": "Aprobar " + tool_name,
+                                "human_description_es": human_description_es,
                                 "estimated_usd": estimated_total,
                             }
                         ],

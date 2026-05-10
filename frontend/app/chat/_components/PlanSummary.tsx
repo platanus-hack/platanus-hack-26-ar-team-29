@@ -28,9 +28,87 @@ const TRADE_TOOL_NAMES = new Set([
     'mcp__wallbit__create_trade',
     'create_trade',
 ]);
+const DEFI_SUPPLY_TOOL_NAMES = new Set(['mcp__defi__supply', 'supply']);
+const DEFI_WITHDRAW_TOOL_NAMES = new Set(['mcp__defi__withdraw', 'withdraw']);
 
 function isTradeStep(step: TradePlanStep) {
     return TRADE_TOOL_NAMES.has(step.tool_name);
+}
+
+function defiKind(step: TradePlanStep): "supply" | "withdraw" | null {
+  if (DEFI_SUPPLY_TOOL_NAMES.has(step.tool_name)) return "supply";
+  if (DEFI_WITHDRAW_TOOL_NAMES.has(step.tool_name)) return "withdraw";
+  return null;
+}
+
+function parseMarketLabel(marketId: string): { protocol: string; network: string; asset: string } {
+  // market_id format: aave-v3-<network>-<asset>, e.g. aave-v3-base-USDC
+  const parts = marketId.split("-");
+  if (parts.length >= 4) {
+    return {
+      protocol: `${parts[0]} ${parts[1]}`.toUpperCase(),
+      network: parts[2],
+      asset: parts.slice(3).join("-").toUpperCase(),
+    };
+  }
+  return { protocol: "", network: "", asset: "" };
+}
+
+function DefiStepBody({
+  kind,
+  args,
+}: {
+  kind: "supply" | "withdraw";
+  args: Record<string, unknown>;
+}) {
+  const asset = String(args.asset ?? "").toUpperCase();
+  const rawAmount = args.amount;
+  const isMax =
+    typeof rawAmount === "string" && rawAmount.trim().toLowerCase() === "max";
+  const amount =
+    typeof rawAmount === "number"
+      ? rawAmount.toString()
+      : typeof rawAmount === "string"
+        ? rawAmount
+        : null;
+  const marketId = String(args.market_id ?? "");
+  const market = marketId ? parseMarketLabel(marketId) : null;
+
+  const actionVerb = kind === "supply" ? "Depositar" : "Retirar";
+  const directionTone = kind === "supply" ? "text-accent" : "text-rose-400";
+  const preposition = kind === "supply" ? "en" : "de";
+
+  return (
+    <div className="space-y-2.5">
+      <div className="text-xl font-semibold leading-snug">
+        <span className={directionTone}>{actionVerb}</span>
+        {amount && (
+          <span className="text-foreground">
+            {" "}
+            {isMax ? "todo" : amount} {!isMax && asset && <span>{asset}</span>}
+          </span>
+        )}
+        {market?.protocol && (
+          <>
+            <span className="text-muted"> {preposition} </span>
+            <span className="font-mono text-foreground">{market.protocol}</span>
+          </>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {market?.network && (
+          <span className="rounded-full border border-line bg-background px-2 py-0.5 text-xs text-muted">
+            Red: {market.network}
+          </span>
+        )}
+        {market?.asset && (
+          <span className="rounded-full border border-line bg-background px-2 py-0.5 text-xs text-muted">
+            {market.asset}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function TradeStepBody({
@@ -143,6 +221,8 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
             <ol className='space-y-2 mt-4'>
                 {plan.steps.map((step) => {
                     const trade = isTradeStep(step);
+                    const defi = defiKind(step);
+                    const friendly = trade || defi !== null;
                     return (
                         <li
                             key={step.id}
@@ -156,6 +236,11 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
                                             unitPriceUsd={
                                                 plan.estimated_unit_price_usd
                                             }
+                                        />
+                                    ) : defi ? (
+                                        <DefiStepBody
+                                            kind={defi}
+                                            args={step.args || {}}
                                         />
                                     ) : (
                                         <>
@@ -175,9 +260,11 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
                                             </div>
                                         </>
                                     )}
-                                    {trade && step.estimated_usd != null && (
+                                    {friendly && step.estimated_usd != null && (
                                         <div className='mt-2 text-xs text-muted'>
-                                            Costo estimado:{' '}
+                                            {defi === 'withdraw'
+                                                ? 'Monto estimado: '
+                                                : 'Costo estimado: '}
                                             <span className='text-foreground'>
                                                 {formatUSD(step.estimated_usd)}
                                             </span>

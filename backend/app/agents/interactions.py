@@ -46,6 +46,12 @@ WRITE_WALLBIT_TOOLS = {
     "mcp__wallbit__create_trade",
 }
 
+WRITE_DEFI_TOOLS = {
+    "supply",
+    "withdraw",
+    "mcp__defi__supply",
+    "mcp__defi__withdraw",
+}
 
 ApprovalResult = PermissionResultAllow | PermissionResultDeny
 EventSink = Callable[[AgentEvent], Awaitable[None]]
@@ -56,6 +62,8 @@ def requires_approval(tool_name: str) -> bool:
     if tool_name in READ_WALLBIT_TOOLS:
         return False
     if tool_name in WRITE_WALLBIT_TOOLS:
+        return True
+    if tool_name in WRITE_DEFI_TOOLS:
         return True
     return tool_name.startswith("mcp__wallbit__")
 
