@@ -5,7 +5,7 @@ import { ConnectionsClient } from "./ConnectionsClient";
 export const dynamic = "force-dynamic";
 
 export default async function ConnectionsPage() {
-  const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const url = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   let connections = [];
   try {
     const res = await fetch(`${url}/api/v1/connections`, { cache: 'no-store' });

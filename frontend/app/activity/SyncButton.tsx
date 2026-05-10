@@ -10,7 +10,7 @@ export function SyncButton() {
   const handleSync = async () => {
     setLoading(true);
     try {
-      const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const url = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
       const res = await fetch(`${url}/api/v1/transactions/sync`, {
         method: "POST",
       });
