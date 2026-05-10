@@ -10,10 +10,21 @@ services:
     volumes:
       - ./.postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d atajo"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 2s
       timeout: 5s
       retries: 10
+
+  db-init:
+    image: postgres:16
+    container_name: atajo-pg-init
+    environment:
+      PGPASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      bash -ec "psql -h db -U postgres -d atajo -v ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null 2>&1 || createdb -h db -U postgres atajo"
 
   backend:
     build:
@@ -28,8 +39,7 @@ services:
       # Pull remaining configs (like ANTHROPIC_API_KEY, FERNET_KEY, etc.)
       - ./backend/.env
     depends_on:
-      db:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     command: >
       bash -c "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
