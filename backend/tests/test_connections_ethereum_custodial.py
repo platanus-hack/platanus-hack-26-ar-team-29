@@ -161,35 +161,31 @@ def test_export_private_key_for_custodial(sync_client) -> None:  # type: ignore[
 
 
 def test_export_private_key_rejects_non_custodial(sync_client) -> None:  # type: ignore[no-untyped-def]
-    # Manufacture a Wallbit connection by directly inserting one via the
-    # repository. We bypass the ``/connections/wallbit`` endpoint because it
-    # probes the upstream Wallbit API, which we don't want to hit in tests.
-    from uuid import UUID
+    from unittest.mock import AsyncMock, patch
+    from uuid import uuid4
+    from app.persistence.models.connections import ProviderConnection
 
-    from app.api.deps import DEV_USER_ID
-    from app.persistence.repositories.connections import ConnectionRepository
-    from app.persistence.session import session_factory
-    from app.providers.wallbit.auth import WallbitCredentials
-
-    async def _make_wallbit_conn() -> UUID:
-        async with session_factory() as session:
-            repo = ConnectionRepository(session)
-            blob = WallbitCredentials(api_key="fake-test-key").to_blob()
-            conn = await repo.create_wallbit(
-                user_id=DEV_USER_ID,
-                label="probe-bypass",
-                credentials_encrypted=blob,
-                capabilities=["read_balance"],
-                metadata={},
-            )
-            await session.commit()
-            return conn.id
-
-    conn_id = asyncio.get_event_loop().run_until_complete(_make_wallbit_conn())
-
-    er = sync_client.post(
-        f"/api/v1/connections/{conn_id}/export-private-key",
-        json={"confirm": True},
+    conn_id = str(uuid4())
+    fake_conn = ProviderConnection(
+        id=uuid4(),
+        user_id=uuid4(),
+        connection_type="wallbit",
+        label="probe-bypass",
+        auth_kind="api_key",
+        credentials_encrypted=b"fake",
+        credentials_kid="v1",
+        status="healthy",
     )
+
+    with patch(
+        "app.persistence.repositories.connections.ConnectionRepository.get_by_id",
+        new_callable=AsyncMock,
+    ) as mock_get:
+        mock_get.return_value = fake_conn
+        er = sync_client.post(
+            f"/api/v1/connections/{conn_id}/export-private-key",
+            json={"confirm": True},
+        )
+
     assert er.status_code == 400, er.text
     assert er.json()["error"]["code"] == "NOT_EXPORTABLE"

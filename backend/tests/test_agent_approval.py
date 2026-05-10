@@ -5,13 +5,13 @@ from typing import Any
 
 import pytest
 
-from app.agents.approval import ApprovalBridge, PermissionResultAllow, PermissionResultDeny
+from app.agents.interactions import UserInteractionBridge, PermissionResultAllow, PermissionResultDeny
 from app.agents.events import AgentEvent
 
 
 @pytest.mark.asyncio
 async def test_read_wallbit_tools_auto_allow() -> None:
-    bridge = ApprovalBridge()
+    bridge = UserInteractionBridge()
 
     result = await bridge.can_use_tool(
         "mcp__wallbit__get_checking_balance",
@@ -25,7 +25,7 @@ async def test_read_wallbit_tools_auto_allow() -> None:
 @pytest.mark.asyncio
 async def test_write_wallbit_tool_emits_approval_and_allows_on_confirm() -> None:
     events: list[AgentEvent] = []
-    bridge = ApprovalBridge()
+    bridge = UserInteractionBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
     task = asyncio.create_task(bridge.can_use_tool("mcp__wallbit__create_trade", {"symbol": "SPY"}))
@@ -47,7 +47,7 @@ async def test_write_wallbit_tool_emits_approval_and_allows_on_confirm() -> None
 @pytest.mark.asyncio
 async def test_write_wallbit_tool_denies_on_reject() -> None:
     events: list[AgentEvent] = []
-    bridge = ApprovalBridge()
+    bridge = UserInteractionBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
     task = asyncio.create_task(bridge.can_use_tool("mcp__wallbit__create_trade", {"symbol": "SPY"}))
@@ -63,7 +63,7 @@ async def test_write_wallbit_tool_denies_on_reject() -> None:
 @pytest.mark.asyncio
 async def test_unknown_wallbit_tool_requires_approval() -> None:
     events: list[AgentEvent] = []
-    bridge = ApprovalBridge()
+    bridge = UserInteractionBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
     task = asyncio.create_task(bridge.can_use_tool("mcp__wallbit__future_write", {"value": 1}))
@@ -77,7 +77,7 @@ async def test_unknown_wallbit_tool_requires_approval() -> None:
 @pytest.mark.asyncio
 async def test_ask_user_question_emits_input_requested_and_allows_with_answer() -> None:
     events: list[AgentEvent] = []
-    bridge = ApprovalBridge()
+    bridge = UserInteractionBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
     task = asyncio.create_task(
@@ -122,7 +122,7 @@ async def test_ask_user_question_emits_input_requested_and_allows_with_answer() 
 @pytest.mark.asyncio
 async def test_ask_user_question_handles_multiple_questions() -> None:
     events: list[AgentEvent] = []
-    bridge = ApprovalBridge()
+    bridge = UserInteractionBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
     task = asyncio.create_task(

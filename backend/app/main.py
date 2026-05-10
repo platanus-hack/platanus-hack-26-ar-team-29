@@ -90,11 +90,21 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
         yield
     finally:
         # Cancel agent tasks gracefully.
-        for task in list(agent_tasks):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        my_tasks = [t for t in agent_tasks if t.get_loop() is loop] if loop else list(agent_tasks)
+
+        for task in my_tasks:
             task.cancel()
-        if agent_tasks:
-            await asyncio.gather(*agent_tasks, return_exceptions=True)
-        agent_tasks.clear()
+        if my_tasks:
+            await asyncio.gather(*my_tasks, return_exceptions=True)
+
+        for task in my_tasks:
+            agent_tasks.discard(task)
+
         await wallbit_provider.aclose()
         from app.persistence.session import reset_engine
 

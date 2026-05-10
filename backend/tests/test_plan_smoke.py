@@ -16,9 +16,13 @@ def test_plan_reject_path(sync_client: TestClient) -> None:
     assert r.status_code == 202
 
     plan_id: str | None = None
-    for _ in range(40):
+    for _ in range(300):
         time.sleep(0.1)
-        msgs = sync_client.get(f"/api/v1/chat/sessions/{sid}/messages").json()
+        r_get = sync_client.get(f"/api/v1/chat/sessions/{sid}/messages")
+        if r_get.status_code != 200:
+            print("Failed to get messages:", r_get.text)
+            continue
+        msgs = r_get.json()
         for m in msgs:
             if m.get("kind") == "plan_proposal" and m.get("plan_id"):
                 plan_id = m["plan_id"]

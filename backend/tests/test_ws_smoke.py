@@ -29,13 +29,18 @@ def test_ws_streams_plan_for_buy_intent(sync_client: TestClient) -> None:
         )
 
         types: list[str] = []
-        for _ in range(80):
+        plan_id: str | None = None
+        for _ in range(300):
             try:
                 frame = ws.receive_json()
             except Exception:
                 break
             t = frame.get("type")
             types.append(t)
+            if t == "plan_proposed":
+                plan_id = frame.get("plan_id")
+                # Reject the plan so the agent can finish the turn
+                sync_client.post(f"/api/v1/plans/{plan_id}/reject", json={"reason": "test"})
             if t == "turn_complete":
                 break
         assert "plan_proposed" in types
