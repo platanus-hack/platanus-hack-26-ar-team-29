@@ -1,14 +1,14 @@
 import uuid
-import structlog
 from datetime import UTC, datetime
 
-log = structlog.get_logger(__name__)
-
+import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.persistence.models.ledger import CanonicalTransaction
 from app.persistence.models.users import UserProfile
+
+log = structlog.get_logger(__name__)
 
 
 async def recalculate_user_profile(session: AsyncSession, user_id: uuid.UUID):

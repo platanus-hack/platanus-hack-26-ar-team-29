@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
+import structlog
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,9 +17,6 @@ from app.persistence.models.users import UserProfile
 from app.persistence.session import session_factory
 from app.providers.wallbit.client import WallbitClient
 from app.services.context import recalculate_user_profile
-
-
-import structlog
 
 log = structlog.get_logger(__name__)
 

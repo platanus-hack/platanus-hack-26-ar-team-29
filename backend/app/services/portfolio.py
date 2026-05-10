@@ -118,7 +118,7 @@ class PortfolioService:
                     continue
                 eth_amount = wei / WEI_PER_ETH
                 short_addr = f"{address[:6]}…{address[-4:]}"
-                
+
                 # Capitalize network name
                 network_display = network
                 if network_display == "polygon-amoy":
