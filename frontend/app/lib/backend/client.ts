@@ -13,6 +13,7 @@ import type {
 } from "./types";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export class BackendApiError extends Error {
   code: string;
@@ -56,6 +57,17 @@ export function getWsBaseUrl() {
   return apiBase;
 }
 
+export function getDevUserToken() {
+  const userId = process.env.NEXT_PUBLIC_DEV_USER_ID || DEFAULT_DEV_USER_ID;
+  return `dev-${userId}`;
+}
+
+export function getAuthHeaders() {
+  return {
+    Authorization: `Bearer ${getDevUserToken()}`,
+  };
+}
+
 async function parseError(res: Response): Promise<BackendApiError> {
   let body: Partial<ApiErrorEnvelope> | null = null;
   try {
@@ -78,6 +90,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
   headers.set("Accept-Language", "es-AR");
+  headers.set("Authorization", `Bearer ${getDevUserToken()}`);
   if (init?.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
   const res = await fetch(`${getApiBaseUrl()}/api/v1${path}`, {

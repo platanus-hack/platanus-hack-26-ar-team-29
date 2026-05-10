@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getAuthHeaders } from "../lib/backend/client";
 
 export function SyncButton() {
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,7 @@ export function SyncButton() {
       const url = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
       const res = await fetch(`${url}/api/v1/transactions/sync`, {
         method: "POST",
+        headers: getAuthHeaders(),
       });
       if (res.ok) {
         alert("Sincronización iniciada en segundo plano. Los cambios aparecerán en breve.");

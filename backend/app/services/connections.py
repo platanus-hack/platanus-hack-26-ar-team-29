@@ -153,7 +153,7 @@ class ConnectionService:
             try:
                 await wc.get_checking_balance()
             except WallbitAPIError as exc:
-                log.warning("wallbit_probe_failed", status=exc.status, body=str(exc.body))
+                log.warning("wallbit_probe_failed", status=exc.status)
                 raise APIError(
                     PROVIDER_UNAVAILABLE,
                     http_status=400,
@@ -162,7 +162,7 @@ class ConnectionService:
                         "Verificá que sea correcta y que tenga permisos de lectura."
                     ),
                     message_en="Wallbit API key validation failed.",
-                    details={"status": exc.status, "body": exc.body},
+                    details={"status": exc.status},
                 ) from exc
 
         creds = WallbitCredentials(api_key=api_key)

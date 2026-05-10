@@ -101,6 +101,15 @@ class ChatService:
         return out
 
     async def list_messages(self, user_id: UUID, session_id: UUID) -> list[dict[str, Any]]:
+        await self.require_session(user_id=user_id, session_id=session_id)
+        messages = await self.repo.list_messages(session_id=session_id, user_id=user_id)
+        return [
+            _message_to_api(m)
+            for m in messages
+            if m.author in ("user", "agent", "system") and m.kind in ("text", "plan_proposal")
+        ]
+
+    async def require_session(self, user_id: UUID, session_id: UUID) -> None:
         cs = await self.repo.get_session(session_id, user_id)
         if cs is None:
             raise APIError(
@@ -109,12 +118,6 @@ class ChatService:
                 message_es="Esta conversación no existe.",
                 message_en="Chat session not found.",
             )
-        messages = await self.repo.list_messages(session_id=session_id, user_id=user_id)
-        return [
-            _message_to_api(m)
-            for m in messages
-            if m.author in ("user", "agent", "system") and m.kind in ("text", "plan_proposal")
-        ]
 
     async def delete_session(self, user_id: UUID, session_id: UUID) -> None:
         cs = await self.repo.get_session(session_id, user_id)

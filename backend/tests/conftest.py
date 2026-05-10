@@ -6,7 +6,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
+from app.api.deps import DEV_USER_ID
 from app.main import create_app
+
+DEV_AUTH_HEADER = {"Authorization": f"Bearer dev-{DEV_USER_ID}"}
+DEV_WS_TOKEN = f"dev-{DEV_USER_ID}"
 
 
 @pytest.fixture(scope="session")
@@ -16,7 +20,7 @@ def app() -> Iterator[FastAPI]:
 
 @pytest.fixture(scope="session")
 def sync_client(app: FastAPI) -> Iterator[TestClient]:
-    with TestClient(app) as client:
+    with TestClient(app, headers=DEV_AUTH_HEADER) as client:
         yield client
 
 
@@ -24,5 +28,9 @@ def sync_client(app: FastAPI) -> Iterator[TestClient]:
 async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     async with app.router.lifespan_context(app):
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers=DEV_AUTH_HEADER,
+        ) as client:
             yield client

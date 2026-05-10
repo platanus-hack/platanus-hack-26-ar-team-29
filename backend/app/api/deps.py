@@ -1,14 +1,16 @@
-"""FastAPI dependencies — auth (dev user only) + service factories."""
+"""FastAPI dependencies — auth + service factories."""
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Request
+from fastapi import Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.anthropic import AnthropicClient
 from app.api.ws.manager import ConnectionManager
+from app.common.errors import UNAUTHORIZED, APIError
 from app.config import get_settings
 from app.persistence.session import get_session
 from app.services.chat import ChatService
@@ -20,10 +22,45 @@ from app.services.portfolio import PortfolioService
 from app.services.profiler import ProfilerService
 
 DEV_USER_ID: UUID = UUID("00000000-0000-0000-0000-000000000001")
+DEV_TOKEN_PREFIX = "dev-"
 
 
-def get_current_user_id() -> UUID:
-    return DEV_USER_ID
+def parse_dev_user_token(token: str | None) -> UUID:
+    if not token or not token.startswith(DEV_TOKEN_PREFIX):
+        raise APIError(
+            UNAUTHORIZED,
+            http_status=401,
+            message_es="Falta un token de autenticación válido.",
+            message_en="Missing valid authentication token.",
+        )
+    raw_user_id = token[len(DEV_TOKEN_PREFIX) :].strip()
+    try:
+        return UUID(raw_user_id)
+    except ValueError as exc:
+        raise APIError(
+            UNAUTHORIZED,
+            http_status=401,
+            message_es="El token de autenticación no es válido.",
+            message_en="Invalid authentication token.",
+        ) from exc
+
+
+def user_id_from_authorization(authorization: str | None) -> UUID:
+    scheme, _, token = (authorization or "").partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise APIError(
+            UNAUTHORIZED,
+            http_status=401,
+            message_es="Falta un token Bearer válido.",
+            message_en="Missing valid Bearer token.",
+        )
+    return parse_dev_user_token(token)
+
+
+def get_current_user_id(
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+) -> UUID:
+    return user_id_from_authorization(authorization)
 
 
 def get_chat_service(
