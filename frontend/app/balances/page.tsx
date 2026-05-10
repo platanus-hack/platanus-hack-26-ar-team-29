@@ -55,7 +55,6 @@ export default function BalancesPage() {
                         {item.account}
                       </div>
                     </div>
-                    <span className="text-xs text-muted shrink-0">Actualizado recién</span>
                   </div>
                   <div className="mt-4 text-2xl font-semibold tabular-nums text-foreground">
                     {item.currency === "USD" ? "$" : ""}

@@ -102,10 +102,12 @@ class PortfolioService:
                 md = dict(conn.connection_metadata or {})
                 address = md.get("address")
                 network = md.get("network")
+                log.info("portfolio_found_ethereum_connection", address=address, network=network)
                 if not isinstance(address, str) or not isinstance(network, str):
                     continue
                 try:
                     wei = await self.eth_client.get_eth_balance(network, address)
+                    log.info("portfolio_fetched_ethereum_balance", wei=wei, address=address)
                 except EthereumClientError as exc:
                     log.warning(
                         "eth_balance_read_failed",
