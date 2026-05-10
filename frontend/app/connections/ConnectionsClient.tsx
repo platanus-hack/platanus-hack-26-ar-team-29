@@ -227,15 +227,42 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
           <div className="bg-card border border-line rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6">
             <h3 className="text-xl font-bold text-foreground">¡Wallet Creada!</h3>
             <div className="space-y-4">
-              <p className="text-sm text-muted">
-                Tu dirección es <code className="bg-accent/10 px-1 py-0.5 rounded text-accent">{mnemonicData.address}</code>
-              </p>
+              <div>
+                <p className="text-sm text-muted mb-1">Tu dirección es</p>
+                <div className="flex items-center gap-2">
+                  <code className="bg-accent/10 px-2 py-1 rounded text-accent flex-1 break-all">{mnemonicData.address}</code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(mnemonicData.address);
+                      alert('Dirección copiada al portapapeles!');
+                    }}
+                    className="shrink-0 p-1.5 bg-accent/10 text-accent rounded hover:bg-accent/20"
+                    title="Copiar dirección"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                  </button>
+                </div>
+              </div>
               <div className="bg-warning/10 border border-warning/20 rounded-xl p-4">
-                <p className="text-sm font-medium text-warning mb-2">Importante: Guardá tu frase semilla</p>
-                <p className="text-xs text-warning/80 mb-3">
-                  Esta es la única vez que verás esta frase. Si la perdés, no podrás recuperar el acceso.
-                </p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-warning">Importante: Guardá tu frase semilla</p>
+                    <p className="text-xs text-warning/80 mt-1">
+                      Esta es la única vez que verás esta frase. Si la perdés, no podrás recuperar el acceso.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(mnemonicData.mnemonic);
+                      alert('Frase semilla copiada al portapapeles!');
+                    }}
+                    className="shrink-0 p-1.5 bg-warning/20 text-warning rounded hover:bg-warning/30"
+                    title="Copiar frase semilla"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-3">
                   {mnemonicData.mnemonic.split(" ").map((word: string, i: number) => (
                     <div key={i} className="bg-background border border-warning/20 rounded-md py-1 px-2 flex items-center gap-1.5">
                       <span className="text-[10px] text-warning/50 select-none">{i + 1}</span>
