@@ -169,12 +169,9 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                         <div className='flex h-10 w-10 items-center justify-center rounded-full bg-background text-sm font-semibold text-foreground border border-accent/40'>
                             AL
                         </div>
-                        <div className='min-w-0'>
-                            <div className='truncate font-medium text-foreground'>
+                        <div className='min-w-0 flex-1'>
+                            <div className='truncate font-medium text-foreground text-sm'>
                                 Alen Davies
-                            </div>
-                            <div className='truncate text-xs text-accent'>
-                                Asistente de inversión
                             </div>
                         </div>
                     </div>
