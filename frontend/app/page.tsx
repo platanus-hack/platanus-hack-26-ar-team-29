@@ -145,6 +145,7 @@ export default function ChatPage() {
                     const newTool = {
                         id: frame.tool_use_id,
                         name: frame.tool_name,
+                        label: frame.tool_label,
                         inputSummary: frame.input_summary,
                         status: 'started' as const,
                     };

@@ -46,6 +46,13 @@ WRITE_WALLBIT_TOOLS = {
     "mcp__wallbit__create_trade",
 }
 
+WRITE_DEFI_TOOLS = {
+    "supply",
+    "withdraw",
+    "mcp__defi__supply",
+    "mcp__defi__withdraw",
+}
+
 ApprovalResult = PermissionResultAllow | PermissionResultDeny
 EventSink = Callable[[AgentEvent], Awaitable[None]]
 ASK_USER_QUESTION_TOOL = "AskUserQuestion"
@@ -56,6 +63,8 @@ def requires_approval(tool_name: str) -> bool:
         return False
     if tool_name in WRITE_WALLBIT_TOOLS:
         return True
+    if tool_name in WRITE_DEFI_TOOLS:
+        return True
     return tool_name.startswith("mcp__wallbit__")
 
 
@@ -64,6 +73,10 @@ class UserInteractionBridge:
         self._event_sink: EventSink | None = None
         self._pending: dict[str, asyncio.Future[str]] = {}
         self._pending_inputs: dict[str, asyncio.Future[list[str]]] = {}
+
+        self.handlers = {
+            ASK_USER_QUESTION_TOOL: self._handle_ask_user_question,
+        }
 
     def set_event_sink(self, event_sink: EventSink) -> None:
         self._event_sink = event_sink
@@ -77,12 +90,19 @@ class UserInteractionBridge:
         input_data: dict[str, Any],
         options: dict[str, Any] | None = None,
     ) -> ApprovalResult:
-        if tool_name == ASK_USER_QUESTION_TOOL:
-            return await self._handle_ask_user_question(input_data, options)
+        if handler := self.handlers.get(tool_name):
+            return await handler(input_data, options)
 
         if not requires_approval(tool_name):
             return PermissionResultAllow(updated_input=input_data)
 
+        return await self._handle_security_approval(tool_name, input_data)
+
+    async def _handle_security_approval(
+        self,
+        tool_name: str,
+        input_data: dict[str, Any]
+    ) -> ApprovalResult:
         if self._event_sink is None:
             return PermissionResultDeny(message="No approval channel is available for this action.")
 
@@ -250,6 +270,3 @@ def _selected_labels(
         labels_by_id.get(selected, labels_by_label.get(selected, selected))
         for selected in selected_options
     ]
-
-
-ApprovalBridge = UserInteractionBridge

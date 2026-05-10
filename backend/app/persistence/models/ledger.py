@@ -135,7 +135,9 @@ class CanonicalTransaction(Base):
     dest_amount: Mapped[float | None] = mapped_column(Numeric(28, 10), nullable=True)
     dest_unit: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    fee_amount: Mapped[float] = mapped_column(Numeric(28, 10), nullable=False, server_default=text("0"))
+    fee_amount: Mapped[float] = mapped_column(
+        Numeric(28, 10), nullable=False, server_default=text("0")
+    )
     fee_currency: Mapped[str | None] = mapped_column(String, nullable=True)
 
     status: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'completed'"))
@@ -147,8 +149,12 @@ class CanonicalTransaction(Base):
     classifier: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     source_kind: Mapped[str] = mapped_column(String, nullable=False)
 
-    source_plan_step_id: Mapped[uuid.UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True, index=True)
-    source_document_id: Mapped[uuid.UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True, index=True)
+    source_plan_step_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True, index=True
+    )
+    source_document_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True, index=True
+    )
 
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     merchant: Mapped[str | None] = mapped_column(String, nullable=True)

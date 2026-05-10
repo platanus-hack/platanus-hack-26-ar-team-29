@@ -134,6 +134,8 @@ class PlanService:
         return {"ok": True, "plan_state": "rejected", "plan_id": str(plan_id)}
 
 
+from app.agents.events import format_tool_name
+
 def _plan_to_dict(plan: Any) -> dict[str, Any]:
     return {
         "id": str(plan.id),
@@ -148,6 +150,7 @@ def _plan_to_dict(plan: Any) -> dict[str, Any]:
                 "id": str(s.id),
                 "ordinal": s.ordinal,
                 "tool_name": s.tool_name,
+                "tool_label": format_tool_name(s.tool_name),
                 "args": s.args,
                 "human_description_es": s.human_description_es,
                 "human_description_en": s.human_description_en,

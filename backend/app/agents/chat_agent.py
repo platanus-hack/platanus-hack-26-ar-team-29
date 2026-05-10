@@ -6,17 +6,11 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-import structlog
-from anthropic import AsyncAnthropic
-
-from app.agents.approval import ApprovalBridge
-from app.agents.events import AgentEvent, error_event, summarize_value
-from app.agents.wallbit_tools import _request, wallbit_mcp_server
-from app.config import get_settings
-from app.persistence.repositories.chat import ChatRepository
-from app.persistence.repositories.plans import PlanRepository
-from app.services.chat import _message_to_api
-from app.services.plans import _plan_to_dict
+from app.agents.defi_tools import defi_mcp_server
+from app.agents.ethereum_tools import ethereum_mcp_server
+from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
+from app.agents.interactions import UserInteractionBridge
+from app.agents.wallbit_tools import wallbit_mcp_server
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -60,11 +54,55 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 - Si el usuario rechaza la operacion, respetalo y ofrece ajustar el plan.
 - Nunca digas que una operacion fue ejecutada hasta que el resultado del tool
   lo confirme.
+- El backend intercepta la llamada al tool y le muestra al usuario un modal con
+  botones **Aprobar / Rechazar**. Esa es la confirmacion oficial. Si en lugar
+  de llamar al tool preguntas "¿confirmás?" en texto, el modal NUNCA aparece y
+  el usuario queda colgado: eso es un bug grave.
+- ANTES de llamar al tool, NO des por hecho que la operacion se va a ejecutar. Usa frases como "Acá te preparé la orden para que la revises:" o "Te dejo los detalles de la operación para que confirmes:". NUNCA digas "Voy a comprar..." ni "Ejecutando compra...", presentalo siempre como una propuesta.
+- El turno tiene que terminar con la **invocacion del tool**, no con una pregunta al usuario.
+- NUNCA digas que una operacion fue ejecutada hasta que el resultado del tool lo confirme.
+- Si el tool devuelve que el usuario rechazó la operación en el modal, respondé de forma natural (ej. "Entendido, operación cancelada.") y ofrece ajustar los parámetros.
 
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
+
+Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Preguntale siempre al usuario en que red la quiere crear si no lo especifico (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base).
+Al finalizar la creacion de la cuenta, pasale al usuario la direccion y la frase semilla usando comillas simples invertidas (`backticks`) para que el formato se renderice bien con boton de copia.
+Ejemplo:
+Direccion: `0x...`
+Frase semilla: `palabra1 palabra2...`
+
+Para iniciar sesion o importar una billetera de Ethereum existente, usa la herramienta `mcp__ethereum__import_ethereum_wallet`. Pidele siempre al usuario su clave privada o frase semilla y la red en la que desea importar.
+Al finalizar la importacion, pasale al usuario la direccion importada.
+
+DeFi / Aave V3 (generar yield depositando en pools):
+- `mcp__defi__list_markets` lista los mercados de Aave disponibles con su APY
+  actual. Usalo cuando el usuario pregunte por opciones de inversion en DeFi,
+  yield pasivo, "donde puedo poner mis dolares", etc. Hoy esta soportado USDC
+  en la red `base`.
+- `mcp__defi__list_positions` muestra las posiciones DeFi del usuario (lo que
+  ya tiene depositado en Aave). Usalo para reportes de portfolio o cuando el
+  usuario pregunte cuanto tiene invertido en DeFi.
+- `mcp__defi__supply` deposita un asset en Aave. ESTA ES UNA OPERACION QUE
+  MUEVE DINERO, asi que se aplica la misma regla que con trades: llama
+  directamente a la tool, no preguntes "¿confirmás?" en texto. El backend
+  intercepta y pide confirmacion al usuario por su cuenta.
+- `mcp__defi__withdraw` retira un asset previamente depositado en Aave. Misma
+  regla: llamala directamente. Para retirar todo lo depositado pasa
+  amount="max".
+- Antes de un supply/withdraw podes (y deberias) explicar en una o dos frases
+  qué vas a hacer (asset, monto, mercado, APY estimado). Despues llamas a la
+  tool sin pedir mas confirmacion.
+- Para obtener un market_id correcto, primero llama a list_markets si no lo
+  tenes; el formato es `aave-v3-<network>-<asset>` (e.g. `aave-v3-base-USDC`).
 """.strip()
 
+ETHEREUM_WRITE_TOOLS = [
+    "create_ethereum_wallet",
+    "mcp__ethereum__create_ethereum_wallet",
+    "import_ethereum_wallet",
+    "mcp__ethereum__import_ethereum_wallet",
+]
 
 WALLBIT_READ_TOOLS = [
     "get_checking_balance",
@@ -81,8 +119,27 @@ WALLBIT_WRITE_TOOLS = [
     "mcp__wallbit__create_trade",
 ]
 WALLBIT_TOOLS = WALLBIT_READ_TOOLS + WALLBIT_WRITE_TOOLS
+
+DEFI_READ_TOOLS = [
+    "list_markets",
+    "get_market",
+    "list_positions",
+    "mcp__defi__list_markets",
+    "mcp__defi__get_market",
+    "mcp__defi__list_positions",
+]
+DEFI_WRITE_TOOLS = [
+    "supply",
+    "withdraw",
+    "mcp__defi__supply",
+    "mcp__defi__withdraw",
+]
+DEFI_TOOLS = DEFI_READ_TOOLS + DEFI_WRITE_TOOLS
+
 AGENT_UI_TOOLS = ["AskUserQuestion"]
-AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS + DEFI_READ_TOOLS
+AGENT_MODEL = "haiku"
+AGENT_FALLBACK_MODEL = "sonnet"
 
 
 async def _allow_pre_tool_use_hook(
@@ -103,6 +160,8 @@ async def _fetch_unit_price_usd(args: dict[str, Any]) -> float | None:
     if not symbol:
         return None
     try:
+        from app.agents.wallbit_tools import _request
+
         resp = await _request("GET", f"/api/public/v1/assets/{symbol}")
         outer = resp.get("data") if isinstance(resp, dict) else None
         # Wallbit returns {"data": {"symbol": ..., "price": ...}} so we unwrap once.
@@ -122,10 +181,10 @@ class ChatAgentSession:
         self,
         *,
         system_prompt: str = SYSTEM_PROMPT,
-        approval_bridge: ApprovalBridge | None = None,
+        approval_bridge: UserInteractionBridge | None = None,
     ) -> None:
         self._system_prompt = system_prompt
-        self._approval_bridge = approval_bridge or ApprovalBridge()
+        self._approval_bridge = approval_bridge or UserInteractionBridge()
         self._client: Any | None = None
         self._connected = False
         self._turn_lock = asyncio.Lock()
@@ -150,11 +209,15 @@ class ChatAgentSession:
             else {"matcher": {}, "hooks": [_allow_pre_tool_use_hook]}
         )
         options = ClaudeAgentOptions(
-            model=get_settings().anthropic_model,
-            fallback_model=get_settings().anthropic_fallback_model,
+            model=AGENT_MODEL,
+            fallback_model=AGENT_FALLBACK_MODEL,
             system_prompt=self._system_prompt,
             include_partial_messages=True,
-            mcp_servers={"wallbit": wallbit_mcp_server()},
+            mcp_servers={
+                "wallbit": wallbit_mcp_server(),
+                "ethereum": ethereum_mcp_server(),
+                "defi": defi_mcp_server(),
+            },
             strict_mcp_config=True,
             permission_mode="default",
             tools=AGENT_UI_TOOLS,
@@ -270,12 +333,14 @@ def normalize_sdk_message(message: Any) -> list[AgentEvent]:
             if block_type == "TextBlock" and isinstance(text, str):
                 text_parts.append(text)
             elif block_type == "ToolUseBlock":
+                tool_name = getattr(block, "name", None)
                 events.append(
                     AgentEvent(
                         "tool_call_started",
                         {
                             "tool_use_id": getattr(block, "id", None),
-                            "tool_name": getattr(block, "name", None),
+                            "tool_name": tool_name,
+                            "tool_label": format_tool_name(tool_name),
                             "input_summary": summarize_value(getattr(block, "input", None)),
                         },
                     )
@@ -322,12 +387,14 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
 
     if event_type == "content_block_start" and content_block is not None:
         if content_block.__class__.__name__ == "ToolUseBlock":
+            tool_name = getattr(content_block, "name", None)
             return [
                 AgentEvent(
                     "tool_call_started",
                     {
                         "tool_use_id": getattr(content_block, "id", None),
-                        "tool_name": getattr(content_block, "name", None),
+                        "tool_name": tool_name,
+                        "tool_label": format_tool_name(tool_name),
                         "input_summary": summarize_value(getattr(content_block, "input", None)),
                     },
                 )
@@ -391,6 +458,7 @@ class ChatAgent:
                         "turn_id": str(turn_id),
                         "tool_use_id": event.payload.get("tool_use_id"),
                         "tool_name": event.payload.get("tool_name"),
+                        "tool_label": event.payload.get("tool_label"),
                         "input_summary": event.payload.get("input_summary"),
                     },
                 )
@@ -411,6 +479,8 @@ class ChatAgent:
                 if not text:
                     continue
                 async with sessionmaker() as db:
+                    from app.persistence.repositories.chat import ChatRepository
+
                     chat_repo = ChatRepository(db)
                     msg = await chat_repo.create_message(
                         session_id=session_id,
@@ -421,6 +491,8 @@ class ChatAgent:
                         turn_id=turn_id,
                     )
                     await db.commit()
+
+                    from app.services.chat import _message_to_api
 
                     api_msg = _message_to_api(msg)
 
@@ -467,6 +539,7 @@ class ChatAgent:
                 # decides. Failure here must not block the approval flow.
                 estimated_unit_price: float | None = None
                 estimated_total: float | None = None
+                human_description_es = "Aprobar " + tool_name
                 if tool_name in ("create_trade", "mcp__wallbit__create_trade"):
                     estimated_unit_price = await _fetch_unit_price_usd(args)
                     if estimated_unit_price is not None:
@@ -476,8 +549,32 @@ class ChatAgent:
                             estimated_total = estimated_unit_price * float(shares)
                         elif isinstance(amount, (int, float)) and amount > 0:
                             estimated_total = float(amount)
+                elif tool_name in ("supply", "mcp__defi__supply", "withdraw", "mcp__defi__withdraw"):
+                    is_supply = tool_name in ("supply", "mcp__defi__supply")
+                    asset = str(args.get("asset") or "").upper()
+                    raw_amount = args.get("amount")
+                    # Stablecoin assumption: 1 USDC ≈ 1 USD (matches services/defi.py).
+                    if isinstance(raw_amount, (int, float)):
+                        estimated_total = float(raw_amount)
+                    elif isinstance(raw_amount, str) and raw_amount.strip().lower() != "max":
+                        try:
+                            estimated_total = float(raw_amount)
+                        except ValueError:
+                            estimated_total = None
+                    amount_label = (
+                        "todo lo depositado"
+                        if isinstance(raw_amount, str) and raw_amount.strip().lower() == "max"
+                        else f"{raw_amount} {asset}".strip()
+                    )
+                    human_description_es = (
+                        f"Depositar {amount_label} en Aave"
+                        if is_supply
+                        else f"Retirar {amount_label} de Aave"
+                    )
 
                 async with sessionmaker() as db:
+                    from app.persistence.repositories.plans import PlanRepository
+
                     repo = PlanRepository(db)
                     plan = await repo.create_plan(
                         user_id=user_id,
@@ -487,7 +584,7 @@ class ChatAgent:
                             {
                                 "tool_name": tool_name,
                                 "args": args,
-                                "human_description_es": "Aprobar " + tool_name,
+                                "human_description_es": human_description_es,
                                 "estimated_usd": estimated_total,
                             }
                         ],
@@ -496,6 +593,8 @@ class ChatAgent:
                     )
 
                     self._plan_to_approval[plan.id] = (session_id, event.payload["approval_id"])
+
+                    from app.persistence.repositories.chat import ChatRepository
 
                     chat_repo = ChatRepository(db)
                     await chat_repo.create_message(
@@ -508,6 +607,8 @@ class ChatAgent:
                         plan_id=plan.id,
                     )
                     await db.commit()
+
+                from app.services.plans import _plan_to_dict
 
                 plan_dict = _plan_to_dict(plan)
                 if estimated_unit_price is not None:
@@ -544,6 +645,10 @@ class ChatAgent:
         sessionmaker: async_sessionmaker[AsyncSession],
     ) -> None:
         try:
+            from anthropic import AsyncAnthropic
+
+            from app.config import get_settings
+
             settings = get_settings()
             client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
@@ -559,6 +664,8 @@ class ChatAgent:
                 title = response.content[0].text.strip()
 
                 async with sessionmaker() as db:
+                    from app.persistence.repositories.chat import ChatRepository
+
                     chat_repo = ChatRepository(db)
                     await chat_repo.update_session_title(session_id, title)
                     await db.commit()
@@ -572,5 +679,7 @@ class ChatAgent:
                     },
                 )
         except Exception as exc:
+            import structlog
+
             log = structlog.get_logger(__name__)
             log.warning("title_generation_failed", error=str(exc))
