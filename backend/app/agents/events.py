@@ -4,7 +4,6 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-
 TOOL_LABELS = {
     "get_checking_balance": "Get Checking Balance",
     "get_stocks_balance": "Get Stocks Balance",

@@ -47,6 +47,7 @@ WRITE_WALLBIT_TOOLS = {
 }
 
 from typing import Union
+
 ApprovalResult = Union[PermissionResultAllow, PermissionResultDeny]
 EventSink = Callable[[AgentEvent], Awaitable[None]]
 ASK_USER_QUESTION_TOOL = "AskUserQuestion"
@@ -65,7 +66,7 @@ class UserInteractionBridge:
         self._event_sink: EventSink | None = None
         self._pending: dict[str, asyncio.Future[str]] = {}
         self._pending_inputs: dict[str, asyncio.Future[list[str]]] = {}
-        
+
         self.handlers = {
             ASK_USER_QUESTION_TOOL: self._handle_ask_user_question,
         }
@@ -91,8 +92,8 @@ class UserInteractionBridge:
         return await self._handle_security_approval(tool_name, input_data)
 
     async def _handle_security_approval(
-        self, 
-        tool_name: str, 
+        self,
+        tool_name: str,
         input_data: dict[str, Any]
     ) -> ApprovalResult:
         if self._event_sink is None:

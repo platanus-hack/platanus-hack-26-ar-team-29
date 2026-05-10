@@ -5,7 +5,6 @@ from typing import Any
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
-
 WALLBIT_API_BASE_URL = "https://api.dev.wallbit.io"
 WALLBIT_API_KEY = "wlb_test_LvjqjbatMJpUCXir728BPneTVh6gEz6jzjSgX0kn"
 

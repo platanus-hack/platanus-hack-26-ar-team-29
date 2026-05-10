@@ -6,8 +6,8 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
 from app.agents.interactions import UserInteractionBridge
-from app.agents.events import AgentEvent, error_event, summarize_value, format_tool_name
 from app.agents.wallbit_tools import wallbit_mcp_server
 
 if TYPE_CHECKING:
@@ -44,12 +44,10 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
   botones **Aprobar / Rechazar**. Esa es la confirmacion oficial. Si en lugar
   de llamar al tool preguntas "¿confirmás?" en texto, el modal NUNCA aparece y
   el usuario queda colgado: eso es un bug grave.
-- Antes de la llamada al tool podes (y deberias) explicar en una o dos frases
-  qué vas a hacer (símbolo, cantidad, precio estimado, costo total). Pero el
-  turno tiene que terminar con la **invocacion del tool**, no con una pregunta.
-- Nunca digas que una operacion fue ejecutada hasta que el resultado del tool
-  lo confirme.
-- Si el usuario rechaza la operacion en el modal, respetalo y ofrece ajustar.
+- ANTES de llamar al tool, NO des por hecho que la operacion se va a ejecutar. Usa frases como "Acá te preparé la orden para que la revises:" o "Te dejo los detalles de la operación para que confirmes:". NUNCA digas "Voy a comprar..." ni "Ejecutando compra...", presentalo siempre como una propuesta.
+- El turno tiene que terminar con la **invocacion del tool**, no con una pregunta al usuario.
+- NUNCA digas que una operacion fue ejecutada hasta que el resultado del tool lo confirme.
+- Si el tool devuelve que el usuario rechazó la operación en el modal, respondé de forma natural (ej. "Entendido, operación cancelada.") y ofrece ajustar los parámetros.
 
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
@@ -511,6 +509,7 @@ class ChatAgent:
     ) -> None:
         try:
             from anthropic import AsyncAnthropic
+
             from app.config import get_settings
 
             settings = get_settings()
