@@ -118,10 +118,22 @@ class PortfolioService:
                     continue
                 eth_amount = wei / WEI_PER_ETH
                 short_addr = f"{address[:6]}…{address[-4:]}"
+                
+                # Capitalize network name
+                network_display = network
+                if network_display == "polygon-amoy":
+                    network_display = "Polygon Amoy"
+                elif network_display == "arbitrum-sepolia":
+                    network_display = "Arbitrum Sepolia"
+                elif network_display == "base-sepolia":
+                    network_display = "Base Sepolia"
+                else:
+                    network_display = network_display.capitalize()
+
                 balances.append(
                     CanonicalBalance(
                         provider="Ethereum",
-                        account=f"{short_addr} ({network})",
+                        account=f"{short_addr} ({network_display})",
                         symbol="ETH",
                         currency="ETH",
                         amount=eth_amount,
