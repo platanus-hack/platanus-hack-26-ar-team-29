@@ -4,10 +4,12 @@ import type {
   ChatMessageDto,
   ChatSession,
   PlanActionResponse,
+  PositionRow,
   ProviderConnection,
   SendMessageResponse,
   TradePlan,
   TransactionRow,
+  UserProfile,
 } from "./types";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
@@ -162,6 +164,20 @@ export const backendApi = {
 
   getBalances() {
     return requestJson<BalanceRow[]>("/balances");
+  },
+
+  getPositions() {
+    return requestJson<PositionRow[]>("/positions");
+  },
+
+  getProfile() {
+    return requestJson<UserProfile>("/profile");
+  },
+
+  generateProfile() {
+    return requestJson<UserProfile>("/profile/generate", {
+      method: "POST",
+    });
   },
 
   getTransactions(limit = 50) {

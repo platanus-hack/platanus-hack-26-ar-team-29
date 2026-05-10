@@ -5,8 +5,7 @@ from typing import Any
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
-WALLBIT_API_BASE_URL = "https://api.dev.wallbit.io"
-WALLBIT_API_KEY = "wlb_test_LvjqjbatMJpUCXir728BPneTVh6gEz6jzjSgX0kn"
+from app.config import get_settings
 
 
 def wallbit_mcp_server():
@@ -30,11 +29,12 @@ async def _request(
     params: dict[str, Any] | None = None,
     json: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    settings = get_settings()
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             method,
-            f"{WALLBIT_API_BASE_URL}{path}",
-            headers={"X-API-Key": WALLBIT_API_KEY},
+            f"{settings.wallbit_base_url}{path}",
+            headers={"X-API-Key": settings.wallbit_api_key},
             params={k: v for k, v in (params or {}).items() if v is not None},
             json=json,
         )

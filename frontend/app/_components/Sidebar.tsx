@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     { label: 'Chat', href: '/' },
     { label: 'Inversiones', href: '/investments' },
     { label: 'Balances', href: '/balances' },
+    { label: 'Perfil', href: '/profile' },
     { label: 'Actividad', href: '/activity' },
     { label: 'Conexiones', href: '/connections' },
 ];

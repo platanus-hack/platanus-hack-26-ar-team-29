@@ -36,24 +36,16 @@ class CanonicalAsset(Base):
     metadata_json: Mapped[dict[str, Any]] = mapped_column(
         "metadata", JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
-    last_seen_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
         CheckConstraint(
             "asset_class IN ('fiat', 'stablecoin', 'crypto', 'equity', 'etf', 'bond', 'treasury', 'roboadvisor_share')",
             name="chk_canonical_assets_class",
         ),
-        UniqueConstraint(
-            "symbol", "asset_class", "network", name="uq_canonical_assets_symbol_class_network"
-        ),
+        UniqueConstraint("symbol", "asset_class", "network", name="uq_canonical_assets_symbol_class_network"),
     )
 
 
@@ -63,9 +55,7 @@ class CanonicalAccount(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     connection_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("provider_connections.id", ondelete="CASCADE"), nullable=False
     )
@@ -75,15 +65,9 @@ class CanonicalAccount(Base):
     metadata_json: Mapped[dict[str, Any]] = mapped_column(
         "metadata", JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
-    last_seen_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
@@ -91,9 +75,7 @@ class CanonicalAccount(Base):
             "account_kind IN ('checking', 'investment', 'roboadvisor', 'wallet_address', 'card', 'savings')",
             name="chk_canonical_accounts_kind",
         ),
-        UniqueConstraint(
-            "connection_id", "external_id", name="uq_canonical_accounts_connection_external"
-        ),
+        UniqueConstraint("connection_id", "external_id", name="uq_canonical_accounts_connection_external"),
     )
 
 
@@ -103,9 +85,7 @@ class CanonicalBalance(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     account_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("canonical_accounts.id", ondelete="CASCADE"), nullable=False
     )
@@ -115,18 +95,10 @@ class CanonicalBalance(Base):
     quantity: Mapped[float] = mapped_column(Numeric(28, 10), nullable=False)
     avg_cost_usd: Mapped[float | None] = mapped_column(Numeric(28, 10), nullable=True)
     cost_basis_usd: Mapped[float | None] = mapped_column(Numeric(28, 10), nullable=True)
-    as_of: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    last_synced_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    last_synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
         CheckConstraint("quantity >= 0", name="chk_canonical_balances_quantity_nonneg"),
@@ -140,9 +112,7 @@ class CanonicalTransaction(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     connection_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("provider_connections.id", ondelete="SET NULL"), nullable=True
     )
@@ -173,14 +143,10 @@ class CanonicalTransaction(Base):
     status: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'completed'"))
 
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    observed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     raw_provider_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    classifier: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, server_default=text("'{}'::jsonb")
-    )
+    classifier: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     source_kind: Mapped[str] = mapped_column(String, nullable=False)
 
     source_plan_step_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -194,12 +160,8 @@ class CanonicalTransaction(Base):
     merchant: Mapped[str | None] = mapped_column(String, nullable=True)
     search_text: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
         CheckConstraint(
@@ -218,7 +180,5 @@ class CanonicalTransaction(Base):
             "source_kind IN ('provider_pulled', 'document_ingested', 'agent_issued')",
             name="chk_canonical_transactions_source_kind",
         ),
-        UniqueConstraint(
-            "connection_id", "external_id", name="uq_canonical_transactions_connection_external"
-        ),
+        UniqueConstraint("connection_id", "external_id", name="uq_canonical_transactions_connection_external"),
     )
