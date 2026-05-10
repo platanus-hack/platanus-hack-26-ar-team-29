@@ -13,7 +13,6 @@ from app.common.errors import NOT_FOUND, PROVIDER_UNAVAILABLE, APIError
 from app.persistence.repositories.connections import ConnectionRepository
 from app.providers.ethereum.client import EthereumClient, EthereumClientError
 from app.providers.wallbit.adapter import (
-    asset_to_price_usd,
     checking_balance_to_rows,
     stocks_balance_to_rows,
     transaction_cost_basis_by_symbol,
@@ -147,22 +146,6 @@ class PortfolioService:
 
             stocks_rows = stocks_balance_to_rows(stocks_raw)
 
-            symbols = sorted({str(row.get("symbol")) for row in stocks_rows if row.get("symbol")})
-            prices_by_symbol: dict[str, float] = {}
-            for symbol in symbols:
-                try:
-                    price = asset_to_price_usd(await wc.get_asset(symbol))
-                except WallbitAPIError as exc:
-                    log.warning(
-                        "wallbit_asset_price_read_failed",
-                        symbol=symbol,
-                        status=exc.status,
-                        body=exc.body,
-                    )
-                    continue
-                if price is not None:
-                    prices_by_symbol[symbol] = price
-
             cost_basis_by_symbol: dict[str, dict[str, float]] = {}
             try:
                 transactions_raw = await wc.list_transactions(limit=None)
@@ -179,11 +162,9 @@ class PortfolioService:
         for row in stocks_rows:
             symbol = str(row.get("symbol") or "")
             shares = _float_or_none(row.get("shares")) or 0.0
-            current_price_usd = _float_or_none(row.get("current_price_usd"))
-            if current_price_usd is None:
-                current_price_usd = prices_by_symbol.get(symbol)
-
             basis = cost_basis_by_symbol.get(symbol, {})
+
+            current_price_usd = _float_or_none(row.get("current_price_usd"))
             if current_price_usd is None:
                 current_price_usd = basis.get("latest_price_usd")
 

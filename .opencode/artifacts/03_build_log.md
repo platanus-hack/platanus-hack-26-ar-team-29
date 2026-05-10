@@ -125,3 +125,13 @@
 ### Follow-up Fix
 - Expanded redundant approval-message filtering to catch Spanish variants like `para que confirmes`, `para que apruebes`, and `ventana de confirmación`.
 - The chat UI now filters already persisted assistant approval-instruction messages too, so stale messages below an approved plan card are hidden on reload.
+
+## Wallbit Rate Limit Fix
+### Completed Work
+- Removed per-symbol `/assets/{symbol}` enrichment from `/api/v1/positions`; positions now use only `/balance/stocks` and `/transactions` to avoid Wallbit rate limits.
+- Added a frontend fetch guard in the Investments tab to avoid React dev/StrictMode double-fetching positions.
+
+### Files Changed
+- `backend/app/services/portfolio.py`
+- `backend/docs/wallbit_api.md`
+- `frontend/app/investments/page.tsx`

@@ -48,7 +48,7 @@ This document serves as the operational contract for the Wallbit DEV API surface
 ```
 **Adapter Note:** Extracts `symbol` and `shares`. Fiat representation relies on fetching the current price or relying on Wallbit to optionally return a value field.
 
-The `/api/v1/positions` demo endpoint enriches these rows with `GET /api/public/v1/assets/{symbol}` when Wallbit does not include valuation fields in `/balance/stocks`. If the asset endpoint does not return a usable price, it falls back to the latest `trade_info.share_price` observed in `/transactions`. It returns `current_price_usd`, computes `usd_value`, and best-effort computes cost basis/P&L from historical BUY trades in `/transactions`. Failed/cancelled/rejected trades are ignored.
+The `/api/v1/positions` demo endpoint intentionally avoids one `/assets/{symbol}` call per holding to stay under Wallbit rate limits. It uses only `/balance/stocks` plus `/transactions`: the latest `trade_info.share_price` is used as the displayed/fallback price, and historical BUY trades compute best-effort cost basis/P&L. Failed/cancelled/rejected trades are ignored.
 
 ---
 

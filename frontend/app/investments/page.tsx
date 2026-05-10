@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "../_components/Sidebar";
 import { PageHeader } from "../_components/PageHeader";
 import { backendApi } from "../lib/backend/client";
 import type { PositionRow } from "../lib/backend/types";
 
 export default function InvestmentsPage() {
+  const didFetchRef = useRef(false);
   const [positions, setPositions] = useState<PositionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+
     backendApi.getPositions().then((data) => {
       setPositions(data);
     }).catch((err) => {
