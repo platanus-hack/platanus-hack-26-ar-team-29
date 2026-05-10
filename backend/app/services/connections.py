@@ -64,7 +64,8 @@ def _validate_network(network: str) -> None:
             NETWORK_NOT_ALLOWED,
             http_status=400,
             message_es=(
-                "Red desconocida. Usá una de: " "sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base."
+                "Red desconocida. Usá una de: "
+                "sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base."
             ),
             message_en="Unsupported network slug.",
             params={"network": network},
@@ -106,7 +107,8 @@ def _normalize_private_key_input(raw: str) -> str:
                 VALIDATION_FAILED,
                 http_status=400,
                 message_es=(
-                    "La frase mnemónica no es válida (revisá la cantidad de " "palabras y el checksum BIP-39)."
+                    "La frase mnemónica no es válida (revisá la cantidad de "
+                    "palabras y el checksum BIP-39)."
                 ),
                 message_en="Invalid BIP-39 mnemonic.",
             ) from exc
@@ -135,7 +137,9 @@ class ConnectionService:
 
     # ------------------- Wallbit (existing) -------------------
 
-    async def create_wallbit(self, user_id: UUID, label: str | None, api_key: str) -> dict[str, Any]:
+    async def create_wallbit(
+        self, user_id: UUID, label: str | None, api_key: str
+    ) -> dict[str, Any]:
         api_key = (api_key or "").strip()
         if not api_key:
             raise APIError(
@@ -207,7 +211,9 @@ class ConnectionService:
             out.append(row)
         return out
 
-    async def get_active_wallbit_credentials(self, user_id: UUID) -> tuple[UUID, WallbitCredentials] | None:
+    async def get_active_wallbit_credentials(
+        self, user_id: UUID
+    ) -> tuple[UUID, WallbitCredentials] | None:
         conn = await self.repo.get_active_wallbit(user_id)
         if conn is None:
             return None
@@ -276,7 +282,9 @@ class ConnectionService:
         if primary_asset_hint:
             metadata["primary_asset_hint"] = primary_asset_hint
 
-        existing = await self.repo.get_active_ethereum_custodial_by_address(user_id, network, address)
+        existing = await self.repo.get_active_ethereum_custodial_by_address(
+            user_id, network, address
+        )
         if existing is not None:
             return {
                 "id": str(existing.id),

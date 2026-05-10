@@ -98,6 +98,7 @@ async def delete_connection(
     await svc.delete_connection(user_id=user_id, connection_id=connection_id)
     return Response(status_code=204)
 
+
 @router.post("/{connection_id}/export-private-key")
 async def export_private_key(
     connection_id: UUID,
