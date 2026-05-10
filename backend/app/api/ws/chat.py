@@ -26,7 +26,7 @@ async def chat_ws(
     try:
         while True:
             try:
-                msg = await asyncio.wait_for(websocket.receive_json(), timeout=60.0)
+                msg = await asyncio.wait_for(websocket.receive_json(), timeout=45.0)
             except TimeoutError:
                 # Keepalive ping from server side.
                 try:

@@ -63,3 +63,15 @@
 - You can spin up both the backend `uvicorn` and frontend Next.js dev server.
 - Review the `Activity` tab to see the unified ledger populated directly from Wallbit and magically categorized by Claude.
 - We can now link this up to the Chat Agent, which can query these aggregates directly from the `UserProfile` to provide context-aware insights.
+
+## Persistent Database Fix
+### Completed Work
+- Modified `docker-compose.yml` to use a local host directory (`./.postgres_data`) for the PostgreSQL database volume instead of an ephemeral named volume.
+- Added `.postgres_data/` to `.gitignore`.
+
+### Files Changed
+- `docker-compose.yml`
+- `.gitignore`
+
+### Decisions and Shortcuts
+- By mapping the volume to `./.postgres_data`, the database persists fully across `docker compose down -v` or standard `docker compose down` operations. PostgreSQL's Docker entrypoint automatically fixes permissions on the host directory when the container starts.
