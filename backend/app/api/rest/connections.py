@@ -89,6 +89,15 @@ async def create_ethereum_custodial(
     }
 
 
+@router.delete("/{connection_id}")
+async def delete_connection(
+    connection_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    svc: ConnectionService = Depends(get_connection_service),
+) -> Response:
+    await svc.delete_connection(user_id=user_id, connection_id=connection_id)
+    return Response(status_code=204)
+
 @router.post("/{connection_id}/export-private-key")
 async def export_private_key(
     connection_id: UUID,
