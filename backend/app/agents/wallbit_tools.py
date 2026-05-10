@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import json
 from typing import Any
 
@@ -8,9 +7,6 @@ import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
 from app.config import get_settings
-
-port = os.getenv("PORT", "8000")
-BACKEND_BASE = f"http://127.0.0.1:{port}"
 
 
 def wallbit_mcp_server():
@@ -176,7 +172,7 @@ async def get_all_balances(args: dict[str, Any]) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             "GET",
-            f"{BACKEND_BASE}/api/v1/balances",
+            "http://127.0.0.1:8000/api/v1/balances",
         )
     try:
         payload = response.json()
