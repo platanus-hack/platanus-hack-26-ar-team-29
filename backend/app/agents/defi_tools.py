@@ -65,7 +65,7 @@ async def _resolve_eth_connection_id() -> str | None:
     for c in conns:
         if not isinstance(c, dict):
             continue
-        if c.get("connection_type") == "ethereum_custodial" and c.get("status") == "active":
+        if c.get("connection_type") == "ethereum_custodial" and c.get("status") == "healthy":
             cid = c.get("id")
             if isinstance(cid, str):
                 return cid
