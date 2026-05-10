@@ -97,7 +97,7 @@ class PortfolioService:
         # connection. Failures here are logged but don't abort the whole call.
         if self.eth_client is not None:
             for conn in await self.repo.list_for_user(user_id):
-                if conn.connection_type != "ethereum_custodial" or conn.status != "active":
+                if conn.connection_type != "ethereum_custodial" or conn.status != "healthy":
                     continue
                 md = dict(conn.connection_metadata or {})
                 address = md.get("address")
