@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
 import { ChatProvider } from './contexts/ChatContext';
+import './globals.css';
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -14,10 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'Atajo - DeFi personalizado',
-    description: 'La forma simple de invertir en DeFi sin perseguir APYs a ciegas.',
+    title: 'Atajo',
+    description: 'Una conversación. Todas tus cuentas.',
     icons: {
-        icon: '/atajo.png',
+        icon: '/atajo-logo.png',
+        shortcut: '/atajo-logo.png',
+        apple: '/atajo-logo.png',
     },
 };
 

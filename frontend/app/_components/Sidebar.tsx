@@ -69,7 +69,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
             <div className='flex items-center justify-between gap-3 px-1 md:justify-start'>
                 <div className='flex items-center gap-3'>
                     <Image
-                        src='/atajo.png'
+                        src='/atajo-logo.png'
                         width={35}
                         height={35}
                         alt='logo'
@@ -218,7 +218,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                         <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-2 text-base font-semibold'>
                                 <Image
-                                    src='/atajo.png'
+                                    src='/atajo-logo.png'
                                     alt='Atajo Logo'
                                     width={24}
                                     height={24}
