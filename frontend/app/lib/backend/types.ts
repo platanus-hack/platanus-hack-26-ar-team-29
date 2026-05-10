@@ -156,15 +156,28 @@ export type BackendWsFrame =
   | { type: "chat_message"; session_id: string; turn_id: string; message: ChatMessageDto }
   | { type: "plan_proposed"; session_id: string; turn_id: string; plan_id: string; plan: TradePlan }
   | {
-      type: "plan_update";
+      type: "input_resolved";
       session_id: string;
-      plan_id: string;
-      step_id?: string | null;
-      state: PlanState | PlanStepState;
-      reason?: string | null;
-      error?: string | null;
-      summary?: string | null;
-      ts: string;
+      turn_id: string;
+      input_id: string;
+      selected_options: string[] | string;
+    }
+  | {
+      type: "credential_requested";
+      session_id: string;
+      turn_id: string;
+      request_id: string;
+      title: string;
+      instructions: string;
+      kind: string;
+      placeholder?: string | null;
+    }
+  | {
+      type: "credential_resolved";
+      session_id: string;
+      turn_id: string;
+      request_id: string;
+      cancelled: boolean;
     }
   | { type: "turn_complete"; session_id: string; turn_id: string }
   | {

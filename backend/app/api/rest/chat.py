@@ -34,6 +34,10 @@ class ResolveInputRequest(BaseModel):
     selected_options: list[str] | str = Field(...)
 
 
+class ResolveCredentialRequest(BaseModel):
+    value: str | None = None
+
+
 @router.post("/sessions")
 async def create_session(
     body: CreateSessionRequest | None = None,
@@ -110,3 +114,24 @@ async def resolve_input(
             message_en="No pending input with that id.",
         )
     return {"ok": True, "input_id": input_id}
+
+
+@router.post("/sessions/{session_id}/credentials/{request_id}/resolve")
+async def resolve_credential(
+    session_id: UUID,
+    request_id: str,
+    body: ResolveCredentialRequest,
+    request: Request,
+    user_id: UUID = Depends(get_current_user_id),  # noqa: ARG001
+) -> dict:
+    chat_agent = request.app.state.chat_agent
+    agent_session = chat_agent.get_session(session_id)
+    resolved = agent_session.resolve_credential(request_id, body.value)
+    if not resolved:
+        raise APIError(
+            NOT_FOUND,
+            http_status=404,
+            message_es="No hay una solicitud de credenciales pendiente con ese identificador.",
+            message_en="No pending credential request with that id.",
+        )
+    return {"ok": True, "request_id": request_id}

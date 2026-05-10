@@ -313,6 +313,43 @@ export default function ChatPage() {
                 return;
             }
 
+            if (frame.type === 'credential_requested') {
+                setIsTyping(false);
+                upsertMessage({
+                    id: `credential-${frame.request_id}`,
+                    role: 'assistant',
+                    content: '',
+                    createdAt: Date.now(),
+                    kind: 'credential_request',
+                    credential: {
+                        requestId: frame.request_id,
+                        title: frame.title,
+                        instructions: frame.instructions,
+                        kind: frame.kind,
+                        placeholder: frame.placeholder,
+                    },
+                });
+                return;
+            }
+
+            if (frame.type === 'credential_resolved') {
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.credential?.requestId === frame.request_id
+                            ? {
+                                  ...m,
+                                  credential: {
+                                      ...m.credential,
+                                      resolved: true,
+                                      cancelled: frame.cancelled,
+                                  },
+                              }
+                            : m,
+                    ),
+                );
+                return;
+            }
+
             if (frame.type === 'turn_complete') {
                 setIsTyping(false);
                 setMessages((prev) =>

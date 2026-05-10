@@ -150,6 +150,16 @@ export const backendApi = {
       },
     );
   },
+  
+  resolveCredential(sessionId: string, requestId: string, value: string | null) {
+    return requestJson<{ ok: true; request_id: string }>(
+      `/chat/sessions/${sessionId}/credentials/${requestId}/resolve`,
+      {
+        method: "POST",
+        body: JSON.stringify({ value }),
+      },
+    );
+  },
 
   connectWallbit(body: { label?: string | null; api_key: string }) {
     return requestJson<ProviderConnection>("/connections/wallbit", {

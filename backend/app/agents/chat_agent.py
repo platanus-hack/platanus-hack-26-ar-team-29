@@ -11,6 +11,7 @@ from app.agents.defi_tools import defi_mcp_server
 from app.agents.ethereum_tools import ethereum_mcp_server
 from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
 from app.agents.interactions import UserInteractionBridge
+from app.agents.ui_tools import ui_mcp_server
 from app.agents.wallbit_tools import wallbit_mcp_server
 
 if TYPE_CHECKING:
@@ -86,13 +87,16 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
 
-Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Preguntale siempre al usuario en que red la quiere crear si no lo especifico (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base).
+Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Usa SIEMPRE `AskUserQuestion` para preguntarle al usuario en que red la quiere crear si no lo especifico (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base). Luego llama a la tool.
 Al finalizar la creacion de la cuenta, pasale al usuario la direccion y la frase semilla usando comillas simples invertidas (`backticks`) para que el formato se renderice bien con boton de copia.
 Ejemplo:
 Direccion: `0x...`
 Frase semilla: `palabra1 palabra2...`
 
-Para iniciar sesion o importar una billetera de Ethereum existente, usa la herramienta `mcp__ethereum__import_ethereum_wallet`. Pidele siempre al usuario su clave privada o frase semilla y la red en la que desea importar.
+Para iniciar sesion o importar una billetera de Ethereum existente, debes recopilar dos cosas:
+1. La red en la que desea importar. Usa SIEMPRE `AskUserQuestion` para preguntar esto (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base).
+2. Su clave privada o frase semilla. Usa SIEMPRE `mcp__ui__request_credential` con `kind="seed_phrase"` o `kind="private_key"` para pedir esto de forma segura. NUNCA pidas que escriba la clave en el chat.
+Una vez que tengas ambas cosas, usa la herramienta `mcp__ethereum__import_ethereum_wallet`.
 Al finalizar la importacion, pasale al usuario la direccion importada.
 
 DeFi / Aave V3 (generar yield depositando en pools):
@@ -158,7 +162,11 @@ DEFI_WRITE_TOOLS = [
 DEFI_TOOLS = DEFI_READ_TOOLS + DEFI_WRITE_TOOLS
 
 AGENT_UI_TOOLS = ["AskUserQuestion"]
-AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS + DEFI_READ_TOOLS
+UI_MCP_TOOLS = [
+    "request_credential",
+    "mcp__ui__request_credential",
+]
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS + DEFI_READ_TOOLS + UI_MCP_TOOLS
 AGENT_MODEL = "haiku"
 AGENT_FALLBACK_MODEL = "sonnet"
 
@@ -238,6 +246,7 @@ class ChatAgentSession:
                 "wallbit": wallbit_mcp_server(),
                 "ethereum": ethereum_mcp_server(),
                 "defi": defi_mcp_server(),
+                "ui": ui_mcp_server(),
             },
             strict_mcp_config=True,
             permission_mode="default",
@@ -278,6 +287,9 @@ class ChatAgentSession:
 
     def resolve_input(self, input_id: str, selected_options: list[str] | str) -> bool:
         return self._approval_bridge.resolve_input(input_id, selected_options)
+
+    def resolve_credential(self, request_id: str, value: str | None) -> bool:
+        return self._approval_bridge.resolve_credential(request_id, value)
 
     async def interrupt(self) -> AgentEvent:
         if self._client is None:
@@ -581,6 +593,31 @@ class ChatAgent:
                         "turn_id": str(turn_id),
                         "input_id": event.payload.get("input_id"),
                         "selected_options": event.payload.get("selected_options"),
+                    },
+                )
+            elif event.type == "credential_requested":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "credential_requested",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "request_id": event.payload.get("request_id"),
+                        "title": event.payload.get("title"),
+                        "instructions": event.payload.get("instructions"),
+                        "kind": event.payload.get("kind"),
+                        "placeholder": event.payload.get("placeholder"),
+                    },
+                )
+            elif event.type == "credential_resolved":
+                await self.manager.broadcast_to_session(
+                    session_id,
+                    {
+                        "type": "credential_resolved",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "request_id": event.payload.get("request_id"),
+                        "cancelled": event.payload.get("cancelled"),
                     },
                 )
             elif event.type == "approval_requested":
