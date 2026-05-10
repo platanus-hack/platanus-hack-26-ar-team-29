@@ -84,7 +84,7 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
       id: "ethereum_custodial",
       name: "Wallet Ethereum",
       status: ethereumConnection ? "Conectado" : "No conectado",
-      description: ethereumConnection?.address ? `${ethereumConnection.address.slice(0, 6)}...${ethereumConnection.address.slice(-4)} (${ethereumConnection.network || "sepolia"})` : "Creá una wallet custodial",
+      description: ethereumConnection?.address ? `${ethereumConnection.address.slice(0, 6)}...${ethereumConnection.address.slice(-4)} (${(ethereumConnection.network || "sepolia").charAt(0).toUpperCase() + (ethereumConnection.network || "sepolia").slice(1)})` : "Creá una wallet custodial",
     },
     {
       id: "bank",
