@@ -47,6 +47,14 @@ _AAVE_V3_MARKETS: dict[tuple[str, str], AaveMarket] = {
         a_token="0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
         decimals=6,
     ),
+    ("sepolia", "USDC"): AaveMarket(
+        network="sepolia",
+        asset_symbol="USDC",
+        asset_address="0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+        pool="0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+        a_token="0x16dA4541aD1807f4443d92D26044C1147406EB80",
+        decimals=6,
+    ),
 }
 
 
