@@ -236,7 +236,7 @@ export function ChatMessage({
                   </svg>
                 </span>
               )}
-              <span className="font-mono">{tool.name}</span>
+              <span className="font-mono">{tool.label || tool.name}</span>
             </div>
           ))}
         </div>

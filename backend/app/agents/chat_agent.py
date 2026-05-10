@@ -6,9 +6,9 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from app.agents.approval import ApprovalBridge
 from app.agents.ethereum_tools import ethereum_mcp_server
-from app.agents.events import AgentEvent, error_event, summarize_value
+from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
+from app.agents.interactions import UserInteractionBridge
 from app.agents.wallbit_tools import wallbit_mcp_server
 
 if TYPE_CHECKING:
@@ -53,6 +53,14 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 - Si el usuario rechaza la operacion, respetalo y ofrece ajustar el plan.
 - Nunca digas que una operacion fue ejecutada hasta que el resultado del tool
   lo confirme.
+- El backend intercepta la llamada al tool y le muestra al usuario un modal con
+  botones **Aprobar / Rechazar**. Esa es la confirmacion oficial. Si en lugar
+  de llamar al tool preguntas "¿confirmás?" en texto, el modal NUNCA aparece y
+  el usuario queda colgado: eso es un bug grave.
+- ANTES de llamar al tool, NO des por hecho que la operacion se va a ejecutar. Usa frases como "Acá te preparé la orden para que la revises:" o "Te dejo los detalles de la operación para que confirmes:". NUNCA digas "Voy a comprar..." ni "Ejecutando compra...", presentalo siempre como una propuesta.
+- El turno tiene que terminar con la **invocacion del tool**, no con una pregunta al usuario.
+- NUNCA digas que una operacion fue ejecutada hasta que el resultado del tool lo confirme.
+- Si el tool devuelve que el usuario rechazó la operación en el modal, respondé de forma natural (ej. "Entendido, operación cancelada.") y ofrece ajustar los parámetros.
 
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
@@ -134,10 +142,10 @@ class ChatAgentSession:
         self,
         *,
         system_prompt: str = SYSTEM_PROMPT,
-        approval_bridge: ApprovalBridge | None = None,
+        approval_bridge: UserInteractionBridge | None = None,
     ) -> None:
         self._system_prompt = system_prompt
-        self._approval_bridge = approval_bridge or ApprovalBridge()
+        self._approval_bridge = approval_bridge or UserInteractionBridge()
         self._client: Any | None = None
         self._connected = False
         self._turn_lock = asyncio.Lock()
@@ -282,12 +290,14 @@ def normalize_sdk_message(message: Any) -> list[AgentEvent]:
             if block_type == "TextBlock" and isinstance(text, str):
                 text_parts.append(text)
             elif block_type == "ToolUseBlock":
+                tool_name = getattr(block, "name", None)
                 events.append(
                     AgentEvent(
                         "tool_call_started",
                         {
                             "tool_use_id": getattr(block, "id", None),
-                            "tool_name": getattr(block, "name", None),
+                            "tool_name": tool_name,
+                            "tool_label": format_tool_name(tool_name),
                             "input_summary": summarize_value(getattr(block, "input", None)),
                         },
                     )
@@ -334,12 +344,14 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
 
     if event_type == "content_block_start" and content_block is not None:
         if content_block.__class__.__name__ == "ToolUseBlock":
+            tool_name = getattr(content_block, "name", None)
             return [
                 AgentEvent(
                     "tool_call_started",
                     {
                         "tool_use_id": getattr(content_block, "id", None),
-                        "tool_name": getattr(content_block, "name", None),
+                        "tool_name": tool_name,
+                        "tool_label": format_tool_name(tool_name),
                         "input_summary": summarize_value(getattr(content_block, "input", None)),
                     },
                 )
@@ -403,6 +415,7 @@ class ChatAgent:
                         "turn_id": str(turn_id),
                         "tool_use_id": event.payload.get("tool_use_id"),
                         "tool_name": event.payload.get("tool_name"),
+                        "tool_label": event.payload.get("tool_label"),
                         "input_summary": event.payload.get("input_summary"),
                     },
                 )

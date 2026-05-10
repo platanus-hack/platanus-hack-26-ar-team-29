@@ -5,6 +5,7 @@ export type ChatRole = "user" | "assistant" | "system";
 export interface ToolCall {
   id: string;
   name: string;
+  label?: string;
   inputSummary?: string;
   resultSummary?: string;
   isError?: boolean;
