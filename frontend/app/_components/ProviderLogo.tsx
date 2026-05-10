@@ -75,23 +75,14 @@ export function ProviderLogo({ provider, size = 'md', className = '' }: Provider
     if (key === 'wallbit') {
         return (
             <span
-                className={`${base} bg-accent/15 border-accent/30 text-accent`}
+                className={`${base} bg-white`}
                 title='Wallbit'
             >
-                <svg
-                    viewBox='0 0 24 24'
-                    aria-hidden='true'
-                    className='h-[55%] w-[55%]'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2.4'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                >
-                    <path d='M3 8h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8Z' />
-                    <path d='M3 8V6a2 2 0 0 1 2-2h11' />
-                    <circle cx='16' cy='14' r='1.4' fill='currentColor' />
-                </svg>
+                <img
+                    src='https://wallbit.io/favicon.ico'
+                    alt='Wallbit'
+                    className='h-[65%] w-[65%] rounded-full'
+                />
             </span>
         );
     }
@@ -129,25 +120,20 @@ export function ProviderLogo({ provider, size = 'md', className = '' }: Provider
 
     if (key === 'bank') {
         return (
-            <span className={`${base} text-muted`} title='Banco'>
+            <span className={`${base} text-muted`} title='Fintech'>
                 <svg
                     viewBox='0 0 24 24'
                     aria-hidden='true'
-                    className='h-[55%] w-[55%]'
+                    className='h-[50%] w-[50%]'
                     fill='none'
                     stroke='currentColor'
                     strokeWidth='2'
                     strokeLinecap='round'
                     strokeLinejoin='round'
                 >
-                    <path d='m3 21 18 0' />
-                    <path d='M3 10h18' />
-                    <path d='M5 6 12 3l7 3' />
-                    <path d='M4 10v11' />
-                    <path d='M20 10v11' />
-                    <path d='M8 14v3' />
-                    <path d='M12 14v3' />
-                    <path d='M16 14v3' />
+                    <path d='M21 12V7H5a2 2 0 0 1 0-4h14v4' />
+                    <path d='M3 5v14a2 2 0 0 0 2 2h16v-5' />
+                    <path d='M18 12a2 2 0 0 0 0 4h4v-4Z' />
                 </svg>
             </span>
         );
