@@ -132,6 +132,7 @@ async def import_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
 
     return {"content": [{"type": "text", "text": json.dumps(payload)}], "data": payload}
 
+
 async def _resolve_eth_connection_id() -> str | None:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
@@ -142,12 +143,13 @@ async def _resolve_eth_connection_id() -> str | None:
         conns = response.json()
     except ValueError:
         return None
-    
+
     if isinstance(conns, list):
         for c in conns:
             if c.get("connection_type") == "ethereum_custodial" and c.get("status") == "healthy":
                 return str(c["id"])
     return None
+
 
 @tool(
     "send_onchain",
@@ -155,10 +157,23 @@ async def _resolve_eth_connection_id() -> str | None:
     {
         "type": "object",
         "properties": {
-            "asset": {"type": "string", "description": "El ticker o simbolo de la cripto (e.g. 'ETH', 'USDC')"},
-            "to": {"type": "string", "description": "La direccion hexadecimal de destino ('0x...')"},
-            "amount": {"type": "string", "description": "El monto a enviar (en formato texto con decimales, e.g. '0.5' o '150.25')"},
-            "gas_speed": {"type": "string", "enum": ["slow", "standard", "fast"], "description": "Opcional: velocidad/comision del gas a pagar. Por defecto 'standard'."}
+            "asset": {
+                "type": "string",
+                "description": "El ticker o simbolo de la cripto (e.g. 'ETH', 'USDC')",
+            },
+            "to": {
+                "type": "string",
+                "description": "La direccion hexadecimal de destino ('0x...')",
+            },
+            "amount": {
+                "type": "string",
+                "description": "El monto a enviar (en formato texto con decimales, e.g. '0.5' o '150.25')",
+            },
+            "gas_speed": {
+                "type": "string",
+                "enum": ["slow", "standard", "fast"],
+                "description": "Opcional: velocidad/comision del gas a pagar. Por defecto 'standard'.",
+            },
         },
         "required": ["asset", "to", "amount"],
         "additionalProperties": False,
@@ -168,7 +183,9 @@ async def send_onchain(args: dict[str, Any]) -> dict[str, Any]:
     connection_id = await _resolve_eth_connection_id()
     if not connection_id:
         return {
-            "content": [{"type": "text", "text": "No se encontro ninguna billetera Ethereum conectada."}],
+            "content": [
+                {"type": "text", "text": "No se encontro ninguna billetera Ethereum conectada."}
+            ],
             "is_error": True,
         }
 

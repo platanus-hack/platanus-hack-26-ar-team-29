@@ -159,6 +159,7 @@ async def create_trade(args: dict[str, Any]) -> dict[str, Any]:
 async def show_table(args: dict[str, Any]) -> dict[str, Any]:
     return {"content": [{"type": "text", "text": json.dumps(args)}]}
 
+
 @tool(
     "get_all_balances",
     "Obtiene todos los balances, saldos y tenencias del usuario en todas las plataformas y billeteras conectadas (incluyendo Wallbit, Ethereum, y otros). Usala cuando el usuario pida saber cuanta plata tiene en general o en crypto.",

@@ -20,12 +20,10 @@ TOOL_LABELS = {
     "mcp__wallbit__create_trade": "Crear Orden de Trade",
     "mcp__wallbit__show_table": "Mostrar Tabla",
     "mcp__wallbit__get_all_balances": "Consultar Balances Totales",
-
     # UI / Internos
     "AskUserQuestion": "Hacer Pregunta",
     "request_credential": "Solicitar Credencial",
     "mcp__ui__request_credential": "Solicitar Credencial",
-
     # Ethereum
     "send_onchain": "Transferir Criptomonedas",
     "mcp__ethereum__send_onchain": "Transferir Criptomonedas",
@@ -33,7 +31,6 @@ TOOL_LABELS = {
     "mcp__ethereum__create_ethereum_wallet": "Crear Billetera",
     "import_ethereum_wallet": "Importar Billetera",
     "mcp__ethereum__import_ethereum_wallet": "Importar Billetera",
-
     # DeFi
     "list_markets": "Listar Mercados DeFi",
     "mcp__defi__list_markets": "Listar Mercados DeFi",

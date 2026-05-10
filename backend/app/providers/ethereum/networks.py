@@ -36,7 +36,9 @@ _NETWORKS: dict[str, NetworkInfo] = {
         slug="sepolia",
         chain_id=11155111,
         explorer_tx_template="https://sepolia.etherscan.io/tx/{hash}",
-        erc20_contracts={"USDC": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"}, # Aave Sepolia Faucet USDC
+        erc20_contracts={
+            "USDC": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"
+        },  # Aave Sepolia Faucet USDC
     ),
     "holesky": NetworkInfo(
         slug="holesky",
