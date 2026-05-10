@@ -190,6 +190,8 @@ class UserInteractionBridge:
         del options
 
         if self._event_sink is None:
+            import structlog
+            structlog.get_logger(__name__).error("request_credential_failed_no_sink_WTF")
             return PermissionResultDeny(
                 message="No credential channel is available.",
             )
