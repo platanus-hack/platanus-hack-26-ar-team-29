@@ -373,55 +373,25 @@ class ConnectionService:
     async def export_private_key(self, user_id: UUID, connection_id: UUID) -> dict[str, Any]:
         conn = await self.repo.get_by_id(connection_id, user_id)
         if conn is None:
-            raise APIError(
-                NOT_FOUND,
-                http_status=404,
-                message_es="No encontramos esa conexión.",
-                message_en="Connection not found.",
-            )
+            raise APIError(NOT_FOUND, http_status=404, message_es="Conexión no encontrada.")
         if conn.connection_type != "ethereum_custodial":
-            # Per 02-3 §5.13.5: non-custodial Ethereum (and every other
-            # provider) can never have its key exported because we don't
-            # store one server-side.
             raise APIError(
-                NOT_EXPORTABLE,
+                INVALID_STATE,
                 http_status=400,
-                message_es=(
-                    "Esta conexión no es custodial: no tenemos clave privada para exportar."
-                ),
-                message_en="Connection is not custodial; no private key to export.",
+                message_es="Solo se puede exportar la clave de billeteras custodiales.",
             )
-        if conn.disconnected_at is not None:
-            raise APIError(
-                NOT_FOUND,
-                http_status=404,
-                message_es="Esta conexión fue desconectada.",
-                message_en="Connection has been disconnected.",
-            )
-
         creds = EthereumCustodialCredentials.from_blob(bytes(conn.credentials_encrypted))
-        md = dict(conn.connection_metadata or {})
-        # NOTE: never log the private_key. The successful export is logged with
-        # tool="export_private_key" and the value redacted (02-3 §5.13.5).
-        log.info(
-            "export_private_key_success",
-            tool="export_private_key",
-            connection_id=str(conn.id),
-            success=True,
-        )
         return {
+            "connection_id": str(conn.id),
             "private_key": creds.private_key,
-            "address": md.get("address"),
-            "network": creds.network,
-            "warning_es": (
-                "Esta clave privada controla tu billetera. No la compartas. "
-                "Si la perdés o la filtrás, perdés los fondos."
-            ),
-            "warning_en": (
-                "This private key controls your wallet. Do not share it. "
-                "Losing or leaking it means losing the funds."
-            ),
         }
+
+    async def delete_connection(self, user_id: UUID, connection_id: UUID) -> None:
+        conn = await self.repo.get_by_id(connection_id, user_id)
+        if conn is None:
+            raise APIError(NOT_FOUND, http_status=404, message_es="Conexión no encontrada.")
+        await self.session.delete(conn)
+        await self.session.commit()
 
     async def get_active_ethereum_custodial(
         self, user_id: UUID, connection_id: UUID
