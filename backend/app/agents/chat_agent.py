@@ -678,6 +678,10 @@ class ChatAgent:
                         if is_supply
                         else f"Retirar {amount_label} de Aave"
                     )
+                elif tool_name in ("send_onchain", "mcp__ethereum__send_onchain"):
+                    asset = str(args.get("asset") or "").upper()
+                    raw_amount = args.get("amount")
+                    human_description_es = f"Transferir {raw_amount} {asset}"
 
                 async with sessionmaker() as db:
                     from app.persistence.repositories.plans import PlanRepository

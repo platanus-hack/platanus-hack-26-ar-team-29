@@ -18,6 +18,8 @@ TOOL_LABELS = {
     "mcp__wallbit__create_trade": "Create Trade",
     "request_credential": "UI Request Credential",
     "mcp__ui__request_credential": "UI Request Credential",
+    "send_onchain": "Transferir Criptomonedas",
+    "mcp__ethereum__send_onchain": "Transferir Criptomonedas",
 }
 
 
