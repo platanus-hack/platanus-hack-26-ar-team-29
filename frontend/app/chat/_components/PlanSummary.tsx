@@ -30,9 +30,14 @@ const TRADE_TOOL_NAMES = new Set([
 ]);
 const DEFI_SUPPLY_TOOL_NAMES = new Set(['mcp__defi__supply', 'supply']);
 const DEFI_WITHDRAW_TOOL_NAMES = new Set(['mcp__defi__withdraw', 'withdraw']);
+const TRANSFER_TOOL_NAMES = new Set(['mcp__ethereum__send_onchain', 'send_onchain']);
 
 function isTradeStep(step: TradePlanStep) {
     return TRADE_TOOL_NAMES.has(step.tool_name);
+}
+
+function isTransferStep(step: TradePlanStep) {
+    return TRANSFER_TOOL_NAMES.has(step.tool_name);
 }
 
 function defiKind(step: TradePlanStep): "supply" | "withdraw" | null {
@@ -52,6 +57,40 @@ function parseMarketLabel(marketId: string): { protocol: string; network: string
     };
   }
   return { protocol: "", network: "", asset: "" };
+}
+
+function TransferStepBody({
+  args,
+}: {
+  args: Record<string, unknown>;
+}) {
+  const asset = String(args.asset ?? "").toUpperCase();
+  const amount = String(args.amount ?? "");
+  const to = String(args.to ?? "");
+  
+  return (
+    <div className="space-y-2.5">
+      <div className="text-xl font-semibold leading-snug">
+        <span className="text-accent">Transferir</span>
+        {amount && (
+          <span className="text-foreground">
+            {" "}
+            {amount} {asset && <span>{asset}</span>}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-1.5 mt-2">
+        {to && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-muted">A la dirección:</span>
+            <span className="rounded border border-line bg-background px-1.5 py-0.5 font-mono text-muted">
+              {to}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function DefiStepBody({
@@ -221,8 +260,9 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
             <ol className='space-y-2 mt-4'>
                 {plan.steps.map((step) => {
                     const trade = isTradeStep(step);
+                    const transfer = isTransferStep(step);
                     const defi = defiKind(step);
-                    const friendly = trade || defi !== null;
+                    const friendly = trade || transfer || defi !== null;
                     return (
                         <li
                             key={step.id}
@@ -237,6 +277,8 @@ export function PlanSummary({ plan }: { plan: TradePlan }) {
                                                 plan.estimated_unit_price_usd
                                             }
                                         />
+                                    ) : transfer ? (
+                                        <TransferStepBody args={step.args || {}} />
                                     ) : defi ? (
                                         <DefiStepBody
                                             kind={defi}

@@ -5,19 +5,46 @@ from dataclasses import dataclass, field
 from typing import Any
 
 TOOL_LABELS = {
-    "get_checking_balance": "Get Checking Balance",
-    "get_stocks_balance": "Get Stocks Balance",
-    "list_transactions": "List Transactions",
-    "get_asset": "Get Asset Info",
-    "create_trade": "Create Trade",
-    "AskUserQuestion": "Ask Question",
-    "mcp__wallbit__get_checking_balance": "Get Checking Balance",
-    "mcp__wallbit__get_stocks_balance": "Get Stocks Balance",
-    "mcp__wallbit__list_transactions": "List Transactions",
-    "mcp__wallbit__get_asset": "Get Asset Info",
-    "mcp__wallbit__create_trade": "Create Trade",
-    "request_credential": "UI Request Credential",
-    "mcp__ui__request_credential": "UI Request Credential",
+    # Wallbit
+    "get_checking_balance": "Consultar Saldo",
+    "get_stocks_balance": "Consultar Inversiones",
+    "list_transactions": "Listar Transacciones",
+    "get_asset": "Consultar Activo",
+    "create_trade": "Crear Orden de Trade",
+    "show_table": "Mostrar Tabla",
+    "get_all_balances": "Consultar Balances Totales",
+    "mcp__wallbit__get_checking_balance": "Consultar Saldo",
+    "mcp__wallbit__get_stocks_balance": "Consultar Inversiones",
+    "mcp__wallbit__list_transactions": "Listar Transacciones",
+    "mcp__wallbit__get_asset": "Consultar Activo",
+    "mcp__wallbit__create_trade": "Crear Orden de Trade",
+    "mcp__wallbit__show_table": "Mostrar Tabla",
+    "mcp__wallbit__get_all_balances": "Consultar Balances Totales",
+
+    # UI / Internos
+    "AskUserQuestion": "Hacer Pregunta",
+    "request_credential": "Solicitar Credencial",
+    "mcp__ui__request_credential": "Solicitar Credencial",
+
+    # Ethereum
+    "send_onchain": "Transferir Criptomonedas",
+    "mcp__ethereum__send_onchain": "Transferir Criptomonedas",
+    "create_ethereum_wallet": "Crear Billetera",
+    "mcp__ethereum__create_ethereum_wallet": "Crear Billetera",
+    "import_ethereum_wallet": "Importar Billetera",
+    "mcp__ethereum__import_ethereum_wallet": "Importar Billetera",
+
+    # DeFi
+    "list_markets": "Listar Mercados DeFi",
+    "mcp__defi__list_markets": "Listar Mercados DeFi",
+    "get_market": "Consultar Mercado DeFi",
+    "mcp__defi__get_market": "Consultar Mercado DeFi",
+    "list_positions": "Listar Posiciones DeFi",
+    "mcp__defi__list_positions": "Listar Posiciones DeFi",
+    "supply": "Depositar en DeFi",
+    "mcp__defi__supply": "Depositar en DeFi",
+    "withdraw": "Retirar de DeFi",
+    "mcp__defi__withdraw": "Retirar de DeFi",
 }
 
 

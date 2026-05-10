@@ -20,6 +20,7 @@ def wallbit_mcp_server():
             get_asset,
             create_trade,
             show_table,
+            get_all_balances,
         ],
     )
 
@@ -91,22 +92,16 @@ async def list_transactions(args: dict[str, Any]) -> dict[str, Any]:
 
 @tool(
     "get_asset",
-    "get_all_balances",
-]
-
-def wallbit_mcp_server():
-    return create_sdk_mcp_server(
-        name="wallbit",
-        version="0.1.0",
-        tools=[
-            get_checking_balance,
-            get_stocks_balance,
-            list_transactions,
-            get_asset,
-            create_trade,
-            get_all_balances,
-        ],
-    )
+    "Obtiene cotizacion e informacion de un asset en particular.",
+    {
+        "type": "object",
+        "properties": {
+            "symbol": {"type": "string"},
+        },
+        "required": ["symbol"],
+        "additionalProperties": False,
+    },
+)
 async def get_asset(args: dict[str, Any]) -> dict[str, Any]:
     symbol = str(args["symbol"]).upper()
     return await _request("GET", f"/api/public/v1/assets/{symbol}")
