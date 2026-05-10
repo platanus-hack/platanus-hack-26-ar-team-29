@@ -133,23 +133,42 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
                 <ProviderLogo provider={item.id} size="md" />
-                <div className="min-w-0">
-                  <div className="text-base font-medium text-foreground">{item.name}</div>
-                  <div className="mt-1 text-xs text-muted font-mono break-all">{item.description}</div>
+                  <div className="min-w-0">
+                    <div className="text-base font-medium text-foreground">{item.name}</div>
+                    <div className="mt-1 text-xs text-muted font-mono break-all flex items-center gap-1.5">
+                      {item.id === "ethereum_custodial" && ethereumConnection?.address ? (
+                        <>
+                          {item.description}
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(ethereumConnection.address);
+                              alert('Dirección copiada al portapapeles!');
+                            }}
+                            className="text-accent hover:text-accent/80"
+                            aria-label="Copiar dirección"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                          </button>
+                        </>
+                      ) : (
+                        item.description
+                      )}
+                    </div>
+                  </div>
                 </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium border ${
+                    item.status === "Conectado"
+                      ? "bg-success/10 text-success border-success/20 shadow-success-soft"
+                      : item.status === "Próximamente"
+                      ? "bg-accent/10 text-accent border-accent/20"
+                      : "bg-background text-subdued border-line"
+                  }`}
+                >
+                  {item.status}
+                </span>
               </div>
-              <span
-                className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium border ${
-                  item.status === "Conectado"
-                    ? "bg-success/10 text-success border-success/20 shadow-success-soft"
-                    : item.status === "Próximamente"
-                    ? "bg-accent/10 text-accent border-accent/20"
-                    : "bg-background text-subdued border-line"
-                }`}
-              >
-                {item.status}
-              </span>
-            </div>
+
 
             {/* Buttons section */}
             <div className="mt-6 flex gap-3">
