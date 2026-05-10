@@ -5,6 +5,34 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+TOOL_LABELS = {
+    "get_checking_balance": "Get Checking Balance",
+    "get_stocks_balance": "Get Stocks Balance",
+    "list_transactions": "List Transactions",
+    "get_asset": "Get Asset Info",
+    "create_trade": "Create Trade",
+    "AskUserQuestion": "Ask Question",
+    "mcp__wallbit__get_checking_balance": "Get Checking Balance",
+    "mcp__wallbit__get_stocks_balance": "Get Stocks Balance",
+    "mcp__wallbit__list_transactions": "List Transactions",
+    "mcp__wallbit__get_asset": "Get Asset Info",
+    "mcp__wallbit__create_trade": "Create Trade",
+}
+
+
+def format_tool_name(tool_name: str | None) -> str:
+    """Returns the human-readable name of the tool, or attempts to format it if not found."""
+    if not tool_name:
+        return "Unknown Tool"
+
+    if tool_name in TOOL_LABELS:
+        return TOOL_LABELS[tool_name]
+
+    # Fallback: remove mcp__ prefixes and format snake_case to Title Case
+    clean_name = tool_name.replace("mcp__wallbit__", "").replace("mcp__", "")
+    return clean_name.replace("_", " ").title()
+
+
 @dataclass(frozen=True)
 class ChatAction:
     id: str
