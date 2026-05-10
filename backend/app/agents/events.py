@@ -73,7 +73,7 @@ def approval_requested_event(
             "approval_id": approval_id,
             "tool_name": tool_name,
             "title": "Confirmar operacion",
-            "message": "OpenFi quiere ejecutar esta operacion en Wallbit.",
+            "message": "Atajo quiere ejecutar esta operacion en Wallbit.",
             "input": input_data,
             "actions": [
                 ChatAction("confirm", "Confirm").to_dict(),

@@ -42,7 +42,7 @@ export default function ProfilePage() {
     <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader
-          title="Perfil de OpenFi"
+          title="Perfil de Atajo"
           description="Análisis automático de tus tendencias financieras y de riesgo."
         />
         <div className="flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:px-10">

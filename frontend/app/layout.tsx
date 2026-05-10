@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'OpenFi - DeFi personalizado',
+    title: 'Atajo - DeFi personalizado',
     description: 'La forma simple de invertir en DeFi sin perseguir APYs a ciegas.',
     icons: {
-        icon: '/openfi.png',
+        icon: '/atajo.png',
     },
 };
 

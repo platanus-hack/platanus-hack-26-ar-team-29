@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover - gives callers a clear runtime error.
 
 
 SYSTEM_PROMPT = """
-Sos OpenFi, un agente financiero conversacional para usuarios de Argentina.
+Sos Atajo, un agente financiero conversacional para usuarios de Argentina.
 Hablas en castellano rioplatense natural, con tono claro y directo.
 
 Reglas de presentación (CRÍTICO):
@@ -374,7 +374,9 @@ def normalize_sdk_message(message: Any) -> list[AgentEvent]:
                             "tool_use_id": getattr(block, "id", None),
                             "tool_name": tool_name,
                             "tool_label": format_tool_name(tool_name),
-                            "input_summary": json.dumps(getattr(block, "input", None)) if getattr(block, "input", None) is not None else None,
+                            "input_summary": json.dumps(getattr(block, "input", None))
+                            if getattr(block, "input", None) is not None
+                            else None,
                         },
                     )
                 )
@@ -385,7 +387,9 @@ def normalize_sdk_message(message: Any) -> list[AgentEvent]:
                         {
                             "tool_use_id": getattr(block, "tool_use_id", None),
                             "is_error": bool(getattr(block, "is_error", False)),
-                            "result_summary": json.dumps(getattr(block, "content", None)) if getattr(block, "content", None) is not None else None,
+                            "result_summary": json.dumps(getattr(block, "content", None))
+                            if getattr(block, "content", None) is not None
+                            else None,
                         },
                     )
                 )
@@ -428,7 +432,9 @@ def _normalize_stream_event(event: Any) -> list[AgentEvent]:
                         "tool_use_id": getattr(content_block, "id", None),
                         "tool_name": tool_name,
                         "tool_label": format_tool_name(tool_name),
-                        "input_summary": json.dumps(getattr(content_block, "input", None)) if getattr(content_block, "input", None) is not None else None,
+                        "input_summary": json.dumps(getattr(content_block, "input", None))
+                        if getattr(content_block, "input", None) is not None
+                        else None,
                     },
                 )
             ]
@@ -640,7 +646,12 @@ class ChatAgent:
                             estimated_total = estimated_unit_price * float(shares)
                         elif isinstance(amount, (int, float)) and amount > 0:
                             estimated_total = float(amount)
-                elif tool_name in ("supply", "mcp__defi__supply", "withdraw", "mcp__defi__withdraw"):
+                elif tool_name in (
+                    "supply",
+                    "mcp__defi__supply",
+                    "withdraw",
+                    "mcp__defi__withdraw",
+                ):
                     is_supply = tool_name in ("supply", "mcp__defi__supply")
                     asset = str(args.get("asset") or "").upper()
                     raw_amount = args.get("amount")

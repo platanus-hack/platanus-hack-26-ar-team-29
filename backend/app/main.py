@@ -116,7 +116,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     setup_logging(settings.log_level, settings.env)
 
-    app = FastAPI(title="OpenFi Backend", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Atajo Backend", version="0.1.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,

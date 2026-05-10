@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
 
     database_url: str = os.getenv(
-        "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/openfi"
+        "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/atajo"
     )
 
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")

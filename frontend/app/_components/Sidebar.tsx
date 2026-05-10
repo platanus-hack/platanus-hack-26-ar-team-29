@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ];
 
 function currentLabel(pathname: string) {
-    return NAV_ITEMS.find((item) => item.href === pathname)?.label ?? 'OpenFi';
+    return NAV_ITEMS.find((item) => item.href === pathname)?.label ?? 'Atajo';
 }
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
@@ -70,14 +70,14 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
             <div className='flex items-center justify-between gap-3 px-1 md:justify-start'>
                 <div className='flex items-center gap-3'>
                     <Image
-                        src='/openfi.png'
+                        src='/atajo.png'
                         width={35}
                         height={35}
                         alt='logo'
                         className='rounded-full shadow-logo'
                     />
                     <span className='text-lg font-semibold tracking-tight text-foreground'>
-                        Open<span className='text-accent'>Fi</span>
+                        Ata<span className='text-accent'>jo</span>
                     </span>
                 </div>
                 <Button 
@@ -222,8 +222,8 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                         <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-2 text-base font-semibold'>
                                 <Image
-                                    src='/openfi.png'
-                                    alt='OpenFi Logo'
+                                    src='/atajo.png'
+                                    alt='Atajo Logo'
                                     width={24}
                                     height={24}
                                     className='rounded-md shadow-logo'
