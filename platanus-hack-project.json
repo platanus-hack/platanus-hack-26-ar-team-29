@@ -1,5 +1,6 @@
 {
   "project-name": "Atajo",
   "project-oneliner-spanish": "Un agente de IA conversacional y agnóstico a cuentas financieras.",
-  "project-description-spanish": "Atajo es un agente de IA que puede leer saldos e historial en todas las cuentas financieras conectadas y ejecutar planes de movimiento de dinero con una aprobación, mostrando actualizaciones en tiempo real."
+  "project-description-spanish": "Atajo es un agente de IA que puede leer saldos e historial en todas las cuentas financieras conectadas y ejecutar planes de movimiento de dinero con una aprobación, mostrando actualizaciones en tiempo real.",
+  "deploy-url": "https://atajo-henna.vercel.app/"
 }
