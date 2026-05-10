@@ -16,6 +16,8 @@ TOOL_LABELS = {
     "mcp__wallbit__list_transactions": "List Transactions",
     "mcp__wallbit__get_asset": "Get Asset Info",
     "mcp__wallbit__create_trade": "Create Trade",
+    "request_credential": "UI Request Credential",
+    "mcp__ui__request_credential": "UI Request Credential",
 }
 
 
