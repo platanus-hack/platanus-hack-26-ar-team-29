@@ -21,7 +21,7 @@ export default async function ConnectionsPage() {
       <div className="flex min-h-0 flex-1 flex-col">
         <PageHeader
           title="Conexiones"
-          description="Gestioná tus cuentas y wallets vinculadas."
+          description="Gestioná tus cuentas y wallets vinculadas"
         />
         <div className="flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:px-10">
           <ConnectionsClient initialConnections={connections} url={url} />

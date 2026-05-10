@@ -59,7 +59,7 @@ export default function BalancesPage() {
   return (
     <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
-        <PageHeader title="Balances" description="Saldos por proveedor y moneda." />
+        <PageHeader title="Balances" description="Saldos por proveedor y moneda" />
         <div className="flex-1 overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:px-10">
           {loading ? (
             <div className="text-center text-muted py-10">Cargando balances...</div>

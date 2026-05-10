@@ -71,7 +71,7 @@ export default async function ActivityPage() {
     <Sidebar>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="px-4 sm:px-6 lg:px-10">
-          <PageHeader title="Actividad" description="Movimientos recientes y estado de planes.">
+          <PageHeader title="Actividad" description="Movimientos recientes y estado de planes">
             <SyncButton />
           </PageHeader>
         </div>

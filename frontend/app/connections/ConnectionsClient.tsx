@@ -161,7 +161,7 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                 <ProviderLogo provider={item.id} size="md" />
                   <div className="min-w-0">
                     <div className="text-base font-medium text-foreground">{item.name}</div>
-                    <div className="mt-1 text-xs text-muted font-mono break-all flex items-center gap-1.5">
+                    <div className="mt-1 text-xs text-muted font-mono break-words flex items-center gap-1.5">
                       {item.id === "ethereum_custodial" && item.address ? (
                         <>
                           {item.description}
