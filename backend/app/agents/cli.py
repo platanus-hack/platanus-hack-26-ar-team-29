@@ -101,8 +101,7 @@ def _render_event(
                 state.hidden_tool_ids.add(str(tool_use_id))
             return
         print(
-            f"\n[tool:start] {event.payload.get('tool_name')} "
-            f"{event.payload.get('input_summary')}"
+            f"\n[tool:start] {event.payload.get('tool_name')} {event.payload.get('input_summary')}"
         )
         state.saw_visible_event = True
         return

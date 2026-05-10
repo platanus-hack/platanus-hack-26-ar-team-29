@@ -11,6 +11,7 @@ from app.workers.context_worker import main as process_dirty_profiles
 
 log = structlog.get_logger(__name__)
 
+
 async def global_poll_loop():
     settings = get_settings()
     interval = settings.poll_interval_seconds
@@ -25,8 +26,11 @@ async def global_poll_loop():
             # Or better yet, we just sync page 1 if we have a routine sync, but we use the sync_all for MVP.
             # Actually, for polling, we can just use the page 1 sync to be faster and not hit API limits.
             from app.services.ingestion import sync_wallbit_transactions
+
             async with session_factory() as session:
-                stmt = select(ProviderConnection).where(ProviderConnection.connection_type == "wallbit")
+                stmt = select(ProviderConnection).where(
+                    ProviderConnection.connection_type == "wallbit"
+                )
                 conns = (await session.execute(stmt)).scalars().all()
 
                 for conn in conns:

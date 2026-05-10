@@ -16,5 +16,6 @@ async def main():
         for profile in profiles:
             await recalculate_user_profile(session, profile.user_id)
 
+
 if __name__ == "__main__":
     asyncio.run(main())

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from app.agents.approval import ApprovalBridge
+from app.agents.ethereum_tools import ethereum_mcp_server
 from app.agents.events import AgentEvent, error_event, summarize_value
 from app.agents.wallbit_tools import wallbit_mcp_server
 
@@ -55,8 +56,14 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
+
+Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Al finalizar la creacion de la cuenta, proveele al usuario la direccion y la frase semilla que haya devuelto la creacion de la billetera.
 """.strip()
 
+ETHEREUM_WRITE_TOOLS = [
+    "create_ethereum_wallet",
+    "mcp__ethereum__create_ethereum_wallet",
+]
 
 WALLBIT_READ_TOOLS = [
     "get_checking_balance",
@@ -74,7 +81,7 @@ WALLBIT_WRITE_TOOLS = [
 ]
 WALLBIT_TOOLS = WALLBIT_READ_TOOLS + WALLBIT_WRITE_TOOLS
 AGENT_UI_TOOLS = ["AskUserQuestion"]
-AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS
 AGENT_MODEL = "haiku"
 AGENT_FALLBACK_MODEL = "sonnet"
 
@@ -102,7 +109,11 @@ async def _fetch_unit_price_usd(args: dict[str, Any]) -> float | None:
         resp = await _request("GET", f"/api/public/v1/assets/{symbol}")
         outer = resp.get("data") if isinstance(resp, dict) else None
         # Wallbit returns {"data": {"symbol": ..., "price": ...}} so we unwrap once.
-        body = outer.get("data") if isinstance(outer, dict) and isinstance(outer.get("data"), dict) else outer
+        body = (
+            outer.get("data")
+            if isinstance(outer, dict) and isinstance(outer.get("data"), dict)
+            else outer
+        )
         price = body.get("price") if isinstance(body, dict) else None
         return float(price) if isinstance(price, int | float) else None
     except Exception:  # noqa: BLE001 — price fetch is best-effort.
@@ -146,7 +157,7 @@ class ChatAgentSession:
             fallback_model=AGENT_FALLBACK_MODEL,
             system_prompt=self._system_prompt,
             include_partial_messages=True,
-            mcp_servers={"wallbit": wallbit_mcp_server()},
+            mcp_servers={"wallbit": wallbit_mcp_server(), "ethereum": ethereum_mcp_server()},
             strict_mcp_config=True,
             permission_mode="default",
             tools=AGENT_UI_TOOLS,

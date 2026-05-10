@@ -27,6 +27,7 @@ For each transaction, you must output:
 Output ONLY valid JSON inside a tool call. Use the `submit_classifications` tool.
 """
 
+
 async def classify_transactions(transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not transactions:
         return []
@@ -51,14 +52,14 @@ async def classify_transactions(transactions: list[dict[str, Any]]) -> list[dict
                                 "uuid": {"type": "string"},
                                 "category": {"type": "string"},
                                 "merchant": {"type": "string"},
-                                "recurrence_hint": {"type": "string"}
+                                "recurrence_hint": {"type": "string"},
                             },
-                            "required": ["uuid", "category", "merchant", "recurrence_hint"]
-                        }
+                            "required": ["uuid", "category", "merchant", "recurrence_hint"],
+                        },
                     }
                 },
-                "required": ["results"]
-            }
+                "required": ["results"],
+            },
         }
     ]
 
@@ -66,9 +67,11 @@ async def classify_transactions(transactions: list[dict[str, Any]]) -> list[dict
         model=settings.anthropic_model,
         max_tokens=2000,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": f"Classify these transactions:\n{transactions_json}"}],
+        messages=[
+            {"role": "user", "content": f"Classify these transactions:\n{transactions_json}"}
+        ],
         tools=tools,
-        tool_choice={"type": "tool", "name": "submit_classifications"}
+        tool_choice={"type": "tool", "name": "submit_classifications"},
     )
 
     for content in response.content:

@@ -18,5 +18,6 @@ async def main():
             count = await sync_wallbit_transactions(session, conn.id)
             print(f"Synced {count} transactions.")
 
+
 if __name__ == "__main__":
     asyncio.run(main())

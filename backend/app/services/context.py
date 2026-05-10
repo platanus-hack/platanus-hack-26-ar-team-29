@@ -18,8 +18,7 @@ async def recalculate_user_profile(session: AsyncSession, user_id: uuid.UUID):
 
     # Recalculate based on categorized transactions
     tx_stmt = select(CanonicalTransaction).where(
-        CanonicalTransaction.user_id == user_id,
-        CanonicalTransaction.status == 'completed'
+        CanonicalTransaction.user_id == user_id, CanonicalTransaction.status == "completed"
     )
     tx_result = await session.execute(tx_stmt)
     txs = tx_result.scalars().all()
@@ -50,7 +49,7 @@ async def recalculate_user_profile(session: AsyncSession, user_id: uuid.UUID):
         "monthly_recurring_spend_usd": necessary_expense,
         "discretionary_spend_usd": discretionary_expense,
         "savings_rate_pct": savings_rate,
-        "runway_months": 6.0 # Hardcoded for MVP
+        "runway_months": 6.0,  # Hardcoded for MVP
     }
 
     profile.is_dirty = False

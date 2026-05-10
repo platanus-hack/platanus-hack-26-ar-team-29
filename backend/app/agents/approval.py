@@ -84,9 +84,7 @@ class UserInteractionBridge:
             return PermissionResultAllow(updated_input=input_data)
 
         if self._event_sink is None:
-            return PermissionResultDeny(
-                message="No approval channel is available for this action."
-            )
+            return PermissionResultDeny(message="No approval channel is available for this action.")
 
         approval_id = uuid.uuid4().hex
         loop = asyncio.get_running_loop()

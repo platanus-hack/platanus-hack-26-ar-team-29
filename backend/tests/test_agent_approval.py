@@ -28,9 +28,7 @@ async def test_write_wallbit_tool_emits_approval_and_allows_on_confirm() -> None
     bridge = ApprovalBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
-    task = asyncio.create_task(
-        bridge.can_use_tool("mcp__wallbit__create_trade", {"symbol": "SPY"})
-    )
+    task = asyncio.create_task(bridge.can_use_tool("mcp__wallbit__create_trade", {"symbol": "SPY"}))
     await _wait_for_events(events, 1)
 
     approval = events[0]
@@ -52,9 +50,7 @@ async def test_write_wallbit_tool_denies_on_reject() -> None:
     bridge = ApprovalBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
-    task = asyncio.create_task(
-        bridge.can_use_tool("mcp__wallbit__create_trade", {"symbol": "SPY"})
-    )
+    task = asyncio.create_task(bridge.can_use_tool("mcp__wallbit__create_trade", {"symbol": "SPY"}))
     await _wait_for_events(events, 1)
 
     assert bridge.resolve(events[0].payload["approval_id"], "reject")
@@ -70,9 +66,7 @@ async def test_unknown_wallbit_tool_requires_approval() -> None:
     bridge = ApprovalBridge()
     bridge.set_event_sink(_collecting_sink(events))
 
-    task = asyncio.create_task(
-        bridge.can_use_tool("mcp__wallbit__future_write", {"value": 1})
-    )
+    task = asyncio.create_task(bridge.can_use_tool("mcp__wallbit__future_write", {"value": 1}))
     await _wait_for_events(events, 1)
 
     assert events[0].type == "approval_requested"
