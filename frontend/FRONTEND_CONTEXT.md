@@ -8,7 +8,7 @@ Este documento resume el estado actual del frontend y el contexto de producto/ar
 - Es una app Next.js con App Router, TypeScript, React 19 y Tailwind CSS 4.
 - El producto pertenece al track `Agentic Money` de Platanus Hack 26.
 - La idea de producto, segun los artifacts, es una app financiera donde el chat con un agente es la superficie principal para consultar, planificar y aprobar acciones sobre dinero.
-- La implementacion actual muestra el chat real integrado con backend directamente en `/`.
+- La implementacion actual muestra el chat real integrado con backend directamente en `/`. El agente y el layout refieren ocasionalmente al nombre Pampa, pero el nombre oficial del producto es Atajo.
 - El diseño objetivo esta documentado principalmente en `.opencode/artifacts/02-2_frontend_design.md` y el contrato REST/WebSocket en `.opencode/artifacts/02-3_api_surface.md`.
 
 ## Stack
@@ -272,7 +272,7 @@ Topicos objetivo:
 
 ## Recomendaciones Para Siguientes Cambios
 
-1. Cambiar metadata y `lang` a la identidad real del proyecto y `es-AR`.
+1. Cambiar metadata, title y `lang` a la identidad real del proyecto (Atajo) y `es-AR`. Reemplazar cualquier referencia vieja a Pampa u OpenFi.
 2. Seguir puliendo copy Spanish-first.
 3. Evaluar si `/chat` debe mantenerse como redirect a `/` o permanecer inexistente.
 4. Separar tipos mock de tipos API objetivo para evitar acoplar el prototipo al contrato incompleto.

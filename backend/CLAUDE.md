@@ -16,7 +16,7 @@ If the change *contradicts* a locked artifact, do not silently diverge. Flag the
 
 ## Project overview
 
-**OpenFi** is a Spanish-first agentic-finance app for Platanus Hack 26 BA (*Agentic Money* track). One conversational agent reads balances across connected accounts (Wallbit, Ethereum, future fintechs), proposes multi-step money-moving plans with one approval gate per plan, runs tradebots within explicit safeguards, ingests / classifies financial documents, and maintains a persistent user financial context.
+**Atajo** is a Spanish-first agentic-finance app for Platanus Hack 26 BA (*Agentic Money* track). One conversational agent reads balances across connected accounts (Wallbit, Ethereum, future fintechs), proposes multi-step money-moving plans with one approval gate per plan, runs tradebots within explicit safeguards, ingests / classifies financial documents, and maintains a persistent user financial context.
 
 This `backend/` is the Python / FastAPI service. Frontend is Next.js / React on a separate branch (`front`).
 
@@ -90,7 +90,7 @@ app/
 | New migration | `uv run alembic revision --autogenerate -m "msg"` |
 | Apply migrations | `uv run alembic upgrade head` |
 | List migration heads (offline) | `uv run alembic heads` |
-| Build container | `docker build -t openfi-backend .` |
+| Build container | `docker build -t atajo-backend .` |
 
 All commands run from `backend/`.
 
