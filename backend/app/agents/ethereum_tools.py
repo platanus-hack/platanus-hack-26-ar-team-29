@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import os
 import json
 from typing import Any
 
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
+
+port = os.getenv("PORT", "8000")
+BACKEND_BASE = f"http://127.0.0.1:{port}"
 
 
 def ethereum_mcp_server():
@@ -47,7 +51,7 @@ async def create_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             "POST",
-            "http://127.0.0.1:8000/api/v1/connections/ethereum-custodial/create",
+            f"{BACKEND_BASE}/api/v1/connections/ethereum-custodial/create",
             json={"network": network, "label": "Wallet Ethereum", "primary_asset_hint": "ETH"},
             # Note: Since the backend requires user auth, in a real scenario we'd pass headers here.
             # But the agent server might run on the same instance without auth if it's the dev user.
@@ -106,7 +110,7 @@ async def import_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             "POST",
-            "http://127.0.0.1:8000/api/v1/connections/ethereum-custodial/import",
+            f"{BACKEND_BASE}/api/v1/connections/ethereum-custodial/import",
             json={
                 "network": network,
                 "private_key": private_key,
@@ -137,7 +141,7 @@ async def _resolve_eth_connection_id() -> str | None:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             "GET",
-            "http://127.0.0.1:8000/api/v1/connections",
+            f"{BACKEND_BASE}/api/v1/connections",
         )
     try:
         conns = response.json()
@@ -197,7 +201,7 @@ async def send_onchain(args: dict[str, Any]) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.request(
             "POST",
-            f"http://127.0.0.1:8000/api/v1/connections/{connection_id}/onchain/transfer",
+            f"{BACKEND_BASE}/api/v1/connections/{connection_id}/onchain/transfer",
             json={
                 "asset": asset,
                 "to": to,

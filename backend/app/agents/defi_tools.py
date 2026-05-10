@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import os
 import json
 from typing import Any
 
 import httpx
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
-BACKEND_BASE = "http://127.0.0.1:8000"
+port = os.getenv("PORT", "8000")
+BACKEND_BASE = f"http://127.0.0.1:{port}"
 
 
 def defi_mcp_server():
