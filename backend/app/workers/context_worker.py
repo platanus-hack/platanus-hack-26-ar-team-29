@@ -9,7 +9,7 @@ from app.services.context import recalculate_user_profile
 
 async def main():
     async for session in get_session():
-        stmt = select(UserProfile).where(UserProfile.is_dirty == True)
+        stmt = select(UserProfile).where(UserProfile.is_dirty)
         result = await session.execute(stmt)
         profiles = result.scalars().all()
 

@@ -120,11 +120,14 @@ class ProfilerService:
             # Fallback data if API fails
             profile_data = {
                 "risk_profile": {
-                    "level": "moderate",
+                    "level": "moderado",
                     "score_1_to_10": 5,
-                    "reasoning": "Fallback due to LLM error",
+                    "reasoning": "Perfil por defecto (error de generación)",
                 },
-                "summaries": {"spending_behavior": "Unknown", "investment_style": "Unknown"},
+                "summaries": {
+                    "spending_behavior": "Desconocido",
+                    "investment_style": "Desconocido",
+                },
                 "portfolio_metrics": {
                     "estimated_net_worth_usd": total_usd,
                     "fiat_percentage": (total_fiat_usd / total_usd * 100) if total_usd > 0 else 0,

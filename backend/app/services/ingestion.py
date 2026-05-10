@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.classifier_agent import classify_transactions
 from app.config import get_settings
 from app.persistence.crypto import decrypt
 from app.persistence.models.connections import ProviderConnection
@@ -17,7 +18,9 @@ from app.providers.wallbit.client import WallbitClient
 from app.services.context import recalculate_user_profile
 
 
-async def _upsert_wallbit_txs(session: AsyncSession, conn: ProviderConnection, raw_txs: list[dict[str, Any]]) -> int:
+async def _upsert_wallbit_txs(
+    session: AsyncSession, conn: ProviderConnection, raw_txs: list[dict[str, Any]]
+) -> int:
     inserted_or_updated = 0
     for raw in raw_txs:
         # Normalize
@@ -192,7 +195,7 @@ async def run_full_sync_pipeline(user_id: uuid.UUID) -> None:
         stmt = (
             select(CanonicalTransaction)
             .where(CanonicalTransaction.user_id == user_id)
-            .where(CanonicalTransaction.classifier.has_key("category") == False)
+            .where(~CanonicalTransaction.classifier.has_key("category"))
             .limit(100)  # batch of 100
         )
         result = await session.execute(stmt)

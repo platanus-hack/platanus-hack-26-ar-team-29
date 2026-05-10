@@ -15,7 +15,7 @@ async def process_unclassified():
         # but since we initialized with '{}'::jsonb we can just check length or specific key.
         stmt = (
             select(CanonicalTransaction)
-            .where(CanonicalTransaction.classifier.has_key("category") == False)
+            .where(~CanonicalTransaction.classifier.has_key("category"))
             .limit(50)
         )
         result = await session.execute(stmt)
