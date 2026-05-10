@@ -103,7 +103,7 @@ DeFi / Aave V3 (generar yield depositando en pools):
 - `mcp__defi__list_markets` lista los mercados de Aave disponibles con su APY
   actual. Usalo cuando el usuario pregunte por opciones de inversion en DeFi,
   yield pasivo, "donde puedo poner mis dolares", etc. Hoy esta soportado USDC
-  en la red `base`.
+  en las redes `base` y `sepolia`.
 - `mcp__defi__list_positions` muestra las posiciones DeFi del usuario (lo que
   ya tiene depositado en Aave). Usalo para reportes de portfolio o cuando el
   usuario pregunte cuanto tiene invertido en DeFi.
