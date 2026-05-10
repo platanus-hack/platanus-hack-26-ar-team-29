@@ -19,8 +19,15 @@ class CreateSessionRequest(BaseModel):
     title: str | None = Field(default=None, max_length=200)
 
 
+class AttachmentRequest(BaseModel):
+    name: str
+    type: str
+    url: str | None = None
+    data: str | None = None
+
 class SendMessageRequest(BaseModel):
-    content: str = Field(min_length=1, max_length=8000)
+    content: str = Field(min_length=0, max_length=8000)
+    attachments: list[AttachmentRequest] | None = None
 
 
 class ResolveInputRequest(BaseModel):
@@ -73,10 +80,12 @@ async def send_message(
     svc: ChatService = Depends(get_chat_service),
 ) -> JSONResponse:
     agent_tasks = request.app.state.agent_tasks
+    attachments = [a.model_dump() for a in body.attachments] if body.attachments else None
     payload = await svc.send_user_message(
         user_id=user_id,
         session_id=session_id,
         content=body.content,
+        attachments=attachments,
         agent_tasks=agent_tasks,
     )
     return JSONResponse(status_code=202, content=payload)

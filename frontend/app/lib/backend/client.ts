@@ -114,10 +114,10 @@ export const backendApi = {
     return requestJson<ChatMessageDto[]>(`/chat/sessions/${sessionId}/messages`);
   },
 
-  sendChatMessage(sessionId: string, content: string) {
+  sendChatMessage(sessionId: string, content: string, attachments?: { name: string, type: string, url?: string }[]) {
     return requestJson<SendMessageResponse>(`/chat/sessions/${sessionId}/messages`, {
       method: "POST",
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, attachments }),
     });
   },
 

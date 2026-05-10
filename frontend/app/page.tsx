@@ -30,6 +30,7 @@ function dtoToMessage(dto: ChatMessageDto, plan?: TradePlan): Message {
         kind: dto.kind === 'plan_proposal' ? 'plan_proposal' : 'text',
         planId: dto.plan_id,
         plan,
+        attachments: dto.attachments,
     };
 }
 
@@ -365,20 +366,28 @@ export default function ChatPage() {
         };
     }, [handleWsFrame, currentSessionId]);
 
-    async function handleSend(text: string) {
+    async function handleSend(text: string, files?: File[]) {
         if (!currentSessionId) return;
+
+        const attachments = files?.map(f => ({
+            name: f.name,
+            type: f.type,
+            url: URL.createObjectURL(f)
+        }));
+
         const userMsg: Message = {
             id: makeId(),
             role: 'user',
             content: text,
             createdAt: Date.now(),
+            attachments,
         };
         upsertMessage(userMsg);
         setIsTyping(true);
         setError(null);
 
         try {
-            await backendApi.sendChatMessage(currentSessionId, text);
+            await backendApi.sendChatMessage(currentSessionId, text, attachments);
         } catch (err) {
             appendSystemMessage(errorText(err));
             setIsTyping(false);

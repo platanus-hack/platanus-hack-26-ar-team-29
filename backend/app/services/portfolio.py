@@ -14,7 +14,6 @@ from app.persistence.repositories.connections import ConnectionRepository
 from app.providers.wallbit.adapter import (
     checking_balance_to_rows,
     stocks_balance_to_rows,
-    transactions_to_rows,
 )
 from app.providers.wallbit.auth import WallbitCredentials
 from app.providers.wallbit.client import WallbitAPIError, WallbitClient
@@ -66,6 +65,7 @@ class PortfolioService:
 
     async def read_transactions(self, user_id: UUID, limit: int = 50) -> list[dict[str, Any]]:
         from sqlalchemy import select
+
         from app.persistence.models.ledger import CanonicalTransaction
 
         stmt = (

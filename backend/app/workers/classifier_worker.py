@@ -1,9 +1,11 @@
 import asyncio
+
 from sqlalchemy import select
-from app.persistence.session import get_session
+
+from app.agents.classifier_agent import classify_transactions
 from app.persistence.models.ledger import CanonicalTransaction
 from app.persistence.models.users import UserProfile
-from app.agents.classifier_agent import classify_transactions
+from app.persistence.session import get_session
 
 
 async def process_unclassified():

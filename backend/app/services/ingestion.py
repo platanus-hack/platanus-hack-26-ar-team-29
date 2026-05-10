@@ -1,14 +1,15 @@
 import uuid
 from datetime import datetime
 from typing import Any
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import select
 
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.persistence.crypto import decrypt
 from app.persistence.models.connections import ProviderConnection
 from app.persistence.models.ledger import CanonicalTransaction
 from app.providers.wallbit.client import WallbitClient
-from app.persistence.crypto import decrypt
 
 
 async def _upsert_wallbit_txs(

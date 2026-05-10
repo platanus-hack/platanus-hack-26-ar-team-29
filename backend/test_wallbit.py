@@ -1,5 +1,6 @@
 import asyncio
 import os
+
 from dotenv import load_dotenv
 
 from app.providers.wallbit.client import WallbitClient

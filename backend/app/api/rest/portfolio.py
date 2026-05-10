@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 
 from app.api.deps import get_current_user_id, get_portfolio_service
 from app.services.portfolio import PortfolioService

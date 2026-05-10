@@ -1,6 +1,8 @@
 import json
 from typing import Any
+
 from anthropic import AsyncAnthropic
+
 from app.config import get_settings
 
 SYSTEM_PROMPT = """You are an expert financial transaction classifier for Argentine users. 
@@ -33,7 +35,7 @@ async def classify_transactions(transactions: list[dict[str, Any]]) -> list[dict
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
     transactions_json = json.dumps(transactions, default=str)
-    
+
     tools = [
         {
             "name": "submit_classifications",
@@ -68,9 +70,9 @@ async def classify_transactions(transactions: list[dict[str, Any]]) -> list[dict
         tools=tools,
         tool_choice={"type": "tool", "name": "submit_classifications"}
     )
-    
+
     for content in response.content:
         if content.type == "tool_use" and content.name == "submit_classifications":
             return content.input.get("results", [])
-            
+
     return []
