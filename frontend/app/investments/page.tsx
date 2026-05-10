@@ -9,19 +9,51 @@ import type { PositionRow } from "../lib/backend/types";
 export default function InvestmentsPage() {
   const [positions, setPositions] = useState<PositionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     backendApi.getPositions().then((data) => {
       setPositions(data);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch((err) => {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "No pudimos cargar inversiones.");
+    }).finally(() => setLoading(false));
   }, []);
 
   const totalValue = positions.reduce((acc, pos) => acc + (pos.usd_value || 0), 0);
+  const hasValuationData = positions.some((pos) => pos.usd_value !== null && pos.usd_value !== undefined);
+  const hasPnlData = positions.some((pos) => pos.unrealized_pnl_usd !== null && pos.unrealized_pnl_usd !== undefined);
+  const totalPnl = positions.reduce((acc, pos) => acc + (pos.unrealized_pnl_usd || 0), 0);
+  const totalCost = positions.reduce((acc, pos) => acc + (pos.cost_basis_usd || 0), 0);
+  const pnlPct = hasPnlData && totalCost > 0 ? (totalPnl / totalCost) * 100 : null;
+  const largestAllocation = positions.reduce((max, pos) => {
+    if (totalValue <= 0 || !pos.usd_value) return max;
+    return Math.max(max, (pos.usd_value / totalValue) * 100);
+  }, 0);
+  const riskLabel = positions.length === 0
+    ? "--"
+    : !hasValuationData
+      ? "n/d"
+    : largestAllocation >= 50
+      ? "Concentrado"
+      : positions.length <= 2
+        ? "Medio"
+        : "Diversificado";
+
+  const formatUsd = (value?: number | null) => {
+    if (value === null || value === undefined) return "n/d";
+    return `$${value.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
+  };
+
+  const formatPct = (value?: number | null) => {
+    if (value === null || value === undefined) return "n/d";
+    return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
+  };
 
   const summary = [
-    { label: "Valor total USD", value: `$${totalValue.toLocaleString("es-AR")}` },
-    { label: "Rendimiento 30d", value: "--" },
-    { label: "Riesgo", value: "--" },
+    { label: "Valor total USD", value: hasValuationData ? formatUsd(totalValue) : "n/d" },
+    { label: "P&L no realizado", value: hasPnlData ? `${formatUsd(totalPnl)}${pnlPct !== null ? ` (${formatPct(pnlPct)})` : ""}` : "n/d" },
+    { label: "Riesgo", value: riskLabel },
   ];
 
   return (
@@ -53,33 +85,46 @@ export default function InvestmentsPage() {
               <div className="divide-y divide-line">
                 {loading ? (
                   <div className="px-6 py-10 text-center text-muted">Cargando posiciones...</div>
+                ) : error ? (
+                  <div className="px-6 py-10 text-center text-muted">{error}</div>
                 ) : positions.length === 0 ? (
                   <div className="px-6 py-10 text-center text-muted">No hay posiciones activas.</div>
                 ) : (
                   positions.map((pos, idx) => {
-                    const alloc = totalValue > 0 && pos.usd_value ? (pos.usd_value / totalValue * 100).toFixed(1) : "0.0";
+                    const hasPositionValue = pos.usd_value !== null && pos.usd_value !== undefined;
+                    const alloc = totalValue > 0 && hasPositionValue ? `${(pos.usd_value! / totalValue * 100).toFixed(1)}%` : "n/d";
+                    const pnlClass = pos.unrealized_pnl_usd === null || pos.unrealized_pnl_usd === undefined
+                      ? "text-muted"
+                      : pos.unrealized_pnl_usd >= 0
+                        ? "text-success"
+                        : "text-red-500";
                     return (
                       <div key={idx} className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between transition-all duration-200 hover:bg-accent/5">
                         <div>
                           <div className="text-base font-medium text-foreground">{pos.symbol}</div>
                           <div className="text-xs font-mono text-muted mt-1">
                             <span className="text-accent">{pos.shares} shares</span> <span className="mx-1 opacity-50">·</span> {pos.provider}
+                            {pos.current_price_usd ? <><span className="mx-1 opacity-50">·</span> {formatUsd(pos.current_price_usd)} c/u</> : null}
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-6 text-sm">
                           <div>
                             <div className="text-xs font-mono text-subdued mb-1">Alloc</div>
-                            <div className="font-medium text-foreground">{alloc}%</div>
+                            <div className="font-medium text-foreground">{alloc}</div>
                           </div>
                           <div>
                             <div className="text-xs font-mono text-subdued mb-1">Valor USD</div>
                             <div className="font-medium tabular-nums text-foreground">
-                              ${pos.usd_value?.toLocaleString("es-AR") || "0"}
+                              {formatUsd(pos.usd_value)}
                             </div>
                           </div>
                           <div>
                             <div className="text-xs font-mono text-subdued mb-1">P&L</div>
-                            <div className="font-medium tabular-nums text-muted">--</div>
+                            <div className={`font-medium tabular-nums ${pnlClass}`}>
+                              {pos.unrealized_pnl_usd === null || pos.unrealized_pnl_usd === undefined
+                                ? "n/d"
+                                : `${formatUsd(pos.unrealized_pnl_usd)} (${formatPct(pos.pnl_percentage)})`}
+                            </div>
                           </div>
                         </div>
                       </div>

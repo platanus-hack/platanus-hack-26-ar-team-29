@@ -107,7 +107,11 @@ export interface PositionRow {
   account: string;
   symbol: string;
   shares: number;
+  current_price_usd?: number | null;
   usd_value?: number | null;
+  avg_cost_usd?: number | null;
+  cost_basis_usd?: number | null;
+  unrealized_pnl_usd?: number | null;
   pnl_percentage?: number | null;
   raw?: Record<string, unknown>;
 }

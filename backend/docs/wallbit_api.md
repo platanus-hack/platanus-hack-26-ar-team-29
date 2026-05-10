@@ -48,6 +48,25 @@ This document serves as the operational contract for the Wallbit DEV API surface
 ```
 **Adapter Note:** Extracts `symbol` and `shares`. Fiat representation relies on fetching the current price or relying on Wallbit to optionally return a value field.
 
+The `/api/v1/positions` demo endpoint enriches these rows with `GET /api/public/v1/assets/{symbol}` when Wallbit does not include valuation fields in `/balance/stocks`. If the asset endpoint does not return a usable price, it falls back to the latest `trade_info.share_price` observed in `/transactions`. It returns `current_price_usd`, computes `usd_value`, and best-effort computes cost basis/P&L from historical BUY trades in `/transactions`. Failed/cancelled/rejected trades are ignored.
+
+---
+
+## 2.1 Get Asset Price
+**Endpoint:** `GET /api/public/v1/assets/{symbol}`
+
+**Expected Response Shape:**
+```json
+{
+  "data": {
+    "symbol": "AAPL",
+    "price": 293.85
+  }
+}
+```
+
+**Adapter Note:** `price`, `current_price`, `current_price_usd`, `price_usd`, and `market_price` are accepted as aliases because the DEV payload shape has varied during the hackathon.
+
 ---
 
 ## 3. List Transactions

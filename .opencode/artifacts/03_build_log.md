@@ -75,3 +75,33 @@
 
 ### Decisions and Shortcuts
 - By mapping the volume to `./.postgres_data`, the database persists fully across `docker compose down -v` or standard `docker compose down` operations. PostgreSQL's Docker entrypoint automatically fixes permissions on the host directory when the container starts.
+
+## Wallbit Investment Tab Enrichment
+### Completed Work
+- Enriched `/api/v1/positions` to consume Wallbit `/assets/{symbol}` for live prices after reading `/balance/stocks`.
+- Added best-effort cost basis and unrealized P&L calculation from Wallbit BUY trades returned by `/transactions`.
+- Updated the frontend Investments tab to replace placeholder total value/P&L/risk fields with backend-provided Wallbit data and visible error states.
+
+### Files Changed
+- `backend/app/providers/wallbit/adapter.py`
+- `backend/app/providers/wallbit/client.py`
+- `backend/app/canonical/models.py`
+- `backend/app/services/portfolio.py`
+- `backend/docs/wallbit_api.md`
+- `backend/tests/test_wallbit_adapter.py`
+- `frontend/app/lib/backend/types.ts`
+- `frontend/app/investments/page.tsx`
+
+### Tests and Results
+- Added adapter unit coverage for Wallbit asset price extraction, inline stock valuation, and BUY-trade cost basis calculation.
+- `uv run pytest tests/test_wallbit_adapter.py -q` passed: 3 tests.
+- `uv run ruff check app/providers/wallbit/adapter.py app/providers/wallbit/client.py app/canonical/models.py app/services/portfolio.py tests/test_wallbit_adapter.py` passed.
+- `npx eslint app/investments/page.tsx app/lib/backend/types.ts` passed.
+- `npx tsc --noEmit` passed.
+- Full backend `uv run pytest -q` is still blocked by pre-existing `ModuleNotFoundError: app.agents.approval` during `tests/test_agent_approval.py` collection.
+- Full backend `uv run ruff check app tests/test_wallbit_adapter.py` is still blocked by pre-existing lint issues in unrelated agent/worker files.
+
+### Follow-up Fix
+- Added a fallback price source for the Investments tab: when Wallbit `/assets/{symbol}` does not return price data, `/api/v1/positions` now uses the latest `trade_info.share_price` observed in Wallbit transactions.
+- Adjusted the Investments UI so missing valuation displays as `n/d` instead of misleading `0.0%` allocation or `$0` totals.
+- Inspected live Wallbit `/transactions`: trade rows include `source_amount`, `dest_amount`, `trade_info.symbol`, and `trade_info.share_price`; failed trades are present too, so the adapter now ignores failed/cancelled/rejected trades when calculating cost basis and fallback prices.

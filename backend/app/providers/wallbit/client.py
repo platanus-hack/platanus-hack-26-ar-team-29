@@ -104,8 +104,9 @@ class WallbitClient:
     async def get_stocks_balance(self) -> Any:
         return await self._request("GET", "/balance/stocks")
 
-    async def list_transactions(self, limit: int = 50) -> Any:
-        return await self._request("GET", "/transactions", params={"limit": limit})
+    async def list_transactions(self, limit: int | None = 50) -> Any:
+        params = {"limit": limit} if limit is not None else None
+        return await self._request("GET", "/transactions", params=params)
 
     async def get_asset(self, symbol: str) -> Any:
         return await self._request("GET", f"/assets/{symbol}")

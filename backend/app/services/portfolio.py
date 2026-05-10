@@ -13,8 +13,10 @@ from app.common.errors import NOT_FOUND, PROVIDER_UNAVAILABLE, APIError
 from app.persistence.repositories.connections import ConnectionRepository
 from app.providers.ethereum.client import EthereumClient, EthereumClientError
 from app.providers.wallbit.adapter import (
+    asset_to_price_usd,
     checking_balance_to_rows,
     stocks_balance_to_rows,
+    transaction_cost_basis_by_symbol,
 )
 from app.providers.wallbit.auth import WallbitCredentials
 from app.providers.wallbit.client import WallbitAPIError, WallbitClient
@@ -22,6 +24,15 @@ from app.providers.wallbit.client import WallbitAPIError, WallbitClient
 log = structlog.get_logger(__name__)
 
 WEI_PER_ETH = 10**18
+
+
+def _float_or_none(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 class PortfolioService:
@@ -134,19 +145,75 @@ class PortfolioService:
                     details={"status": exc.status, "body": exc.body},
                 ) from exc
 
-        stocks_rows = stocks_balance_to_rows(stocks_raw)
+            stocks_rows = stocks_balance_to_rows(stocks_raw)
+
+            symbols = sorted({str(row.get("symbol")) for row in stocks_rows if row.get("symbol")})
+            prices_by_symbol: dict[str, float] = {}
+            for symbol in symbols:
+                try:
+                    price = asset_to_price_usd(await wc.get_asset(symbol))
+                except WallbitAPIError as exc:
+                    log.warning(
+                        "wallbit_asset_price_read_failed",
+                        symbol=symbol,
+                        status=exc.status,
+                        body=exc.body,
+                    )
+                    continue
+                if price is not None:
+                    prices_by_symbol[symbol] = price
+
+            cost_basis_by_symbol: dict[str, dict[str, float]] = {}
+            try:
+                transactions_raw = await wc.list_transactions(limit=None)
+            except WallbitAPIError as exc:
+                log.warning(
+                    "wallbit_transactions_cost_basis_read_failed",
+                    status=exc.status,
+                    body=exc.body,
+                )
+            else:
+                cost_basis_by_symbol = transaction_cost_basis_by_symbol(transactions_raw)
+
         positions = []
         for row in stocks_rows:
+            symbol = str(row.get("symbol") or "")
+            shares = _float_or_none(row.get("shares")) or 0.0
+            current_price_usd = _float_or_none(row.get("current_price_usd"))
+            if current_price_usd is None:
+                current_price_usd = prices_by_symbol.get(symbol)
+
+            basis = cost_basis_by_symbol.get(symbol, {})
+            if current_price_usd is None:
+                current_price_usd = basis.get("latest_price_usd")
+
+            usd_value = _float_or_none(row.get("usd_value"))
+            if usd_value is None and current_price_usd is not None:
+                usd_value = shares * current_price_usd
+
+            avg_cost_usd = _float_or_none(row.get("avg_cost_usd")) or basis.get("avg_cost_usd")
+            cost_basis_usd = _float_or_none(row.get("cost_basis_usd"))
+            if cost_basis_usd is None and avg_cost_usd is not None:
+                cost_basis_usd = shares * avg_cost_usd
+
+            unrealized_pnl_usd = None
+            pnl_percentage = None
+            if usd_value is not None and cost_basis_usd is not None and cost_basis_usd > 0:
+                unrealized_pnl_usd = usd_value - cost_basis_usd
+                pnl_percentage = (unrealized_pnl_usd / cost_basis_usd) * 100
+
             positions.append(
                 CanonicalPosition(
                     provider="Wallbit",
                     account=row.get("account", "investment"),
-                    symbol=row.get("symbol", ""),
-                    shares=float(row.get("shares", 0.0)),
-                    usd_value=float(row.get("usd_value", 0.0))
-                    if row.get("usd_value") is not None
-                    else None,
-                    pnl_percentage=None,
+                    symbol=symbol,
+                    shares=shares,
+                    current_price_usd=current_price_usd,
+                    usd_value=usd_value,
+                    avg_cost_usd=avg_cost_usd,
+                    cost_basis_usd=cost_basis_usd,
+                    unrealized_pnl_usd=unrealized_pnl_usd,
+                    pnl_percentage=pnl_percentage,
                     raw=row.get("raw", {}),
                 )
             )
