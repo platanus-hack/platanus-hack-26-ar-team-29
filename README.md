@@ -1,5 +1,8 @@
 # Atajo 🤑
 
+[![Backend Lint](https://github.com/platanus-hack/platanus-hack-26-ar-team-29/actions/workflows/backend-lint.yml/badge.svg)](https://github.com/platanus-hack/platanus-hack-26-ar-team-29/actions/workflows/backend-lint.yml)
+[![Frontend Lint](https://github.com/platanus-hack/platanus-hack-26-ar-team-29/actions/workflows/frontend-lint.yml/badge.svg)](https://github.com/platanus-hack/platanus-hack-26-ar-team-29/actions/workflows/frontend-lint.yml)
+
 **Track:** Agentic Money (Platanus Hack 26: Buenos Aires)
 
 <img src="./project-logo.png" alt="Project Logo" width="150" />
