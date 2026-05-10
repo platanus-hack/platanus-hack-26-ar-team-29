@@ -66,6 +66,10 @@ REQUEST_CREDENTIAL_TOOL_NAMES = {
 
 
 def requires_approval(tool_name: str) -> bool:
+    if tool_name == ASK_USER_QUESTION_TOOL:
+        return True
+    if tool_name in REQUEST_CREDENTIAL_TOOL_NAMES:
+        return True
     if tool_name in READ_WALLBIT_TOOLS:
         return False
     if tool_name in WRITE_WALLBIT_TOOLS:
@@ -188,6 +192,8 @@ class UserInteractionBridge:
         del options
 
         if self._event_sink is None:
+            import structlog
+            structlog.get_logger(__name__).error("request_credential_failed_no_sink_WTF")
             return PermissionResultDeny(
                 message="No credential channel is available.",
             )

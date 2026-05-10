@@ -33,7 +33,6 @@ def ui_mcp_server():
             },
             "kind": {
                 "type": "string",
-                "enum": ["seed_phrase", "private_key", "api_key", "secret"],
                 "description": (
                     "Tipo de dato — 'seed_phrase' para BIP-39 (textarea, mascara), "
                     "'private_key' para hex (input, mascara), 'api_key' / 'secret' para otros."
@@ -52,8 +51,7 @@ def ui_mcp_server():
                 ),
             },
         },
-        "required": ["title", "kind", "instructions"],
-        "additionalProperties": False,
+        "additionalProperties": True,
     },
 )
 async def request_credential(args: dict[str, Any]) -> dict[str, Any]:

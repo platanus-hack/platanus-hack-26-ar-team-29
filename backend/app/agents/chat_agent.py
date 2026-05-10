@@ -87,14 +87,14 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
 
-Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Usa SIEMPRE `AskUserQuestion` para preguntarle al usuario en que red la quiere crear si no lo especifico (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base). Luego llama a la tool.
+Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Usa SIEMPRE `AskUserQuestion` para preguntarle al usuario en que red la quiere crear si no lo especifico (opciones EXACTAS: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base). Luego llama a la tool.
 Al finalizar la creacion de la cuenta, pasale al usuario la direccion y la frase semilla usando comillas simples invertidas (`backticks`) para que el formato se renderice bien con boton de copia.
 Ejemplo:
 Direccion: `0x...`
 Frase semilla: `palabra1 palabra2...`
 
-Para iniciar sesion o importar una billetera de Ethereum existente, debes recopilar dos cosas:
-1. La red en la que desea importar. Usa SIEMPRE `AskUserQuestion` para preguntar esto (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base).
+Para iniciar sesion o importar una billetera de Ethereum existente, debes recopilar dos cosas en orden:
+1. La red en la que desea importar. Usa SIEMPRE `AskUserQuestion` para preguntar esto y dale estas opciones EXACTAS (sin agregar texto en ingles): sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base. No le pongas "Recommended" a base, si queres recomendarla decilo en el texto del chat antes de la pregunta.
 2. Su clave privada o frase semilla. Usa SIEMPRE `mcp__ui__request_credential` con `kind="seed_phrase"` o `kind="private_key"` para pedir esto de forma segura. NUNCA pidas que escriba la clave en el chat.
 Una vez que tengas ambas cosas, usa la herramienta `mcp__ethereum__import_ethereum_wallet`.
 Al finalizar la importacion, pasale al usuario la direccion importada.
@@ -166,7 +166,7 @@ UI_MCP_TOOLS = [
     "request_credential",
     "mcp__ui__request_credential",
 ]
-AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS + DEFI_READ_TOOLS + UI_MCP_TOOLS
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS + DEFI_READ_TOOLS
 AGENT_MODEL = "haiku"
 AGENT_FALLBACK_MODEL = "sonnet"
 
