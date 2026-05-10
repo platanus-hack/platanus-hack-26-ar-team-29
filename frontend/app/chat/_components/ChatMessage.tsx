@@ -1,8 +1,26 @@
-import { FileText, Image as ImageIcon } from "lucide-react";
+import { FileText, Image as ImageIcon, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import type { Message } from "../types";
 import { InputQuestion } from "./InputQuestion";
 import { PlanConfirmation } from "./PlanConfirmation";
+
+function CopyableCode({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-background px-2 py-0.5 border border-line text-accent font-mono text-[11px] shadow-sm">
+      <span className="truncate max-w-[200px] sm:max-w-xs">{text}</span>
+      <button onClick={handleCopy} className="text-muted hover:text-foreground transition-colors ml-1 p-0.5 rounded-sm hover:bg-surface active:scale-95" title="Copiar">
+        {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+      </button>
+    </span>
+  );
+}
 
 type MarkdownBlock =
   | { type: "paragraph"; text: string }
@@ -11,20 +29,25 @@ type MarkdownBlock =
 
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const boldPattern = /\*\*(.+?)\*\*/g;
+  const tokenPattern = /(\*\*.+?\*\*|```.+?```|`.+?`)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = boldPattern.exec(text)) !== null) {
+  while ((match = tokenPattern.exec(text)) !== null) {
     if (match.index > lastIndex) {
       nodes.push(text.slice(lastIndex, match.index));
     }
-    nodes.push(
-      <strong key={`${match.index}-${match[1]}`} className="font-semibold text-foreground">
-        {match[1]}
-      </strong>,
-    );
-    lastIndex = boldPattern.lastIndex;
+    const token = match[1];
+    if (token.startsWith('**') && token.endsWith('**')) {
+      nodes.push(<strong key={`${match.index}-bold`} className="font-semibold text-foreground">{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith('```') && token.endsWith('```')) {
+      const code = token.slice(3, -3).trim();
+      nodes.push(<CopyableCode key={`${match.index}-code3`} text={code} />);
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      const code = token.slice(1, -1);
+      nodes.push(<CopyableCode key={`${match.index}-code1`} text={code} />);
+    }
+    lastIndex = tokenPattern.lastIndex;
   }
 
   if (lastIndex < text.length) {

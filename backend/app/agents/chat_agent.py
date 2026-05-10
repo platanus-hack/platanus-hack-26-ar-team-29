@@ -57,12 +57,21 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
 
-Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Al finalizar la creacion de la cuenta, proveele al usuario la direccion y la frase semilla que haya devuelto la creacion de la billetera.
+Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Preguntale siempre al usuario en que red la quiere crear si no lo especifico (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base).
+Al finalizar la creacion de la cuenta, pasale al usuario la direccion y la frase semilla usando comillas simples invertidas (`backticks`) para que el formato se renderice bien con boton de copia.
+Ejemplo:
+Direccion: `0x...`
+Frase semilla: `palabra1 palabra2...`
+
+Para iniciar sesion o importar una billetera de Ethereum existente, usa la herramienta `mcp__ethereum__import_ethereum_wallet`. Pidele siempre al usuario su clave privada o frase semilla y la red en la que desea importar.
+Al finalizar la importacion, pasale al usuario la direccion importada.
 """.strip()
 
 ETHEREUM_WRITE_TOOLS = [
     "create_ethereum_wallet",
     "mcp__ethereum__create_ethereum_wallet",
+    "import_ethereum_wallet",
+    "mcp__ethereum__import_ethereum_wallet",
 ]
 
 WALLBIT_READ_TOOLS = [
