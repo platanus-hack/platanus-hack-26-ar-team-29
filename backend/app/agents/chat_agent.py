@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.agents.ethereum_tools import ethereum_mcp_server
 from app.agents.events import AgentEvent, error_event, format_tool_name, summarize_value
 from app.agents.interactions import UserInteractionBridge
 from app.agents.wallbit_tools import wallbit_mcp_server
@@ -39,7 +40,19 @@ Reglas de seguridad:
 Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 - Cuando tengas todos los datos necesarios para una compra/venta, **llama
   directamente** a la tool `mcp__wallbit__create_trade`. NO escribas en texto
-  "¿confirmás?" o "¿querés que compre X?" antes de llamar al tool.
+  "¿confirmás?", "¿querés que compre X?", ni preguntas similares antes de
+  llamar al tool. Llamar al tool es lo que dispara la confirmacion oficial.
+- NUNCA describas el mecanismo de confirmacion al usuario. No menciones
+  "modal", "botones", "Aprobar / Rechazar", "ventana", "popup" ni nada
+  parecido. La UI ya muestra esos controles por su cuenta — si los nombras
+  en texto, suena raro y rompe la experiencia.
+- Antes de la llamada al tool podes (y deberias) explicar en una o dos frases
+  cortas qué vas a hacer (símbolo, cantidad, precio estimado, costo total).
+  El turno tiene que terminar con la **invocacion del tool**, no con una
+  pregunta y no con una explicacion del flujo de confirmacion.
+- Si el usuario rechaza la operacion, respetalo y ofrece ajustar el plan.
+- Nunca digas que una operacion fue ejecutada hasta que el resultado del tool
+  lo confirme.
 - El backend intercepta la llamada al tool y le muestra al usuario un modal con
   botones **Aprobar / Rechazar**. Esa es la confirmacion oficial. Si en lugar
   de llamar al tool preguntas "¿confirmás?" en texto, el modal NUNCA aparece y
@@ -51,8 +64,23 @@ Flujo de trade (CRITICO — leelo y seguilo al pie de la letra):
 
 La herramienta de trading se llama `mcp__wallbit__create_trade`. Esta
 disponible y conectada — nunca digas lo contrario.
+
+Para crear una billetera de Ethereum, usa la herramienta `mcp__ethereum__create_ethereum_wallet`. Preguntale siempre al usuario en que red la quiere crear si no lo especifico (opciones: sepolia, holesky, polygon-amoy, arbitrum-sepolia, base-sepolia, base).
+Al finalizar la creacion de la cuenta, pasale al usuario la direccion y la frase semilla usando comillas simples invertidas (`backticks`) para que el formato se renderice bien con boton de copia.
+Ejemplo:
+Direccion: `0x...`
+Frase semilla: `palabra1 palabra2...`
+
+Para iniciar sesion o importar una billetera de Ethereum existente, usa la herramienta `mcp__ethereum__import_ethereum_wallet`. Pidele siempre al usuario su clave privada o frase semilla y la red en la que desea importar.
+Al finalizar la importacion, pasale al usuario la direccion importada.
 """.strip()
 
+ETHEREUM_WRITE_TOOLS = [
+    "create_ethereum_wallet",
+    "mcp__ethereum__create_ethereum_wallet",
+    "import_ethereum_wallet",
+    "mcp__ethereum__import_ethereum_wallet",
+]
 
 WALLBIT_READ_TOOLS = [
     "get_checking_balance",
@@ -70,7 +98,7 @@ WALLBIT_WRITE_TOOLS = [
 ]
 WALLBIT_TOOLS = WALLBIT_READ_TOOLS + WALLBIT_WRITE_TOOLS
 AGENT_UI_TOOLS = ["AskUserQuestion"]
-AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS
+AUTO_ALLOWED_TOOLS = WALLBIT_READ_TOOLS + ETHEREUM_WRITE_TOOLS
 AGENT_MODEL = "haiku"
 AGENT_FALLBACK_MODEL = "sonnet"
 
@@ -82,6 +110,31 @@ async def _allow_pre_tool_use_hook(
 ) -> dict[str, bool]:
     del input_data, tool_use_id, context
     return {"continue_": True}
+
+
+async def _fetch_unit_price_usd(args: dict[str, Any]) -> float | None:
+    """Best-effort fetch of an asset's current unit price for plan-card display.
+
+    Returns None on any failure — the approval flow must not block on it.
+    """
+    symbol = str(args.get("symbol") or "").upper()
+    if not symbol:
+        return None
+    try:
+        from app.agents.wallbit_tools import _request
+
+        resp = await _request("GET", f"/api/public/v1/assets/{symbol}")
+        outer = resp.get("data") if isinstance(resp, dict) else None
+        # Wallbit returns {"data": {"symbol": ..., "price": ...}} so we unwrap once.
+        body = (
+            outer.get("data")
+            if isinstance(outer, dict) and isinstance(outer.get("data"), dict)
+            else outer
+        )
+        price = body.get("price") if isinstance(body, dict) else None
+        return float(price) if isinstance(price, int | float) else None
+    except Exception:  # noqa: BLE001 — price fetch is best-effort.
+        return None
 
 
 class ChatAgentSession:
@@ -121,9 +174,10 @@ class ChatAgentSession:
             fallback_model=AGENT_FALLBACK_MODEL,
             system_prompt=self._system_prompt,
             include_partial_messages=True,
-            mcp_servers={"wallbit": wallbit_mcp_server()},
+            mcp_servers={"wallbit": wallbit_mcp_server(), "ethereum": ethereum_mcp_server()},
             strict_mcp_config=True,
             permission_mode="default",
+            tools=AGENT_UI_TOOLS,
             allowed_tools=AUTO_ALLOWED_TOOLS,
             can_use_tool=self._approval_bridge.can_use_tool,
             hooks={"PreToolUse": [pre_tool_use_hook]},
@@ -341,8 +395,6 @@ class ChatAgent:
             self.agent_tasks.add(task)
             task.add_done_callback(self.agent_tasks.discard)
 
-        full_text = []
-
         async for event in agent_session.send_user_message(user_content):
             if event.type == "agent_token":
                 await self.manager.broadcast_to_session(
@@ -381,9 +433,34 @@ class ChatAgent:
                 )
             elif event.type == "agent_message":
                 text = event.payload.get("text", "")
-                full_text.append(text)
+                if not text:
+                    continue
+                async with sessionmaker() as db:
+                    from app.persistence.repositories.chat import ChatRepository
+
+                    chat_repo = ChatRepository(db)
+                    msg = await chat_repo.create_message(
+                        session_id=session_id,
+                        user_id=user_id,
+                        author="agent",
+                        kind="text",
+                        content_blocks=[{"type": "text", "text": text}],
+                        turn_id=turn_id,
+                    )
+                    await db.commit()
+
+                    from app.services.chat import _message_to_api
+
+                    api_msg = _message_to_api(msg)
+
                 await self.manager.broadcast_to_session(
-                    session_id, {"type": "agent_message", "text": text}
+                    session_id,
+                    {
+                        "type": "chat_message",
+                        "session_id": str(session_id),
+                        "turn_id": str(turn_id),
+                        "message": api_msg,
+                    },
                 )
             elif event.type == "input_requested":
                 await self.manager.broadcast_to_session(
@@ -411,6 +488,24 @@ class ChatAgent:
                     },
                 )
             elif event.type == "approval_requested":
+                tool_name = event.payload["tool_name"]
+                args = event.payload.get("input") or {}
+
+                # For trade plans, fetch the live unit price so the plan card
+                # can show "Precio actual" + estimated cost before the user
+                # decides. Failure here must not block the approval flow.
+                estimated_unit_price: float | None = None
+                estimated_total: float | None = None
+                if tool_name in ("create_trade", "mcp__wallbit__create_trade"):
+                    estimated_unit_price = await _fetch_unit_price_usd(args)
+                    if estimated_unit_price is not None:
+                        shares = args.get("shares")
+                        amount = args.get("amount")
+                        if isinstance(shares, (int, float)) and shares > 0:
+                            estimated_total = estimated_unit_price * float(shares)
+                        elif isinstance(amount, (int, float)) and amount > 0:
+                            estimated_total = float(amount)
+
                 async with sessionmaker() as db:
                     from app.persistence.repositories.plans import PlanRepository
 
@@ -421,12 +516,14 @@ class ChatAgent:
                         origin_message_id=None,
                         steps_data=[
                             {
-                                "tool_name": event.payload["tool_name"],
-                                "args": event.payload["input"],
-                                "human_description_es": "Aprobar " + event.payload["tool_name"],
+                                "tool_name": tool_name,
+                                "args": args,
+                                "human_description_es": "Aprobar " + tool_name,
+                                "estimated_usd": estimated_total,
                             }
                         ],
                         expires_at=_dt.datetime.now(_dt.UTC) + _dt.timedelta(minutes=15),
+                        total_estimated_usd=estimated_total,
                     )
 
                     self._plan_to_approval[plan.id] = (session_id, event.payload["approval_id"])
@@ -447,13 +544,17 @@ class ChatAgent:
 
                 from app.services.plans import _plan_to_dict
 
+                plan_dict = _plan_to_dict(plan)
+                if estimated_unit_price is not None:
+                    plan_dict["estimated_unit_price_usd"] = estimated_unit_price
+
                 await self.manager.broadcast_to_session(
                     session_id,
                     {
                         "type": "plan_proposed",
                         "session_id": str(session_id),
                         "plan_id": str(plan.id),
-                        "plan": _plan_to_dict(plan),
+                        "plan": plan_dict,
                     },
                 )
             elif event.type == "error":
@@ -465,36 +566,6 @@ class ChatAgent:
                         "code": "AGENT_ERROR",
                     },
                 )
-
-        final_text = "".join(full_text)
-        if final_text:
-            async with sessionmaker() as db:
-                from app.persistence.repositories.chat import ChatRepository
-
-                chat_repo = ChatRepository(db)
-                msg = await chat_repo.create_message(
-                    session_id=session_id,
-                    user_id=user_id,
-                    author="agent",
-                    kind="text",
-                    content_blocks=[{"type": "text", "text": final_text}],
-                    turn_id=turn_id,
-                )
-                await db.commit()
-
-                from app.services.chat import _message_to_api
-
-                api_msg = _message_to_api(msg)
-
-            await self.manager.broadcast_to_session(
-                session_id,
-                {
-                    "type": "chat_message",
-                    "session_id": str(session_id),
-                    "turn_id": str(turn_id),
-                    "message": api_msg,
-                },
-            )
 
         await self.manager.broadcast_to_session(
             session_id,

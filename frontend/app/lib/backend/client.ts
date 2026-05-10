@@ -4,10 +4,12 @@ import type {
   ChatMessageDto,
   ChatSession,
   PlanActionResponse,
+  PositionRow,
   ProviderConnection,
   SendMessageResponse,
   TradePlan,
   TransactionRow,
+  UserProfile,
 } from "./types";
 
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
@@ -114,10 +116,10 @@ export const backendApi = {
     return requestJson<ChatMessageDto[]>(`/chat/sessions/${sessionId}/messages`);
   },
 
-  sendChatMessage(sessionId: string, content: string) {
+  sendChatMessage(sessionId: string, content: string, attachments?: { name: string, type: string, url?: string }[]) {
     return requestJson<SendMessageResponse>(`/chat/sessions/${sessionId}/messages`, {
       method: "POST",
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, attachments }),
     });
   },
 
@@ -162,6 +164,20 @@ export const backendApi = {
 
   getBalances() {
     return requestJson<BalanceRow[]>("/balances");
+  },
+
+  getPositions() {
+    return requestJson<PositionRow[]>("/positions");
+  },
+
+  getProfile() {
+    return requestJson<UserProfile>("/profile");
+  },
+
+  generateProfile() {
+    return requestJson<UserProfile>("/profile/generate", {
+      method: "POST",
+    });
   },
 
   getTransactions(limit = 50) {

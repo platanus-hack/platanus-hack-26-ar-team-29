@@ -46,9 +46,8 @@ WRITE_WALLBIT_TOOLS = {
     "mcp__wallbit__create_trade",
 }
 
-from typing import Union
 
-ApprovalResult = Union[PermissionResultAllow, PermissionResultDeny]
+ApprovalResult = PermissionResultAllow | PermissionResultDeny
 EventSink = Callable[[AgentEvent], Awaitable[None]]
 ASK_USER_QUESTION_TOOL = "AskUserQuestion"
 
@@ -97,9 +96,7 @@ class UserInteractionBridge:
         input_data: dict[str, Any]
     ) -> ApprovalResult:
         if self._event_sink is None:
-            return PermissionResultDeny(
-                message="No approval channel is available for this action."
-            )
+            return PermissionResultDeny(message="No approval channel is available for this action.")
 
         approval_id = uuid.uuid4().hex
         loop = asyncio.get_running_loop()

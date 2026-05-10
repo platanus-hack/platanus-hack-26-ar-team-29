@@ -40,12 +40,15 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
     provider_registry.register(wallbit_provider)
     provider_registry.register(ethereum_provider)
 
-
     chat_agent = ChatAgent(
         manager=connection_manager,
         agent_tasks=agent_tasks,
     )
 
+    from app.workers.poller import global_poll_loop
+
+    poller_task = asyncio.create_task(global_poll_loop())
+    agent_tasks.add(poller_task)
 
     app.state.connection_manager = connection_manager
     app.state.provider_registry = provider_registry

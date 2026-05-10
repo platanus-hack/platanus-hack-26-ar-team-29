@@ -1,11 +1,12 @@
 from fastapi import APIRouter
 
-from app.api.rest import chat, connections, defi, onchain, plans, portfolio
+from app.api.rest import chat, connections, defi, onchain, plans, portfolio, profile
 from app.api.ws import chat as ws_chat
 
 api_router = APIRouter()
 api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(plans.router, prefix="/plans", tags=["plans"])
+api_router.include_router(profile.router, prefix="/profile", tags=["profile"])
 api_router.include_router(connections.router, prefix="/connections", tags=["connections"])
 # /connections/{id}/onchain/* routes — separate file for clarity, mounted under
 # the same /connections prefix so URL paths match the artifact (02-3 §5.13.2).

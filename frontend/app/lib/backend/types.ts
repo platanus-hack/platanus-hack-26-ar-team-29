@@ -27,6 +27,11 @@ export interface ChatMessageDto {
   kind?: BackendMessageKind;
   plan_id?: string | null;
   created_at: string;
+  attachments?: {
+    name: string;
+    type: string;
+    url?: string;
+  }[];
 }
 
 export interface SendMessageResponse {
@@ -66,6 +71,7 @@ export interface TradePlan {
   id: string;
   state: PlanState;
   total_estimated_usd?: number | null;
+  estimated_unit_price_usd?: number | null;
   expires_at?: string;
   created_at?: string;
   steps: TradePlanStep[];
@@ -87,16 +93,42 @@ export interface ProviderConnection {
 }
 
 export interface BalanceRow {
-  provider?: string;
-  connection_type?: string;
-  account_type?: string;
-  currency?: string;
-  symbol?: string;
-  asset_type?: string;
-  amount?: number;
-  quantity?: number;
-  value_usd?: number | null;
-  [key: string]: unknown;
+  provider: string;
+  account: string;
+  symbol: string;
+  currency: string;
+  amount: number;
+  usd_value?: number | null;
+  raw?: Record<string, unknown>;
+}
+
+export interface PositionRow {
+  provider: string;
+  account: string;
+  symbol: string;
+  shares: number;
+  usd_value?: number | null;
+  pnl_percentage?: number | null;
+  raw?: Record<string, unknown>;
+}
+
+export interface UserProfile {
+  is_dirty: boolean;
+  last_recomputed_at?: string | null;
+  summaries: {
+    spending_behavior?: string;
+    investment_style?: string;
+  };
+  risk_profile: {
+    level?: string;
+    score_1_to_10?: number;
+    reasoning?: string;
+  };
+  portfolio_metrics: {
+    estimated_net_worth_usd?: number;
+    fiat_percentage?: number;
+    investments_percentage?: number;
+  };
 }
 
 export interface TransactionRow {

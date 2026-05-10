@@ -358,9 +358,7 @@ class EthereumClient:
             contract = w3.eth.contract(
                 address=Web3.to_checksum_address(pool_address), abi=AAVE_V3_POOL_ABI
             )
-            data = contract.functions.getReserveData(
-                Web3.to_checksum_address(asset_address)
-            ).call()
+            data = contract.functions.getReserveData(Web3.to_checksum_address(asset_address)).call()
             # Tuple positions match the struct definition in aave.py.
             return {
                 "configuration": int(data[0][0]),

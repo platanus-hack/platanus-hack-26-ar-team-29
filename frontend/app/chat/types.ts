@@ -28,6 +28,12 @@ export interface InputRequest {
   selectedLabels?: string[];
 }
 
+export interface Attachment {
+  name: string;
+  type: string;
+  url?: string;
+}
+
 export interface Message {
   id: string;
   role: ChatRole;
@@ -38,4 +44,5 @@ export interface Message {
   plan?: TradePlan;
   tools?: ToolCall[];
   input?: InputRequest;
+  attachments?: Attachment[];
 }

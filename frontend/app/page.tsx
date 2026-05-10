@@ -30,6 +30,7 @@ function dtoToMessage(dto: ChatMessageDto, plan?: TradePlan): Message {
         kind: dto.kind === 'plan_proposal' ? 'plan_proposal' : 'text',
         planId: dto.plan_id,
         plan,
+        attachments: dto.attachments,
     };
 }
 
@@ -62,13 +63,22 @@ export default function ChatPage() {
 
     const updatePlan = useCallback(
         (planId: string, updater: (plan: TradePlan) => TradePlan) => {
-            setMessages((prev) =>
-                prev.map((message) =>
-                    message.plan?.id === planId
-                        ? { ...message, plan: updater(message.plan) }
-                        : message,
-                ),
-            );
+            setMessages((prev) => {
+                const next = prev.map((message) => {
+                    if (message.plan?.id !== planId) return message;
+                    const newPlan = updater(message.plan);
+                    const wasPending = message.plan.state === 'pending_approval';
+                    const isPending = newPlan.state === 'pending_approval';
+                    // Pending plans pin to the bottom (Date.now() + 1e9).
+                    // Once resolved, drop the pin so subsequent responses sort after.
+                    // Re-pin if the plan flips back to pending (e.g., error rollback).
+                    let createdAt = message.createdAt;
+                    if (isPending && !wasPending) createdAt = Date.now() + 1e9;
+                    else if (!isPending && wasPending) createdAt = Date.now();
+                    return { ...message, plan: newPlan, createdAt };
+                });
+                return sortMessages(next);
+            });
         },
         [],
     );
@@ -196,11 +206,13 @@ export default function ChatPage() {
             }
 
             if (frame.type === 'plan_proposed') {
+                // Plan cards are the actionable item — pin them after any
+                // current or future end-of-turn agent message in this session.
                 upsertMessage({
                     id: `plan-${frame.plan_id}`,
                     role: 'assistant',
                     content: '',
-                    createdAt: Date.now(),
+                    createdAt: Date.now() + 1e9,
                     kind: 'plan_proposal',
                     planId: frame.plan_id,
                     plan: frame.plan,
@@ -355,20 +367,28 @@ export default function ChatPage() {
         };
     }, [handleWsFrame, currentSessionId]);
 
-    async function handleSend(text: string) {
+    async function handleSend(text: string, files?: File[]) {
         if (!currentSessionId) return;
+
+        const attachments = files?.map(f => ({
+            name: f.name,
+            type: f.type,
+            url: URL.createObjectURL(f)
+        }));
+
         const userMsg: Message = {
             id: makeId(),
             role: 'user',
             content: text,
             createdAt: Date.now(),
+            attachments,
         };
         upsertMessage(userMsg);
         setIsTyping(true);
         setError(null);
 
         try {
-            await backendApi.sendChatMessage(currentSessionId, text);
+            await backendApi.sendChatMessage(currentSessionId, text, attachments);
         } catch (err) {
             appendSystemMessage(errorText(err));
             setIsTyping(false);
@@ -436,21 +456,16 @@ export default function ChatPage() {
 
     return (
         <Sidebar>
-            <div className='flex h-[100dvh] w-full flex-col bg-background md:h-full'>
-                <header className='flex min-h-[74px] items-center border-b border-line bg-background px-10'>
+            <div className='flex h-full w-full flex-col bg-background'>
+                <header className='hidden md:flex min-h-[74px] items-center border-b border-line bg-background px-10 flex-shrink-0'>
                     <div className='flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between'>
                         <div className='min-w-0'>
                             <h1 className='text-2xl font-semibold tracking-tight text-foreground'>
                                 Open<span className='text-accent'>Fi</span>{' '}
-                                Chat
+                                <span className='text-muted'>Agent</span>
                             </h1>
                         </div>
                     </div>
-                    {error && (
-                        <div className='mt-2 rounded-xl bg-error/10 border border-error/20 px-3 py-2 text-sm leading-6 text-error'>
-                            {error}
-                        </div>
-                    )}
                 </header>
                 <ChatThread
                     messages={messages}

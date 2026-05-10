@@ -1,0 +1,10 @@
+INFO:     Started server process [257280]
+INFO:     Waiting for application startup.
+[2m2026-05-09T22:42:20.602968Z[0m [[32m[1minfo     [0m] [1mapp_startup                   [0m [36menv[0m=[35mdev[0m
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+[2m2026-05-09T22:42:23.936366Z[0m [[32m[1minfo     [0m] [1mapp_shutdown                  [0m
+INFO:     Application shutdown complete.
+INFO:     Finished server process [257280]
