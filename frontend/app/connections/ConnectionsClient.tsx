@@ -211,16 +211,14 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
               {item.status === "Conectado" && (
                 <button
                   type="button"
-                  disabled={isDisconnecting || isCreating} // Disable if disconnecting or creating
+                  disabled={isDisconnecting || isCreating || item.id === "wallbit"} // Disable if disconnecting or creating
                   onClick={() => {
                     if (item.id === "ethereum_custodial") {
                       handleDisconnectCryptoWallet(item.id);
-                    } else {
-                      alert("Desconexión no implementada para este tipo.");
                     }
                   }}
                   className={`flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
-                    isDisconnecting || isCreating
+                    isDisconnecting || isCreating || item.id === "wallbit"
                       ? "bg-background border-line text-muted opacity-50 cursor-not-allowed"
                       : "border-destructive/25 bg-background text-destructive hover:bg-destructive/10 hover:border-destructive/50"
                   }`}
