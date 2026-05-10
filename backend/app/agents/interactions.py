@@ -56,6 +56,11 @@ WRITE_DEFI_TOOLS = {
     "mcp__defi__withdraw",
 }
 
+WRITE_ETHEREUM_TOOLS = {
+    "send_onchain",
+    "mcp__ethereum__send_onchain",
+}
+
 ApprovalResult = PermissionResultAllow | PermissionResultDeny
 EventSink = Callable[[AgentEvent], Awaitable[None]]
 ASK_USER_QUESTION_TOOL = "AskUserQuestion"
@@ -75,6 +80,8 @@ def requires_approval(tool_name: str) -> bool:
     if tool_name in WRITE_WALLBIT_TOOLS:
         return True
     if tool_name in WRITE_DEFI_TOOLS:
+        return True
+    if tool_name in WRITE_ETHEREUM_TOOLS:
         return True
     return tool_name.startswith("mcp__wallbit__")
 

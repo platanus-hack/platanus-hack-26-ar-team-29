@@ -77,16 +77,13 @@ export function ProviderLogo({ provider, size = 'md', className = '' }: Provider
     if (key === 'wallbit') {
         return (
             <span
-                className={`${base} bg-white`}
+                className={`${base} bg-white overflow-hidden`}
                 title='Wallbit'
             >
-                <Image
-                    src='https://wallbit.io/favicon.ico'
+                <img
+                    src='/wallbit-logo.png'
                     alt='Wallbit'
-                    width={24}
-                    height={24}
-                    unoptimized
-                    className='h-[65%] w-[65%] rounded-full'
+                    className='h-full w-full object-cover'
                 />
             </span>
         );

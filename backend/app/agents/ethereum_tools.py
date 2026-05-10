@@ -14,6 +14,7 @@ def ethereum_mcp_server():
         tools=[
             create_ethereum_wallet,
             import_ethereum_wallet,
+            send_onchain,
         ],
     )
 
@@ -130,3 +131,85 @@ async def import_ethereum_wallet(args: dict[str, Any]) -> dict[str, Any]:
         }
 
     return {"content": [{"type": "text", "text": json.dumps(payload)}], "data": payload}
+
+async def _resolve_eth_connection_id() -> str | None:
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.request(
+            "GET",
+            "http://127.0.0.1:8000/api/v1/connections",
+        )
+    try:
+        conns = response.json()
+    except ValueError:
+        return None
+    
+    if isinstance(conns, list):
+        for c in conns:
+            if c.get("connection_type") == "ethereum_custodial" and c.get("status") == "healthy":
+                return str(c["id"])
+    return None
+
+@tool(
+    "send_onchain",
+    "Realiza una transferencia de criptomonedas (ETH o un token ERC20 como USDC) hacia otra direccion en la red. ESTA ES UNA OPERACION QUE MUEVE DINERO — al llamar la tool el backend pide confirmacion del usuario. Llama directamente a la tool. No necesitas pedir conexion.",
+    {
+        "type": "object",
+        "properties": {
+            "asset": {"type": "string", "description": "El ticker o simbolo de la cripto (e.g. 'ETH', 'USDC')"},
+            "to": {"type": "string", "description": "La direccion hexadecimal de destino ('0x...')"},
+            "amount": {"type": "string", "description": "El monto a enviar (en formato texto con decimales, e.g. '0.5' o '150.25')"},
+            "gas_speed": {"type": "string", "enum": ["slow", "standard", "fast"], "description": "Opcional: velocidad/comision del gas a pagar. Por defecto 'standard'."}
+        },
+        "required": ["asset", "to", "amount"],
+        "additionalProperties": False,
+    },
+)
+async def send_onchain(args: dict[str, Any]) -> dict[str, Any]:
+    connection_id = await _resolve_eth_connection_id()
+    if not connection_id:
+        return {
+            "content": [{"type": "text", "text": "No se encontro ninguna billetera Ethereum conectada."}],
+            "is_error": True,
+        }
+
+    asset = args.get("asset")
+    to = args.get("to")
+    amount = args.get("amount")
+    gas_speed = args.get("gas_speed", "standard")
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.request(
+            "POST",
+            f"http://127.0.0.1:8000/api/v1/connections/{connection_id}/onchain/transfer",
+            json={
+                "asset": asset,
+                "to": to,
+                "amount": amount,
+                "gas_speed": gas_speed,
+            },
+        )
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {"raw": response.text}
+
+    if response.is_error:
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"Error realizando transferencia:\nStatus: {response.status_code}\nDetalles:\n{json.dumps(payload, indent=2)}",
+                }
+            ],
+            "is_error": True,
+        }
+
+    return {
+        "content": [
+            {
+                "type": "text",
+                "text": f"Transferencia enviada satisfactoriamente:\n{json.dumps(payload, indent=2)}",
+            }
+        ],
+        "data": payload,
+    }
