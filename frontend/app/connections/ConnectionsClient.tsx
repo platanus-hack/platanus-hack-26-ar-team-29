@@ -19,10 +19,49 @@ export interface Connection {
 export function ConnectionsClient({ initialConnections, url }: { initialConnections: Connection[], url: string }) {
   const [connections, setConnections] = useState(initialConnections);
   const [isCreating, setIsCreating] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false); // New state for disconnecting
   const [mnemonicData, setMnemonicData] = useState<{ mnemonic: string, address: string } | null>(null);
 
   const ethereumConnection = connections.find(c => c.connection_type === "ethereum_custodial");
   const wallbitConnection = connections.find(c => c.connection_type === "wallbit");
+
+  const handleDisconnectCryptoWallet = useCallback(async (connectionId: string) => {
+    setIsDisconnecting(true); // Set disconnecting state
+    const isConfirmed = window.confirm(
+      "¿Estás seguro de que quieres desconectar esta wallet? Se eliminará tu clave privada/frase semilla de la base de datos y no podrás recuperarla."
+    );
+
+    if (isConfirmed) {
+      try {
+        const res = await fetch(`${url}/api/v1/connections/${connectionId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (res.ok) {
+          // Refresh connections
+          const refreshRes = await fetch(`${url}/api/v1/connections`, { cache: 'no-store' });
+          if (refreshRes.ok) {
+            setConnections(await refreshRes.json());
+          } else {
+            alert("Error al refrescar la lista de conexiones después de desconectar.");
+          }
+        } else {
+          const errorData = await res.json();
+          alert(`Error al desconectar: ${errorData.error?.message_es || "Fallo al desconectar la wallet"}`);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error de conexión al intentar desconectar.");
+      } finally {
+        setIsDisconnecting(false); // Reset disconnecting state
+      }
+    } else {
+      setIsDisconnecting(false); // Reset disconnecting state if cancelled
+    }
+  }, [url, setConnections]); // Dependency array includes url and setConnections
 
   const displayList = [
     {
@@ -111,24 +150,55 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                 {item.status}
               </span>
             </div>
-            <button
-              type="button"
-              disabled={item.status === "Conectado" || item.status === "Próximamente" || isCreating}
-              onClick={() => {
-                if (item.id === "ethereum_custodial") {
-                  handleCreateEthereum();
-                } else if (item.id === "wallbit") {
-                  alert("Para conectar Wallbit, se necesita el API key (no implementado en esta vista aún).");
+
+            {/* Buttons section */}
+            <div className="mt-6 flex gap-3">
+              {/* Connect/Connected Button */}
+              <button
+                type="button"
+                disabled={
+                  item.status !== "No conectado" || // Disable if not "No conectado"
+                  isCreating ||
+                  isDisconnecting
                 }
-              }}
-              className={`mt-6 w-full rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
-                item.status === "Conectado" || item.status === "Próximamente" 
-                  ? "bg-background border-line text-muted opacity-50 cursor-not-allowed" 
-                  : "border-accent/25 bg-background text-muted hover:bg-accent/10 hover:text-foreground hover:border-accent/50"
-              }`}
-            >
-              {isCreating && item.id === "ethereum_custodial" ? "Creando..." : item.status === "Conectado" ? "Conectado" : "Conectar"}
-            </button>
+                onClick={() => {
+                  if (item.id === "ethereum_custodial") {
+                    handleCreateEthereum();
+                  } else if (item.id === "wallbit") {
+                    alert("Para conectar Wallbit, se necesita el API key (no implementado en esta vista aún).");
+                  }
+                }}
+                className={`flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
+                  item.status !== "No conectado" || isCreating || isDisconnecting
+                    ? "bg-background border-line text-muted opacity-50 cursor-not-allowed"
+                    : "border-accent/25 bg-background text-muted hover:bg-accent/10 hover:text-foreground hover:border-accent/50"
+                }`}
+              >
+                {isCreating && item.id === "ethereum_custodial" ? "Creando..." : item.status === "Conectado" ? "Conectado" : "Conectar"}
+              </button>
+
+              {/* Disconnect Button */}
+              {item.status === "Conectado" && (
+                <button
+                  type="button"
+                  disabled={isDisconnecting || isCreating} // Disable if disconnecting or creating
+                  onClick={() => {
+                    if (item.id === "ethereum_custodial") {
+                      handleDisconnectCryptoWallet(item.id);
+                    } else {
+                      alert("Desconexión no implementada para este tipo.");
+                    }
+                  }}
+                  className={`flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
+                    isDisconnecting || isCreating
+                      ? "bg-background border-line text-muted opacity-50 cursor-not-allowed"
+                      : "border-destructive/25 bg-background text-destructive hover:bg-destructive/10 hover:border-destructive/50"
+                  }`}
+                >
+                  Desconectar
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
