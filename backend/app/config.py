@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     env: str = os.getenv("ENV", "dev")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
-    cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+    cors_origins: str = os.getenv("CORS_ORIGINS", "*")
 
     database_url: str = os.getenv(
         "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/atajo"
