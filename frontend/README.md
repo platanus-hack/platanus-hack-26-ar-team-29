@@ -1,41 +1,54 @@
 # Atajo Frontend
 
-Este es el frontend de **Atajo**, un agente financiero conversacional construido para Platanus Hack 26 (Buenos Aires).
+Frontend for **Atajo** — a Spanish-first conversational AI agent that lives on top of an account-agnostic personal-finance backend. Built for **Platanus Hack 26 (Buenos Aires)** in the *Agentic Money* track.
 
-## Stack
+## Status
 
-- Framework: [Next.js 15](https://nextjs.org) (App Router).
-- Runtime UI: React 19.
-- Lenguaje: TypeScript.
-- Estilos: Tailwind CSS v4.
+**MVP chat interface running.** Integrates with the backend REST and WebSocket APIs to support real-time conversational agent interactions and plan approvals.
 
-## Desarrollo Local
+## Prerequisites
 
-Primero, instala las dependencias usando [Bun](https://bun.sh/):
+- **Bun** — `curl -fsSL https://bun.sh/install | bash`
+- Node.js (v18+)
+
+## Quick start
 
 ```bash
+# 1. From repo root
+cd frontend
+
+# 2. Install dependencies
 bun install
-```
 
-Luego inicia el servidor de desarrollo:
-
-```bash
+# 3. Start development server
 bun dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación.
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-### Variables de Entorno
+### Environment variables
 
-El frontend requiere que el backend (FastAPI) esté corriendo. Configura estas variables (por defecto apuntan a localhost si no las defines, pero es buena práctica tenerlas):
+The frontend requires the backend (FastAPI) to be running. Configure these variables (they default to localhost if not defined, but it's good practice to have them explicitly):
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_WS_BASE_URL=ws://localhost:8000
 ```
 
-## Arquitectura y Contexto
+## Common commands
 
-Por favor lee el archivo `FRONTEND_CONTEXT.md` en este mismo directorio. Contiene todas las reglas arquitectónicas, los contratos de la API (REST y WebSockets) que usa el frontend y el estado de la implementación actual.
+```bash
+bun dev          # Start development server
+bun run build    # Build for production
+bun run lint     # Run ESLint
+```
 
-Para instrucciones sobre cómo los LLM deben trabajar con esta versión de Next.js, revisa `AGENTS.md`.
+All commands run from `frontend/`.
+
+## Documentation
+
+- [`CLAUDE.md`](./CLAUDE.md) — frontend-specific guidelines, architecture, and context.
+- [`AGENTS.md`](./AGENTS.md) — Next.js 15 specific instructions for LLMs.
+- [`../.opencode/artifacts/`](../.opencode/artifacts/) — locked design contracts:
+  - `02-2_frontend_design.md` — frontend surface inventory
+  - `02-3_api_surface.md` — REST + WebSocket contract (authoritative for endpoint shapes)
