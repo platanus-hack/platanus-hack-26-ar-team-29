@@ -66,6 +66,8 @@ REQUEST_CREDENTIAL_TOOL_NAMES = {
 
 
 def requires_approval(tool_name: str) -> bool:
+    if tool_name == ASK_USER_QUESTION_TOOL:
+        return True
     if tool_name in REQUEST_CREDENTIAL_TOOL_NAMES:
         return True
     if tool_name in READ_WALLBIT_TOOLS:
