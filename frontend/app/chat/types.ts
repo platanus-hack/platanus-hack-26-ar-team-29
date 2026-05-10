@@ -28,6 +28,16 @@ export interface InputRequest {
   selectedLabels?: string[];
 }
 
+export interface CredentialRequest {
+  requestId: string;
+  title: string;
+  instructions: string;
+  kind: string;
+  placeholder?: string | null;
+  resolved?: boolean;
+  cancelled?: boolean;
+}
+
 export interface Attachment {
   name: string;
   type: string;
@@ -39,10 +49,11 @@ export interface Message {
   role: ChatRole;
   content: string;
   createdAt: number;
-  kind?: "text" | "plan_proposal" | "stream" | "error" | "input_request";
+  kind?: "text" | "plan_proposal" | "stream" | "error" | "input_request" | "credential_request";
   planId?: string | null;
   plan?: TradePlan;
   tools?: ToolCall[];
   input?: InputRequest;
+  credential?: CredentialRequest;
   attachments?: Attachment[];
 }

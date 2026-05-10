@@ -156,6 +156,15 @@ export type BackendWsFrame =
   | { type: "chat_message"; session_id: string; turn_id: string; message: ChatMessageDto }
   | { type: "plan_proposed"; session_id: string; turn_id: string; plan_id: string; plan: TradePlan }
   | {
+      type: "plan_update";
+      session_id: string;
+      plan_id: string;
+      state: PlanState;
+      step_id?: string | null;
+      summary?: string | null;
+      error?: string | null;
+    }
+  | {
       type: "input_resolved";
       session_id: string;
       turn_id: string;

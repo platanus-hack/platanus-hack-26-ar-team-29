@@ -10,14 +10,18 @@ export function ChatThread({
     busyPlanId,
     onResolveInput,
     busyInputId,
+    onResolveCredential,
+    busyCredentialId,
 }: {
     messages: Message[];
     isTyping: boolean;
     onApprovePlan?: (planId: string) => void;
     onRejectPlan?: (planId: string) => void;
     busyPlanId?: string | null;
-    onResolveInput?: (inputId: string, selectedIds: string[]) => void;
-    busyInputId?: string | null;
+  onResolveInput?: (inputId: string, selectedIds: string[]) => void;
+  busyInputId?: string | null;
+  onResolveCredential?: (requestId: string, value: string | null) => void;
+  busyCredentialId?: string | null;
 }) {
     const ref = useRef<HTMLDivElement>(null);
 
@@ -48,15 +52,17 @@ export function ChatThread({
                     </div>
                 )}
                 {messages.map((m) => (
-                    <ChatMessage
-                        key={m.id}
-                        message={m}
-                        onApprovePlan={onApprovePlan}
-                        onRejectPlan={onRejectPlan}
-                        busyPlanId={busyPlanId}
-                        onResolveInput={onResolveInput}
-                        busyInputId={busyInputId}
-                    />
+            <ChatMessage
+              key={m.id}
+              message={m}
+              onApprovePlan={onApprovePlan}
+              onRejectPlan={onRejectPlan}
+              busyPlanId={busyPlanId}
+              onResolveInput={onResolveInput}
+              busyInputId={busyInputId}
+              onResolveCredential={onResolveCredential}
+              busyCredentialId={busyCredentialId}
+            />
                 ))}
                 {isTyping && (
                     <div className='flex justify-start'>

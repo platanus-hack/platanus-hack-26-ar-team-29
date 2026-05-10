@@ -53,6 +53,7 @@ export default function ChatPage() {
     const [isTyping, setIsTyping] = useState(false);
     const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
     const [busyInputId, setBusyInputId] = useState<string | null>(null);
+    const [busyCredentialId, setBusyCredentialId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const upsertMessage = useCallback((message: Message) => {
@@ -304,7 +305,7 @@ export default function ChatPage() {
                                   input: {
                                       ...m.input,
                                       resolved: true,
-                                      selectedLabels: frame.selected_options,
+                                      selectedLabels: Array.isArray(frame.selected_options) ? frame.selected_options : [frame.selected_options],
                                   },
                               }
                             : m,
@@ -510,6 +511,21 @@ export default function ChatPage() {
         }
     }
 
+    async function resolveCredential(requestId: string, value: string | null) {
+        if (!currentSessionId) return;
+        setBusyCredentialId(requestId);
+        setError(null);
+        setIsTyping(true);
+        try {
+            await backendApi.resolveCredential(currentSessionId, requestId, value);
+        } catch (err) {
+            appendSystemMessage(errorText(err));
+            setIsTyping(false);
+        } finally {
+            setBusyCredentialId(null);
+        }
+    }
+
     async function rejectPlan(planId: string) {
         setBusyPlanId(planId);
         setError(null);
@@ -553,13 +569,15 @@ export default function ChatPage() {
                     </div>
                 </header>
                 <ChatThread
-                    messages={visibleMessages}
+                    messages={messages}
                     isTyping={isTyping || isBooting}
                     onApprovePlan={approvePlan}
                     onRejectPlan={rejectPlan}
                     busyPlanId={busyPlanId}
                     onResolveInput={resolveInput}
                     busyInputId={busyInputId}
+                    onResolveCredential={resolveCredential}
+                    busyCredentialId={busyCredentialId}
                 />
                 <ChatInput
                     onSend={handleSend}
