@@ -22,6 +22,16 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
   const [isDisconnecting, setIsDisconnecting] = useState(false); // New state for disconnecting
   const [mnemonicData, setMnemonicData] = useState<{ mnemonic: string, address: string } | null>(null);
 
+  const [copiedListId, setCopiedListId] = useState<string | null>(null);
+  const [copiedModalAddress, setCopiedModalAddress] = useState(false);
+  const [copiedModalMnemonic, setCopiedModalMnemonic] = useState(false);
+
+  const copyToClipboard = (text: string, setter: (val: any) => void, val: any, clearVal: any) => {
+    navigator.clipboard.writeText(text);
+    setter(val);
+    setTimeout(() => setter(clearVal), 2000);
+  };
+
   const ethereumConnection = connections.find(c => c.connection_type === "ethereum_custodial");
   const wallbitConnection = connections.find(c => c.connection_type === "wallbit");
 
@@ -140,14 +150,15 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                         <>
                           {item.description}
                           <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(ethereumConnection.address);
-                              alert('Dirección copiada al portapapeles!');
-                            }}
-                            className="text-accent hover:text-accent/80"
+                            onClick={() => copyToClipboard(ethereumConnection.address!, setCopiedListId, item.id, null)}
+                            className="text-accent hover:text-accent/80 transition-colors"
                             aria-label="Copiar dirección"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                            {copiedListId === item.id ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                            )}
                           </button>
                         </>
                       ) : (
@@ -232,14 +243,15 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                 <div className="flex items-center gap-2">
                   <code className="bg-accent/10 px-2 py-1 rounded text-accent flex-1 break-all">{mnemonicData.address}</code>
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(mnemonicData.address);
-                      alert('Dirección copiada al portapapeles!');
-                    }}
-                    className="shrink-0 p-1.5 bg-accent/10 text-accent rounded hover:bg-accent/20"
+                    onClick={() => copyToClipboard(mnemonicData.address, setCopiedModalAddress, true, false)}
+                    className="shrink-0 p-1.5 bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors"
                     title="Copiar dirección"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                    {copiedModalAddress ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                    )}
                   </button>
                 </div>
               </div>
@@ -252,14 +264,15 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                     </p>
                   </div>
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(mnemonicData.mnemonic);
-                      alert('Frase semilla copiada al portapapeles!');
-                    }}
-                    className="shrink-0 p-1.5 bg-warning/20 text-warning rounded hover:bg-warning/30"
+                    onClick={() => copyToClipboard(mnemonicData.mnemonic, setCopiedModalMnemonic, true, false)}
+                    className="shrink-0 p-1.5 bg-warning/20 text-warning rounded hover:bg-warning/30 transition-colors"
                     title="Copiar frase semilla"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                    {copiedModalMnemonic ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
+                    )}
                   </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-3">
