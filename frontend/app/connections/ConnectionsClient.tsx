@@ -32,8 +32,8 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
     setTimeout(() => setter(clearVal), 2000);
   };
 
-  const ethereumConnection = connections.find(c => c.connection_type === "ethereum_custodial");
   const wallbitConnection = connections.find(c => c.connection_type === "wallbit");
+  const ethereumConnections = connections.filter(c => c.connection_type === "ethereum_custodial");
 
   const handleDisconnectCryptoWallet = useCallback(async (connectionId: string) => {
     setIsDisconnecting(true); // Set disconnecting state
@@ -76,18 +76,34 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
   const displayList = [
     {
       id: "wallbit",
+      connectionId: wallbitConnection?.id,
       name: "Wallbit",
       status: wallbitConnection ? "Conectado" : "No conectado",
       description: wallbitConnection ? "API key validada" : "Conectá tu cuenta de Wallbit",
     },
-    {
-      id: "ethereum_custodial",
-      name: "Wallet Ethereum",
-      status: ethereumConnection ? "Conectado" : "No conectado",
-      description: ethereumConnection?.address ? `${ethereumConnection.address.slice(0, 6)}...${ethereumConnection.address.slice(-4)} (${(ethereumConnection.network || "sepolia").charAt(0).toUpperCase() + (ethereumConnection.network || "sepolia").slice(1)})` : "Creá una wallet custodial",
-    },
+    // If no ethereum connections exist, show a single placeholder to connect one.
+    // Otherwise, map all existing ethereum connections.
+    ...(ethereumConnections.length > 0 
+      ? ethereumConnections.map((ethConn) => ({
+          id: "ethereum_custodial",
+          connectionId: ethConn.id,
+          name: "Wallet Ethereum",
+          status: "Conectado",
+          address: ethConn.address,
+          description: ethConn.address ? `${ethConn.address.slice(0, 6)}...${ethConn.address.slice(-4)} (${(ethConn.network || "sepolia").charAt(0).toUpperCase() + (ethConn.network || "sepolia").slice(1)})` : "Wallet conectada",
+        }))
+      : [{
+          id: "ethereum_custodial",
+          connectionId: undefined,
+          name: "Wallet Ethereum",
+          status: "No conectado",
+          address: undefined,
+          description: "Creá una wallet custodial",
+        }]
+    ),
     {
       id: "bank",
+      connectionId: undefined,
       name: "Tu fintech de confianza",
       status: "Próximamente",
       description: "Sumá tu billetera virtual para consolidar todos tus saldos en un solo lugar",
@@ -135,9 +151,9 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
   return (
     <>
       <div className="mx-auto max-w-5xl grid gap-4 md:grid-cols-2">
-        {displayList.map((item) => (
+        {displayList.map((item, index) => (
           <div
-            key={item.id}
+            key={item.connectionId || item.id + index}
             className="rounded-3xl border border-line bg-card p-6 shadow-card transition-all duration-200 hover:border-accent/25 hover:shadow-card-hover"
           >
             <div className="flex items-start justify-between gap-3">
@@ -146,15 +162,15 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                   <div className="min-w-0">
                     <div className="text-base font-medium text-foreground">{item.name}</div>
                     <div className="mt-1 text-xs text-muted font-mono break-all flex items-center gap-1.5">
-                      {item.id === "ethereum_custodial" && ethereumConnection?.address ? (
+                      {item.id === "ethereum_custodial" && item.address ? (
                         <>
                           {item.description}
                           <button
-                            onClick={() => copyToClipboard(ethereumConnection.address!, setCopiedListId, item.id, null)}
+                            onClick={() => copyToClipboard(item.address!, setCopiedListId, item.connectionId || item.id, null)}
                             className="text-accent hover:text-accent/80 transition-colors"
                             aria-label="Copiar dirección"
                           >
-                            {copiedListId === item.id ? (
+                            {copiedListId === (item.connectionId || item.id) ? (
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             ) : (
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 15v-1c0-1.1.9-2 2-2h1v9a2 2 0 0 0 2 2h10c1.1 0 2-.9 2-2V19"></path></svg>
@@ -213,8 +229,8 @@ export function ConnectionsClient({ initialConnections, url }: { initialConnecti
                   type="button"
                   disabled={isDisconnecting || isCreating || item.id === "wallbit"} // Disable if disconnecting or creating
                   onClick={() => {
-                    if (item.id === "ethereum_custodial") {
-                      handleDisconnectCryptoWallet(item.id);
+                    if (item.id === "ethereum_custodial" && item.connectionId) {
+                      handleDisconnectCryptoWallet(item.connectionId);
                     }
                   }}
                   className={`flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
